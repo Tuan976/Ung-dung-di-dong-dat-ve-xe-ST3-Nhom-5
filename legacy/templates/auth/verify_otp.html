@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Xác thực OTP | Hutech Bus{% endblock %}
+
+{% block content %}
+<div
+    style="min-height:80vh; display:flex; align-items:center; justify-content:center; padding:2rem; background:linear-gradient(135deg,#f8faff,#e8f0fe);">
+    <div style="width:100%; max-width:420px;">
+        <div
+            style="background:white; border-radius:24px; padding:2.5rem; box-shadow:0 20px 60px rgba(0,0,0,0.1); position:relative; overflow:hidden;">
+            <div
+                style="position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, var(--success), var(--primary));">
+            </div>
+
+            <!-- Header -->
+            <div style="text-align:center; margin-bottom:2rem;">
+                <div
+                    style="width:64px; height:64px; background:linear-gradient(135deg,#10b981,#059669); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:white; margin:0 auto 1rem; box-shadow:0 8px 24px rgba(16,185,129,0.3);">
+                    <i class="ri-shield-keyhole-line"></i>
+                </div>
+                <h1 style="font-size:1.5rem; font-weight:900; color:var(--text-dark); margin-bottom:0.5rem;">Xác thực
+                    OTP</h1>
+                <p style="color:var(--text-gray); font-size:0.9rem; line-height:1.6;">
+                    Mã xác thực đã được gửi đến<br>
+                    <strong style="color:var(--primary);">{{ email }}</strong>
+                </p>
+            </div>
+
+            <form action="{{ url_for('verify_otp') }}" method="POST">
+
+                <!-- OTP input -->
+                <div style="margin-bottom:1.75rem;">
+                    <label
+                        style="display:block; font-size:0.78rem; font-weight:700; color:var(--text-gray); margin-bottom:0.6rem; text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Nhập
+                        mã OTP 6 số</label>
+                    <input type="text" name="otp" required placeholder="• • • • • •" maxlength="6"
+                        style="width:100%; padding:1rem; border:2px solid var(--bg-light); border-radius:14px; font-size:2rem; font-weight:900; text-align:center; letter-spacing:12px; background:var(--bg-light); font-family:monospace; transition:all 0.2s; outline:none;"
+                        onfocus="this.style.borderColor='var(--success)'; this.style.background='white'; this.style.boxShadow='0 0 0 4px rgba(16,185,129,0.1)';"
+                        onblur="this.style.borderColor='var(--bg-light)'; this.style.background='var(--bg-light)'; this.style.boxShadow='';"
+                        oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value.length==6) this.style.borderColor='var(--success)';">
+                    <p style="text-align:center; font-size:0.82rem; color:var(--text-gray); margin-top:0.75rem;">
+                        <i class="ri-time-line"></i> Mã có hiệu lực trong <strong>10 phút</strong>
+                    </p>
+                </div>
+
+                <button type="submit" class="bt-btn bt-btn-primary"
+                    style="width:100%; font-size:1rem; padding:0.9rem; border-radius:12px; font-weight:800; background:linear-gradient(135deg, var(--success), #059669); box-shadow:0 8px 24px rgba(16,185,129,0.3);">
+                    <i class="ri-shield-check-line"></i> Xác thực
+                </button>
+            </form>
+
+            <p style="text-align:center; margin-top:1.5rem; font-size:0.88rem; color:var(--text-gray);">
+                Không nhận được mã?
+                <a href="{{ url_for('forgot_password') }}"
+                    style="color:var(--primary); font-weight:700; margin-left:0.25rem;">Gửi lại OTP</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,307 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+{% set is_admin = session.get('role') == 'ADMIN' %}
+{% set is_station_staff = session.get('role') == 'STAFF' and session.get('staff_role') == 'STATION_STAFF' %}
+{% set can_manage_operations = is_admin or is_station_staff %}
+<div class="page-header">
+    <h1 class="page-title">Lịch Trình Chạy</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: {{ '1fr 2fr' if is_admin else '1fr' }}; gap: 32px; align-items: start;">
+    {% if is_admin %}
+    <!-- Form Lên Lịch -->
+    <div class="card" style="position: sticky; top: 20px;">
+        <h2 style="font-size: 18px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Lên Lịch
+            Chuyến Mới</h2>
+        <form action="{{ url_for('add_trip') }}" method="POST">
+            <div class="form-group">
+                <label>Chọn Tuyến</label>
+                <select name="route_id" class="form-input" required>
+                    {% for route in routes %}
+                    <option value="{{ route.id }}">{{ route.start_point }} - {{ route.end_point }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Chọn Xe & Tài Xế</label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <select name="bus_id" class="form-input" required>
+                        <option value="" disabled selected>-- Chọn Xe --</option>
+                        {% for bus in buses %}
+                        <option value="{{ bus.id }}">{{ bus.license_plate }} ({{ bus.bus_type }})</option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="driver_id" class="form-input" required>
+                        <option value="" disabled selected>-- Chọn Tài xế --</option>
+                        {% for driver in drivers %}
+                        <option value="{{ driver.id }}">{{ driver.name }} - {{ driver.phone }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="assistant_id" class="form-input">
+                        <option value="" selected>-- Chọn Phụ xe (Tuỳ chọn) --</option>
+                        {% for assistant in assistants %}
+                        <option value="{{ assistant.id }}">{{ assistant.name }} - {{ assistant.phone }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Giờ khởi hành</label>
+                <input type="datetime-local" name="departure_time" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label>Hệ số giá</label>
+                <input type="number" step="0.1" name="price_multiplier" class="form-input" value="1.0">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%;">Lên Lịch Ngay</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Danh sách Chuyến đi -->
+    <div>
+        <!-- Trip Filter -->
+        <div class="card" style="margin-bottom: 24px; padding: 20px; background: #f8f9fa;">
+            <form action="{{ url_for('admin_trips_page') }}" method="GET"
+                style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 12px; color: #666; font-weight: 600;">Điểm đi</label>
+                    <select name="start_point" class="form-input">
+                        <option value="">Tất cả</option>
+                        {% for pt in start_points %}
+                        <option value="{{ pt }}" {% if request.args.get('start_point')==pt %}selected{% endif %}>{{ pt
+                            }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 12px; color: #666; font-weight: 600;">Điểm đến</label>
+                    <select name="end_point" class="form-input">
+                        <option value="">Tất cả</option>
+                        {% for pt in end_points %}
+                        <option value="{{ pt }}" {% if request.args.get('end_point')==pt %}selected{% endif %}>{{ pt }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 12px; color: #666; font-weight: 600;">Ngày khởi hành</label>
+                    <input type="date" name="date" class="form-input" value="{{ request.args.get('date', '') }}">
+                </div>
+                <div>
+                    <button type="submit" class="btn-primary"
+                        style="height: 42px; width: 42px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Tuyến</th>
+                        <th>Xe & Nhân sự</th>
+                        <th>Lịch chạy & Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if trips %}
+                    {% for trip in trips %}
+                    <tr
+                        style="{% if trip.status == 'Completed' %}opacity:0.75;{% elif trip.status == 'Cancelled' %}opacity:0.55;{% endif %}">
+                        <td>
+                            <div style="font-weight: 700; font-size:14px;">{{ trip.route.start_point }} <i
+                                    class="fas fa-arrow-right" style="font-size: 10px; color: #999;"></i> {{
+                                trip.route.end_point }}</div>
+                            <div
+                                style="font-size: 13px; color: var(--primary-color); margin-top: 2px; font-weight:600;">
+                                {{ "{:,.0f}".format(trip.route.base_price * trip.price_multiplier) }}đ</div>
+                            {% if trip.route.duration_hours %}
+                            <div style="font-size:11px; color:#9ca3af; margin-top:2px;">⏱️ ~{{
+                                trip.route.duration_hours|int }}h chạy</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight: 700;">{{ trip.bus.license_plate }}</div>
+                            <div style="font-size: 13px; margin-top: 4px; color:#374151;">
+                                {% if trip.driver_ref %}
+                                <span
+                                    style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:50px; font-size:11px; font-weight:700;">
+                                    🚗 {{ trip.driver_ref.name }}
+                                </span>
+                                {% elif trip.driver_name %}
+                                <span
+                                    style="background:#f3f4f6; color:#6b7280; padding:2px 8px; border-radius:50px; font-size:11px;">
+                                    ✓ {{ trip.driver_name }} (xong)
+                                </span>
+                                {% else %}
+                                <span style="color: #f59e0b; font-size:11px; font-weight:600;">⚠️ Chưa gán tài xế</span>
+                                {% endif %}
+                                {% if trip.assistant_ref %}
+                                <br><span
+                                    style="background:#f0fdf4; color:#166534; padding:2px 8px; border-radius:50px; font-size:11px; margin-top:2px; display:inline-block;">
+                                    👤 {{ trip.assistant_ref.name }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size:15px;">{{ trip.departure_time.strftime('%H:%M') }}
+                            </div>
+                            <div style="font-size: 13px; color: #666;">{{ trip.departure_time.strftime('%d/%m/%Y') }}
+                            </div>
+                            {% if trip.route.duration_hours and trip.status in ['Scheduled','Running'] %}
+                            <div style="font-size:11px; color:#9ca3af; margin-top:2px;">
+                                {% set h = trip.route.duration_hours | int %}
+                                {% set m = ((trip.route.duration_hours - h) * 60) | int %}
+                                🏁 ~{{ h }}h{% if m > 0 %}{{ m }}p{% endif %} nữa đến nơi
+                            </div>
+                            {% endif %}
+                            <div style="margin-top:6px;">
+                                {% if trip.status == 'Scheduled' %}
+                                <span
+                                    style="background:#dbeafe; color:#1d4ed8; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700;">🕐
+                                    Chờ khởi hành</span>
+                                {% elif trip.status == 'Running' %}
+                                <span
+                                    style="background:#d1fae5; color:#065f46; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700;">🚌
+                                    Đang chạy</span>
+                                {% elif trip.status == 'Completed' %}
+                                <span
+                                    style="background:#f3f4f6; color:#374151; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700;">✅
+                                    Hoàn thành</span>
+                                {% elif trip.status == 'Cancelled' %}
+                                <span
+                                    style="background:#fee2e2; color:#991b1b; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700;">❌
+                                    Đã hủy</span>
+                                {% elif trip.status == 'Broken' %}
+                                <span
+                                    style="background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700;">⚠️
+                                    Sự cố</span>
+                                {% else %}
+                                <span
+                                    style="background:#f3f4f6; color:#4b5563; padding:3px 10px; border-radius:50px; font-size:11px;">{{
+                                    trip.status }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+
+                                {# Xem khách & hàng #}
+                                <a href="{{ url_for('trip_passengers', trip_id=trip.id) }}"
+                                    style="padding: 5px 9px; font-size: 11px; border-radius:6px; background:#3B82F6; color:white; text-decoration:none; white-space:nowrap;">
+                                    <i class="fas fa-list"></i> Khách
+                                </a>
+                                {% if can_manage_operations %}
+                                <a href="{{ url_for('trip_cargo', trip_id=trip.id) }}"
+                                    style="padding: 5px 9px; font-size: 11px; border-radius:6px; background:#F59E0B; color:white; text-decoration:none; white-space:nowrap;">
+                                    <i class="fas fa-box"></i> Hàng
+                                </a>
+                                {% endif %}
+
+                                {# Chỉ hiện khi còn active #}
+                                {% if trip.status in ['Scheduled', 'Running', 'Broken'] %}
+
+                                <a href="{{ url_for('book_seat', trip_id=trip.id) }}"
+                                    style="padding: 5px 9px; font-size: 11px; border-radius:6px; background:#10B981; color:white; text-decoration:none; white-space:nowrap;">
+                                    <i class="fas fa-plus-circle"></i> Vé
+                                </a>
+
+                                {# Nút chuyển sang Running nếu đang Scheduled #}
+                                {% if trip.status == 'Scheduled' and can_manage_operations %}
+                                <form action="{{ url_for('update_trip_status', trip_id=trip.id) }}" method="POST"
+                                    style="display:inline;">
+                                    <input type="hidden" name="status" value="Running">
+                                    <button type="submit"
+                                        style="padding:5px 9px; font-size:11px; border-radius:6px; background:#7c3aed; color:white; border:none; cursor:pointer; font-family:inherit; white-space:nowrap;"
+                                        title="Đánh dấu xe đã xuất phát">
+                                        🚌 Xuất phát
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                {# Nút Hoàn thành chuyến - nhả tài xế ngay lập tức #}
+                                <form action="{{ url_for('complete_trip', trip_id=trip.id) }}" method="POST"
+                                    style="display:inline;"
+                                    onsubmit="return confirm('Xác nhận hoàn thành chuyến này?\n✅ Tài xế và phụ xe sẽ được GIẢI PHÓNG ngay!')">
+                                    <button type="submit"
+                                        style="padding:5px 9px; font-size:11px; border-radius:6px; background:#065f46; color:white; border:none; cursor:pointer; font-family:inherit; white-space:nowrap;"
+                                        title="Kết thúc chuyến - giải phóng tài xế">
+                                        🏁 Hoàn thành
+                                    </button>
+                                </form>
+
+                                {# Sự cố #}
+                                {% if is_admin %}
+                                <a href="{{ url_for('admin_trip_breakdown', trip_id=trip.id) }}"
+                                    style="padding:5px 9px; font-size:11px; border-radius:6px; background:#FEF2F2; border:1px solid #FEE2E2; color:#DC2626; text-decoration:none; white-space:nowrap;">
+                                    <i class="fas fa-exclamation-triangle"></i> Sự cố
+                                </a>
+                                {% endif %}
+
+                                {# Hủy chuyến #}
+                                {% if is_admin %}
+                                <form action="{{ url_for('update_trip_status', trip_id=trip.id) }}" method="POST"
+                                    style="display:inline;"
+                                    onsubmit="return confirm('Hủy chuyến này? Tài xế sẽ được giải phóng.')">
+                                    <input type="hidden" name="status" value="Cancelled">
+                                    <button type="submit"
+                                        style="padding:5px 9px; font-size:11px; border-radius:6px; background:#fff; border:1px solid #fca5a5; color:#dc2626; cursor:pointer; font-family:inherit; white-space:nowrap;">
+                                        ❌ Hủy
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                {# Sửa #}
+                                {% if is_admin %}
+                                <a href="{{ url_for('edit_trip', trip_id=trip.id) }}"
+                                    style="padding:5px 9px; font-size:11px; border-radius:6px; background:white; border:1px solid #d1d5db; color:#374151; text-decoration:none; white-space:nowrap;">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+
+                                {% else %}
+                                {# Chuyến đã xong - chỉ xem #}
+                                <a href="{{ url_for('trip_passengers', trip_id=trip.id) }}"
+                                    style="padding:5px 9px; font-size:11px; border-radius:6px; background:#f3f4f6; color:#6b7280; text-decoration:none; white-space:nowrap;">
+                                    📋 Xem chi tiết
+                                </a>
+                                {% endif %}
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 48px; color: #9ca3af;">
+                            <div style="font-size:40px; margin-bottom:12px;">🚌</div>
+                            <div style="font-weight:700; font-size:16px;">Chưa có chuyến nào.</div>
+                            <div style="font-size:13px; margin-top:4px;">Hãy lên lịch chuyến đầu tiên ở bên trái!</div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Status-aware row highlight */
+    tr:hover td {
+        background: #f8faff !important;
+    }
+</style>
+{% endblock %}

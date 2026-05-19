@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}Chính Sách Bảo Mật – Hutech Bus{% endblock %}
+{% block meta_desc %}Chính sách bảo mật và quyền riêng tư của Hutech Bus – cam kết bảo vệ thông tin cá nhân của bạn.{%
+endblock %}
+
+{% block extra_css %}
+<style>
+    .legal-hero {
+        background: linear-gradient(135deg, #0f2027 0%, #1a6b3c 50%, #16a34a 100%);
+        padding: 4rem 1.5rem 3rem;
+        text-align: center;
+        color: white;
+    }
+
+    .legal-hero h1 {
+        font-size: clamp(1.8rem, 4vw, 2.8rem);
+        font-weight: 900;
+        margin-bottom: 0.75rem;
+    }
+
+    .legal-hero p {
+        font-size: 1rem;
+        opacity: 0.75;
+        max-width: 560px;
+        margin: 0 auto;
+    }
+
+    .legal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50px;
+        padding: 0.35rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        backdrop-filter: blur(8px);
+    }
+
+    .legal-container {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem 5rem;
+    }
+
+    .legal-toc {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 16px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .legal-toc h3 {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #16a34a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+    }
+
+    .legal-toc ol {
+        margin: 0;
+        padding-left: 1.25rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.3rem 1rem;
+    }
+
+    .legal-toc li a {
+        color: #374151;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .legal-toc li a:hover {
+        color: #16a34a;
+    }
+
+    .legal-section {
+        margin-bottom: 2.5rem;
+        scroll-margin-top: 80px;
+    }
+
+    .legal-section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #bbf7d0;
+    }
+
+    .section-num {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+
+    .legal-section h2 {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .legal-section p,
+    .legal-section li {
+        color: #4b5563;
+        font-size: 0.95rem;
+        line-height: 1.85;
+    }
+
+    .legal-section ul,
+    .legal-section ol {
+        padding-left: 1.5rem;
+        margin: 0.75rem 0;
+    }
+
+    .legal-section li {
+        margin-bottom: 0.4rem;
+    }
+
+    .legal-highlight {
+        background: linear-gradient(135deg, #f0fdf4, #eff6ff);
+        border-left: 4px solid #16a34a;
+        border-radius: 0 10px 10px 0;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
+
+    .legal-highlight strong {
+        color: #15803d;
+    }
+
+    .legal-warning {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 10px 10px 0;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+        color: #92400e;
+    }
+
+    .legal-updated {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        font-size: 0.85rem;
+        color: #6b7280;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .legal-updated strong {
+        color: #1e293b;
+    }
+
+    .data-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        transition: box-shadow 0.2s;
+    }
+
+    .data-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .data-card-icon {
+        font-size: 1.75rem;
+        flex-shrink: 0;
+    }
+
+    .data-card h4 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .data-card p {
+        font-size: 0.825rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    @media (max-width: 600px) {
+        .legal-toc ol {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="legal-hero">
+    <div class="legal-badge">
+        <i class="ri-shield-check-line"></i> Bảo mật & Riêng tư
+    </div>
+    <h1>🛡️ Chính Sách Bảo Mật</h1>
+    <p>Hutech Bus cam kết bảo vệ quyền riêng tư và an toàn thông tin cá nhân của bạn theo tiêu chuẩn cao nhất.</p>
+</div>
+
+<div class="legal-container">
+
+    <!-- Cập nhật -->
+    <div class="legal-updated">
+        <span>📅 Ngày có hiệu lực: <strong>01/01/2026</strong></span>
+        <span>🔄 Cập nhật gần nhất: <strong>05/03/2026</strong></span>
+        <span>📌 Phiên bản: <strong>2.1</strong></span>
+    </div>
+
+    <!-- Cam kết mở đầu -->
+    <div class="legal-highlight" style="margin-bottom: 2rem;">
+        <strong>🔒 Cam kết của chúng tôi:</strong> Hutech Bus không bao giờ bán, cho thuê hoặc trao đổi thông tin cá
+        nhân của bạn với bên thứ ba vì mục đích thương mại mà không có sự đồng ý rõ ràng của bạn.
+    </div>
+
+    <!-- Mục lục -->
+    <div class="legal-toc">
+        <h3><i class="ri-list-check"></i> Nội dung</h3>
+        <ol>
+            <li><a href="#p1">Thông tin chúng tôi thu thập</a></li>
+            <li><a href="#p2">Mục đích sử dụng</a></li>
+            <li><a href="#p3">Cách chúng tôi bảo vệ dữ liệu</a></li>
+            <li><a href="#p4">Chia sẻ thông tin</a></li>
+            <li><a href="#p5">Cookie & Tracking</a></li>
+            <li><a href="#p6">Quyền của bạn</a></li>
+            <li><a href="#p7">Lưu trữ dữ liệu</a></li>
+            <li><a href="#p8">Trẻ em & Người vị thành niên</a></li>
+            <li><a href="#p9">Thay đổi chính sách</a></li>
+            <li><a href="#p10">Khiếu nại & Liên hệ</a></li>
+        </ol>
+    </div>
+
+    <!-- Điều 1 -->
+    <div class="legal-section" id="p1">
+        <div class="legal-section-header">
+            <div class="section-num">1</div>
+            <h2>Thông Tin Chúng Tôi Thu Thập</h2>
+        </div>
+        <p>Chúng tôi thu thập thông tin từ các nguồn sau:</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; margin:1rem 0;">
+            <div class="data-card">
+                <div class="data-card-icon">👤</div>
+                <div>
+                    <h4>Thông tin tài khoản</h4>
+                    <p>Họ tên, số điện thoại, email, ngày sinh, CCCD/CMND, ảnh đại diện.</p>
+                </div>
+            </div>
+            <div class="data-card">
+                <div class="data-card-icon">🎫</div>
+                <div>
+                    <h4>Thông tin giao dịch</h4>
+                    <p>Lịch sử đặt vé, hành trình, giá vé, phương thức thanh toán (mã hóa).</p>
+                </div>
+            </div>
+            <div class="data-card">
+                <div class="data-card-icon">📍</div>
+                <div>
+                    <h4>Dữ liệu vị trí</h4>
+                    <p>Vị trí GPS khi bạn cho phép (dùng để tìm điểm đón gần nhất).</p>
+                </div>
+            </div>
+            <div class="data-card">
+                <div class="data-card-icon">💻</div>
+                <div>
+                    <h4>Dữ liệu thiết bị</h4>
+                    <p>Địa chỉ IP, loại trình duyệt, hệ điều hành, thời gian truy cập.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Điều 2 -->
+    <div class="legal-section" id="p2">
+        <div class="legal-section-header">
+            <div class="section-num">2</div>
+            <h2>Mục Đích Sử Dụng Thông Tin</h2>
+        </div>
+        <p>Thông tin của bạn được sử dụng để:</p>
+        <ul>
+            <li>✅ Xác thực danh tính và quản lý tài khoản</li>
+            <li>✅ Xử lý đặt vé, thanh toán và hoàn tiền</li>
+            <li>✅ Gửi email/SMS xác nhận vé và thông báo chuyến xe</li>
+            <li>✅ Hỗ trợ khách hàng qua chatbot và đội ngũ tư vấn</li>
+            <li>✅ Cải thiện trải nghiệm người dùng và tối ưu giao diện</li>
+            <li>✅ Phân tích thống kê (dữ liệu đã ẩn danh)</li>
+            <li>✅ Gửi thông tin khuyến mãi (chỉ khi bạn đã đăng ký nhận)</li>
+            <li>✅ Tuân thủ yêu cầu pháp lý từ cơ quan nhà nước</li>
+        </ul>
+    </div>
+
+    <!-- Điều 3 -->
+    <div class="legal-section" id="p3">
+        <div class="legal-section-header">
+            <div class="section-num">3</div>
+            <h2>Cách Chúng Tôi Bảo Vệ Dữ Liệu</h2>
+        </div>
+        <p>Hutech Bus áp dụng nhiều lớp bảo mật để bảo vệ thông tin của bạn:</p>
+        <ul>
+            <li>🔐 <strong>Mã hóa SSL/TLS 256-bit</strong> cho tất cả dữ liệu truyền tải</li>
+            <li>🗄️ <strong>Mật khẩu được băm</strong> bằng bcrypt (không thể giải mã ngược)</li>
+            <li>🔒 <strong>Thông tin thanh toán</strong> được mã hóa và không lưu trực tiếp trên máy chủ của chúng tôi
+            </li>
+            <li>🛡️ <strong>Kiểm tra bảo mật</strong> định kỳ và vá lỗi kịp thời</li>
+            <li>🏢 <strong>Máy chủ đặt tại Việt Nam</strong>, tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân
+            </li>
+            <li>🔑 <strong>Phân quyền truy cập</strong> nghiêm ngặt – chỉ nhân viên được ủy quyền mới xem được dữ liệu
+            </li>
+        </ul>
+        <div class="legal-highlight">
+            <strong>Lưu ý:</strong> Không có hệ thống bảo mật nào là tuyệt đối. Bạn cũng có trách nhiệm bảo vệ tài khoản
+            của mình bằng mật khẩu mạnh và không chia sẻ thông tin đăng nhập.
+        </div>
+    </div>
+
+    <!-- Điều 4 -->
+    <div class="legal-section" id="p4">
+        <div class="legal-section-header">
+            <div class="section-num">4</div>
+            <h2>Chia Sẻ Thông Tin</h2>
+        </div>
+        <p>Chúng tôi <strong>chỉ chia sẻ</strong> thông tin trong các trường hợp sau:</p>
+        <ul>
+            <li><strong>Nhà xe đối tác:</strong> Tên, số điện thoại và thông tin vé cần thiết để thực hiện hành trình
+            </li>
+            <li><strong>Cổng thanh toán:</strong> Thông tin giao dịch cần thiết để xử lý thanh toán (VNPay, MoMo...)
+            </li>
+            <li><strong>Dịch vụ email/SMS:</strong> Địa chỉ email và SĐT để gửi thông báo</li>
+            <li><strong>Cơ quan nhà nước:</strong> Khi có yêu cầu hợp pháp theo quy định pháp luật</li>
+        </ul>
+        <div class="legal-warning">
+            ⚠️ Trong mọi trường hợp, chúng tôi <strong>KHÔNG</strong> bán hoặc trao đổi dữ liệu cá nhân cho bên thứ ba
+            vì mục đích thương mại.
+        </div>
+    </div>
+
+    <!-- Điều 5 -->
+    <div class="legal-section" id="p5">
+        <div class="legal-section-header">
+            <div class="section-num">5</div>
+            <h2>Cookie & Theo Dõi</h2>
+        </div>
+        <p>Website sử dụng cookie để cải thiện trải nghiệm người dùng:</p>
+        <ul>
+            <li><strong>Cookie thiết yếu:</strong> Duy trì phiên đăng nhập, giỏ vé – <em>không thể tắt</em></li>
+            <li><strong>Cookie phân tích:</strong> Google Analytics để hiểu cách người dùng tương tác (dữ liệu ẩn danh)
+            </li>
+            <li><strong>Cookie cá nhân hóa:</strong> Ghi nhớ tùy chọn tìm kiếm của bạn</li>
+        </ul>
+        <p>Bạn có thể xóa cookie qua cài đặt trình duyệt bất kỳ lúc nào, nhưng điều này có thể ảnh hưởng đến chức năng
+            của website.</p>
+    </div>
+
+    <!-- Điều 6 -->
+    <div class="legal-section" id="p6">
+        <div class="legal-section-header">
+            <div class="section-num">6</div>
+            <h2>Quyền Của Bạn</h2>
+        </div>
+        <p>Theo Nghị định 13/2023/NĐ-CP, bạn có các quyền sau đối với dữ liệu cá nhân:</p>
+        <div
+            style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem; margin:1rem 0;">
+            <div
+                style="background:#f0fdf4; border-radius:10px; padding:1rem; border:1px solid #bbf7d0; text-align:center;">
+                <div style="font-size:1.5rem; margin-bottom:0.4rem;">👁️</div>
+                <div style="font-weight:700; font-size:0.875rem;">Quyền truy cập</div>
+                <div style="font-size:0.8rem; color:#6b7280; margin-top:0.25rem;">Xem thông tin cá nhân chúng tôi đang
+                    lưu trữ</div>
+            </div>
+            <div
+                style="background:#f0fdf4; border-radius:10px; padding:1rem; border:1px solid #bbf7d0; text-align:center;">
+                <div style="font-size:1.5rem; margin-bottom:0.4rem;">✏️</div>
+                <div style="font-weight:700; font-size:0.875rem;">Quyền chỉnh sửa</div>
+                <div style="font-size:0.8rem; color:#6b7280; margin-top:0.25rem;">Cập nhật thông tin không chính xác
+                </div>
+            </div>
+            <div
+                style="background:#f0fdf4; border-radius:10px; padding:1rem; border:1px solid #bbf7d0; text-align:center;">
+                <div style="font-size:1.5rem; margin-bottom:0.4rem;">🗑️</div>
+                <div style="font-weight:700; font-size:0.875rem;">Quyền xóa</div>
+                <div style="font-size:0.8rem; color:#6b7280; margin-top:0.25rem;">Yêu cầu xóa tài khoản và dữ liệu</div>
+            </div>
+            <div
+                style="background:#f0fdf4; border-radius:10px; padding:1rem; border:1px solid #bbf7d0; text-align:center;">
+                <div style="font-size:1.5rem; margin-bottom:0.4rem;">🚫</div>
+                <div style="font-weight:700; font-size:0.875rem;">Quyền phản đối</div>
+                <div style="font-size:0.8rem; color:#6b7280; margin-top:0.25rem;">Từ chối nhận email marketing</div>
+            </div>
+        </div>
+        <p>Để thực hiện quyền của mình, gửi yêu cầu đến <strong>privacy@hutechbus.vn</strong>. Chúng tôi sẽ phản hồi
+            trong vòng <strong>30 ngày làm việc</strong>.</p>
+    </div>
+
+    <!-- Điều 7 -->
+    <div class="legal-section" id="p7">
+        <div class="legal-section-header">
+            <div class="section-num">7</div>
+            <h2>Thời Gian Lưu Trữ Dữ Liệu</h2>
+        </div>
+        <ul>
+            <li><strong>Thông tin tài khoản:</strong> Lưu cho đến khi bạn yêu cầu xóa</li>
+            <li><strong>Lịch sử giao dịch:</strong> 10 năm (theo quy định kế toán và thuế)</li>
+            <li><strong>Log truy cập:</strong> 90 ngày</li>
+            <li><strong>Dữ liệu chat hỗ trợ:</strong> 2 năm</li>
+        </ul>
+        <p>Sau khi hết thời hạn lưu trữ, dữ liệu sẽ được xóa hoặc ẩn danh hóa an toàn.</p>
+    </div>
+
+    <!-- Điều 8 -->
+    <div class="legal-section" id="p8">
+        <div class="legal-section-header">
+            <div class="section-num">8</div>
+            <h2>Trẻ Em & Người Vị Thành Niên</h2>
+        </div>
+        <p>Dịch vụ của Hutech Bus <strong>không dành cho trẻ em dưới 15 tuổi</strong>. Chúng tôi không cố ý thu thập
+            thông tin từ trẻ em. Nếu phát hiện tài khoản của trẻ em, chúng tôi sẽ xóa ngay lập tức.</p>
+        <p>Người từ 15–18 tuổi có thể sử dụng dịch vụ với <strong>sự đồng ý và giám sát của phụ huynh/người giám
+                hộ</strong>.</p>
+    </div>
+
+    <!-- Điều 9 -->
+    <div class="legal-section" id="p9">
+        <div class="legal-section-header">
+            <div class="section-num">9</div>
+            <h2>Thay Đổi Chính Sách</h2>
+        </div>
+        <p>Chúng tôi có thể cập nhật Chính Sách Bảo Mật này theo thời gian. Khi có thay đổi quan trọng:</p>
+        <ul>
+            <li>Thông báo qua email đến địa chỉ đã đăng ký</li>
+            <li>Hiển thị thông báo nổi bật trên website ít nhất 30 ngày trước khi có hiệu lực</li>
+            <li>Cập nhật ngày "Cập nhật gần nhất" ở đầu trang này</li>
+        </ul>
+        <p>Việc tiếp tục sử dụng dịch vụ sau khi thay đổi có hiệu lực được coi là bạn đồng ý với chính sách mới.</p>
+    </div>
+
+    <!-- Điều 10 -->
+    <div class="legal-section" id="p10">
+        <div class="legal-section-header">
+            <div class="section-num">10</div>
+            <h2>Khiếu Nại & Liên Hệ</h2>
+        </div>
+        <p>Nếu bạn cho rằng quyền riêng tư của mình bị vi phạm, hãy liên hệ ngay:</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-top:1rem;">
+            <div style="background:#f0fdf4; border-radius:12px; padding:1.25rem; border:1px solid #bbf7d0;">
+                <div style="font-size:1.5rem; margin-bottom:0.5rem;">📧</div>
+                <div style="font-weight:700; font-size:0.875rem; color:#374151;">Email bảo mật</div>
+                <div style="font-size:0.875rem; color:#16a34a;">privacy@hutechbus.vn</div>
+            </div>
+            <div style="background:#f0fdf4; border-radius:12px; padding:1.25rem; border:1px solid #bbf7d0;">
+                <div style="font-size:1.5rem; margin-bottom:0.5rem;">⏱️</div>
+                <div style="font-weight:700; font-size:0.875rem; color:#374151;">Thời gian phản hồi</div>
+                <div style="font-size:0.875rem; color:#374151;">Trong vòng 30 ngày làm việc</div>
+            </div>
+            <div style="background:#f0fdf4; border-radius:12px; padding:1.25rem; border:1px solid #bbf7d0;">
+                <div style="font-size:1.5rem; margin-bottom:0.5rem;">🏛️</div>
+                <div style="font-weight:700; font-size:0.875rem; color:#374151;">Cơ quan thẩm quyền</div>
+                <div style="font-size:0.875rem; color:#374151;">Bộ Công an – Cục An ninh mạng</div>
+            </div>
+        </div>
+
+        <div style="margin-top:2rem; text-align:center;">
+            <a href="/terms"
+                style="display:inline-flex; align-items:center; gap:0.5rem; background:#f0fdf4; color:#16a34a; padding:0.7rem 1.5rem; border-radius:50px; font-weight:700; font-size:0.9rem; text-decoration:none; border:1px solid #bbf7d0; transition:all 0.2s;">
+                <i class="ri-file-text-line"></i> Xem Điều Khoản Sử Dụng →
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

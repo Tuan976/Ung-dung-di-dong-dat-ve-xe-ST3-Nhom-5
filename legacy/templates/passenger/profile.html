@@ -1,0 +1,58 @@
+{% extends "passenger/layout.html" %}
+
+{% block passenger_content %}
+<section class="profile-card">
+    <div class="block-header" style="margin-bottom:1.35rem;">
+        <div>
+            <div class="section-kicker"><i class="ri-user-settings-line"></i> Tài khoản</div>
+            <h1 class="section-heading" style="font-size:1.7rem; margin-top:.7rem;">Cài đặt hồ sơ</h1>
+            <p class="section-copy" style="margin-top:.4rem;">Cập nhật thông tin liên hệ và thay đổi mật khẩu khi cần.</p>
+        </div>
+    </div>
+
+    <form action="{{ url_for('my_profile') }}" method="POST" class="profile-grid" style="max-width:720px;">
+        <div class="form-group">
+            <label>Họ và tên</label>
+            <div class="input-icon-wrap">
+                <i class="ri-user-line"></i>
+                <input type="text" name="name" class="profile-input" required value="{{ user.name }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Email (tài khoản)</label>
+            <div class="input-icon-wrap">
+                <i class="ri-mail-line"></i>
+                <input type="email" class="profile-input" value="{{ user.email }}" disabled style="background:#f1f5f9; color:#94a3b8; cursor:not-allowed;">
+            </div>
+            <small style="color:#94a3b8;">Địa chỉ email không thể thay đổi.</small>
+        </div>
+
+        <div class="form-group">
+            <label>Số điện thoại</label>
+            <div class="input-icon-wrap">
+                <i class="ri-phone-line"></i>
+                <input type="text" name="phone" class="profile-input" required value="{{ user.phone }}">
+            </div>
+        </div>
+
+        <div class="profile-note">
+            <div style="font-weight:800; color:#0f172a; margin-bottom:.35rem;">Đổi mật khẩu</div>
+            <div style="font-size:.9rem;">Nhập mật khẩu mới nếu bạn muốn cập nhật. Bỏ trống để giữ nguyên mật khẩu hiện tại.</div>
+        </div>
+
+        <div class="form-group">
+            <label>Mật khẩu mới</label>
+            <div class="input-icon-wrap">
+                <i class="ri-lock-password-line"></i>
+                <input type="password" name="new_password" class="profile-input" placeholder="••••••••">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:.8rem; flex-wrap:wrap; margin-top:.25rem;">
+            <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Lưu thay đổi</button>
+            <a href="{{ url_for('my_tickets') }}" class="btn-secondary"><i class="ri-ticket-2-line"></i> Xem vé của tôi</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,789 @@
+{% extends "base.html" %}
+
+{% block title %}Hutech Bus – Đặt vé xe khách online nhanh, rẻ, uy tín{% endblock %}
+
+{% block content %}
+
+<!-- ====== HERO SECTION ====== -->
+<section class="bt-hero" id="home">
+    <div class="bt-hero__blob1"></div>
+    <div class="bt-hero__blob2"></div>
+    <div class="bt-hero__inner">
+        <div class="bt-hero__content">
+            <div class="bt-hero__badge">
+                <i class="ri-fire-line"></i>
+                🇻🇳 Hệ thống vé xe lớn nhất Việt Nam
+            </div>
+            <h1 class="bt-hero__title">
+                Đặt vé xe <span>nhanh chóng</span><br>giá rẻ nhất
+            </h1>
+            <p class="bt-hero__subtitle">
+                Hơn 500 tuyến xe, 63 tỉnh thành toàn quốc. Đặt vé chỉ 3 phút,<br>
+                nhận vé ngay trên điện thoại. Không cần in vé!
+            </p>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                <a href="#bt-search" class="bt-btn bt-btn-accent" style="font-size:1rem; padding:0.9rem 2rem;">
+                    <i class="ri-bus-line"></i> Tìm chuyến ngay
+                </a>
+                <a href="/passenger/register" class="bt-btn"
+                    style="background:rgba(255,255,255,0.15); color:white; border:2px solid rgba(255,255,255,0.35); font-size:1rem; padding:0.9rem 2rem; backdrop-filter:blur(8px);">
+                    <i class="ri-user-add-line"></i> Đăng ký miễn phí
+                </a>
+            </div>
+            <div class="bt-hero__stats">
+                <div class="bt-hero__stat">
+                    <div class="bt-hero__stat-value">500+</div>
+                    <div class="bt-hero__stat-label">Tuyến xe</div>
+                </div>
+                <div class="bt-hero__stat">
+                    <div class="bt-hero__stat-value">100+</div>
+                    <div class="bt-hero__stat-label">Nhà xe</div>
+                </div>
+                <div class="bt-hero__stat">
+                    <div class="bt-hero__stat-value">2M+</div>
+                    <div class="bt-hero__stat-label">Hành khách</div>
+                </div>
+                <div class="bt-hero__stat">
+                    <div class="bt-hero__stat-value">4.8⭐</div>
+                    <div class="bt-hero__stat-label">Đánh giá</div>
+                </div>
+            </div>
+        </div>
+        <div class="bt-hero__visual">
+            <img src="{{ url_for('static', filename='img/bus.png') }}" alt="Bus Hutech" class="bt-hero__bus-img"
+                onerror="this.style.display='none'">
+        </div>
+    </div>
+</section>
+
+<!-- ====== SEARCH SECTION ====== -->
+<section class="bt-search-section" id="bt-search">
+    <div class="bt-search-box">
+        <div class="bt-search-tabs">
+            <button class="bt-search-tab active" onclick="switchTab(this,'mot-chieu')">
+                <i class="ri-arrow-right-line"></i> Một chiều
+            </button>
+            <button class="bt-search-tab" onclick="switchTab(this,'khu-hoi')">
+                <i class="ri-arrow-left-right-line"></i> Khứ hồi
+            </button>
+        </div>
+
+        <form action="/" method="GET" id="search-form">
+            <!-- Datalists for autocomplete -->
+            <datalist id="provinces-list">
+                {% for p in all_provinces %}
+                <option value="{{ p }}">
+                    {% endfor %}
+            </datalist>
+
+            <div class="bt-search-form">
+                <!-- Điểm đi -->
+                <div class="bt-search-field">
+                    <label><i class="ri-map-pin-2-line" style="color:var(--primary);"></i> Điểm xuất phát</label>
+                    <div style="position:relative;">
+                        <i class="ri-map-pin-2-fill field-icon"></i>
+                        <input type="text" id="input-start" list="provinces-list"
+                            placeholder="Gõ để tìm... (VD: Hà Nội, TPHCM)"
+                            value="{{ request.args.get('start_point', '') }}" autocomplete="off"
+                            oninput="syncHidden('input-start','start_point')"
+                            onchange="syncHidden('input-start','start_point')">
+                        <input type="hidden" name="start_point" id="start_point"
+                            value="{{ request.args.get('start_point', '') }}">
+                    </div>
+                </div>
+
+                <!-- Swap button -->
+                <div class="bt-search-field"
+                    style="position:relative; max-width:50px; align-self:end; padding-bottom:0.85rem;">
+                    <button type="button" id="swap-btn" onclick="swapLocations()" title="Đổi chiều"
+                        style="width:42px; height:42px; border-radius:50%; background:white; border:2px solid var(--primary); color:var(--primary); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s; font-size:1rem; box-shadow:var(--shadow-sm);">
+                        <i class="ri-arrow-left-right-line"></i>
+                    </button>
+                </div>
+
+                <!-- Điểm đến -->
+                <div class="bt-search-field">
+                    <label><i class="ri-map-pin-line" style="color:var(--accent);"></i> Điểm đến</label>
+                    <div style="position:relative;">
+                        <i class="ri-map-pin-fill field-icon" style="color:var(--accent);"></i>
+                        <input type="text" id="input-end" list="provinces-list"
+                            placeholder="Gõ để tìm... (VD: Hà Nội, Đà Lạt)"
+                            value="{{ request.args.get('end_point', '') }}" autocomplete="off"
+                            oninput="syncHidden('input-end','end_point')"
+                            onchange="syncHidden('input-end','end_point')">
+                        <input type="hidden" name="end_point" id="end_point"
+                            value="{{ request.args.get('end_point', '') }}">
+                    </div>
+                </div>
+
+                <!-- Ngày đi -->
+                <div class="bt-search-field">
+                    <label><i class="ri-calendar-line" style="color:var(--success);"></i> Ngày đi</label>
+                    <div style="position:relative;">
+                        <i class="ri-calendar-event-fill field-icon" style="color:var(--success);"></i>
+                        <input type="date" name="date" value="{{ request.args.get('date', '') }}" min="{{ today }}">
+                    </div>
+                </div>
+
+                <!-- Ngày về -->
+                <div class="bt-search-field" id="return-date-container"
+                    style="{% if request.args.get('return_date') %}display:block;{% else %}display:none;{% endif %}">
+                    <label><i class="ri-calendar-event-line" style="color:var(--accent);"></i> Ngày về</label>
+                    <div style="position:relative;">
+                        <i class="ri-calendar-event-fill field-icon" style="color:var(--accent);"></i>
+                        <input type="date" name="return_date" id="return_date"
+                            value="{{ request.args.get('return_date', '') }}" min="{{ today }}">
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="bt-search-field" style="align-self:end;">
+                    <button type="submit" class="bt-search-submit">
+                        <i class="ri-search-2-line"></i>
+                        Tìm chuyến xe
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <script>
+            function syncHidden(inputId, hiddenId) {
+                document.getElementById(hiddenId).value = document.getElementById(inputId).value;
+            }
+        </script>
+
+
+        <!-- Quick routes -->
+        <div style="margin-top:1.25rem; padding-top:1.25rem; border-top:1px dashed var(--bg-light);">
+            <p
+                style="font-size:0.8rem; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.75rem;">
+                <i class="ri-fire-line" style="color:var(--accent);"></i> Tuyến phổ biến:
+            </p>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                {% set popular = [
+                ('TP. Hồ Chí Minh','Hà Nội'),
+                ('Hà Nội','TP. Hồ Chí Minh'),
+                ('Hà Nội','Đà Nẵng'),
+                ('TP. Hồ Chí Minh','Cần Thơ'),
+                ('TP. Hồ Chí Minh','Đà Lạt'),
+                ('Hà Nội','Hải Phòng'),
+                ('TP. Hồ Chí Minh','Nha Trang'),
+                ('Hà Nội','Ninh Bình')
+                ] %}
+                {% for s,e in popular %}
+                <a href="/?start_point={{ s }}&end_point={{ e }}&date={{ today }}"
+                    style="background:var(--bg-light); color:var(--text-gray); padding:0.3rem 0.8rem; border-radius:50px; font-size:0.8rem; font-weight:600; white-space:nowrap; transition:all 0.2s; border:1px solid transparent;"
+                    onmouseover="this.style.background='rgba(40,135,255,0.08)'; this.style.borderColor='var(--primary)'; this.style.color='var(--primary)';"
+                    onmouseout="this.style.background='var(--bg-light)'; this.style.borderColor='transparent'; this.style.color='var(--text-gray)';">
+                    {{ s }} → {{ e }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ====== AI SUGGESTIONS ====== -->
+<section id="bt-ai-section" style="display:none; padding:0 1.5rem 2rem;">
+    <div class="bt-ai-section">
+        <div class="bt-ai-header">
+            <div class="bt-ai-icon">
+                <i class="ri-magic-line"></i>
+            </div>
+            <div>
+                <div class="bt-ai-title">✨ Gợi ý thông minh cho bạn</div>
+                <div class="bt-ai-subtitle">Dựa trên sở thích và hành trình phổ biến</div>
+            </div>
+        </div>
+        <div class="bt-ai-grid" id="bt-ai-list"></div>
+    </div>
+</section>
+
+<!-- ====== TRIPS SECTION ====== -->
+<section class="bt-section" id="bt-trips-section" style="padding-top:2rem;">
+    <div style="max-width:var(--max-width); margin:0 auto;">
+
+        <!-- Results header -->
+        {% if request.args.get('start_point') or request.args.get('end_point') or request.args.get('date') %}
+        <div
+            style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+                <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-dark);">
+                    <i class="ri-bus-line" style="color:var(--primary);"></i>
+                    {% if request.args.get('start_point') and request.args.get('end_point') %}
+                    {{ request.args.get('start_point') }} → {{ request.args.get('end_point') }}
+                    {% else %}
+                    Kết quả tìm kiếm
+                    {% endif %}
+                </h2>
+                <p style="color:var(--text-gray); font-size:0.9rem; margin-top:0.25rem;">
+                    Tìm thấy <strong style="color:var(--primary);">{{ trips|length }}</strong> chuyến xe
+                    {% if request.args.get('date') %} ngày {{ request.args.get('date') }}{% endif %}
+                </p>
+            </div>
+            <a href="/" class="bt-btn bt-btn-outline" style="font-size:0.85rem;">
+                <i class="ri-refresh-line"></i> Tìm lại
+            </a>
+        </div>
+        {% else %}
+        <div class="bt-section-header">
+            <div class="bt-section-tag"><i class="ri-bus-2-line"></i> Chuyến xe</div>
+            <h2 class="bt-section-title">Các chuyến xe đang mở</h2>
+            <p class="bt-section-desc">Lựa chọn chuyến đi phù hợp nhất với bạn</p>
+        </div>
+        {% endif %}
+
+        <!-- Filter bar (when showing all trips) -->
+        {% if not request.args.get('start_point') and not request.args.get('end_point') %}
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+            <button onclick="filterBusType('')" class="filter-btn filter-active"
+                style="padding:0.4rem 1rem; border-radius:50px; font-size:0.82rem; font-weight:700; border:2px solid var(--primary); background:var(--primary); color:white; cursor:pointer; transition:all 0.2s;">Tất
+                cả</button>
+            <button onclick="filterBusType('sleeper')" class="filter-btn"
+                style="padding:0.4rem 1rem; border-radius:50px; font-size:0.82rem; font-weight:700; border:2px solid var(--bg-light); background:white; color:var(--text-gray); cursor:pointer; transition:all 0.2s;">🛏
+                Giường nằm</button>
+            <button onclick="filterBusType('seat')" class="filter-btn"
+                style="padding:0.4rem 1rem; border-radius:50px; font-size:0.82rem; font-weight:700; border:2px solid var(--bg-light); background:white; color:var(--text-gray); cursor:pointer; transition:all 0.2s;">💺
+                Ghế ngồi</button>
+            <button onclick="filterBusType('limousine')" class="filter-btn"
+                style="padding:0.4rem 1rem; border-radius:50px; font-size:0.82rem; font-weight:700; border:2px solid var(--bg-light); background:white; color:var(--text-gray); cursor:pointer; transition:all 0.2s;">🌟
+                Limousine</button>
+        </div>
+        {% endif %}
+
+        <!-- TRIP CARDS -->
+
+        {% macro render_trip(trip) %}
+        {% set available_seats = trip.bus.total_seats - trip.bookings|selectattr('status','ne','CANCELLED')|list|length
+        %}
+        <div class="bt-trip-card" data-bustype="{{ trip.bus.bus_type }}">
+            <div>
+                <!-- Header -->
+                <div class="bt-trip-header">
+                    <div class="bt-company-badge">
+                        {{ trip.route.company.name[0]|upper }}
+                    </div>
+                    <div>
+                        <div class="bt-company-name">{{ trip.route.company.name }}</div>
+                        <div class="bt-bus-type">
+                            {% if trip.bus.bus_type == 'sleeper' %}
+                            🛏 Giường nằm
+                            {% elif trip.bus.bus_type == 'limousine' %}
+                            🌟 Limousine VIP
+                            {% elif trip.bus.bus_type == 'seat' %}
+                            💺 Ghế ngồi
+                            {% else %}
+                            🚌 {{ trip.bus.bus_type|title }}
+                            {% endif %}
+                            · {{ trip.bus.total_seats }} chỗ
+                        </div>
+                    </div>
+                    {% if trip.status != 'Scheduled' %}
+                    <span style="margin-left:auto; padding:0.2rem 0.7rem; border-radius:50px; font-size:0.75rem; font-weight:700;
+                        {% if trip.status == 'Running' %}background:rgba(16,185,129,0.1); color:#065f46;
+                        {% elif trip.status == 'Cancelled' %}background:rgba(239,68,68,0.1); color:#991b1b;
+                        {% else %}background:rgba(245,158,11,0.1); color:#92400e;{% endif %}">
+                        {{ trip.status }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Route -->
+                <div class="bt-trip-route">
+                    <div class="bt-route-point">
+                        <div class="bt-route-time">{{ trip.departure_time.strftime('%H:%M') }}</div>
+                        <div class="bt-route-date">{{ trip.departure_time.strftime('%d/%m/%Y') }}</div>
+                        <div class="bt-route-city">{{ trip.route.start_point }}</div>
+                    </div>
+                    <div class="bt-route-sep">
+                        <div class="bt-route-line"></div>
+                        <div class="bt-route-duration">
+                            {% if trip.route.duration_hours %}
+                            {{ trip.route.duration_hours|int }}h
+                            {% if (trip.route.duration_hours * 60)|int % 60 > 0 %}{{ (trip.route.duration_hours *
+                            60)|int % 60 }}p{% endif %}
+                            {% else %}—{% endif %}
+                        </div>
+                    </div>
+                    <div class="bt-route-point" style="text-align:right;">
+                        <div class="bt-route-time">
+                            {% if trip.arrival_time %}{{ trip.arrival_time.strftime('%H:%M') }}{% else %}—{% endif %}
+                        </div>
+                        <div class="bt-route-date">
+                            {% if trip.arrival_time %}{{ trip.arrival_time.strftime('%d/%m/%Y') }}{% endif %}
+                        </div>
+                        <div class="bt-route-city">{{ trip.route.end_point }}</div>
+                    </div>
+                </div>
+
+                <!-- Meta tags -->
+                <div class="bt-trip-meta">
+                    {% if trip.route.distance_km %}
+                    <span class="bt-meta-tag blue">
+                        <i class="ri-road-map-line"></i> {{ trip.route.distance_km|int }} km
+                    </span>
+                    {% endif %}
+                    <span class="bt-meta-tag green">
+                        <i class="ri-wifi-line"></i> WiFi
+                    </span>
+                    <span class="bt-meta-tag blue">
+                        <i class="ri-temp-cold-line"></i> Điều hoà
+                    </span>
+                    {% if trip.bus.bus_type == 'limousine' %}
+                    <span class="bt-meta-tag orange">
+                        <i class="ri-vip-crown-line"></i> VIP
+                    </span>
+                    {% endif %}
+                    <span class="bt-meta-tag">
+                        <i class="ri-user-line"></i>
+                        {% if trip.driver_ref %}{{ trip.driver_ref.name }}{% elif trip.driver_name %}{{ trip.driver_name
+                        }}{% else %}—{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Price + Book -->
+            <div class="bt-trip-actions">
+                <div class="bt-price">
+                    <div class="bt-price-label">Giá từ</div>
+                    <div class="bt-price-value">
+                        {{ "{:,.0f}".format(trip.route.base_price * trip.price_multiplier) }}
+                    </div>
+                    <div class="bt-price-unit">VNĐ / khách</div>
+                </div>
+                <div class="bt-seat-count {% if available_seats <= 5 %}low{% endif %}">
+                    <i class="ri-seat-line"></i>
+                    {% if available_seats <= 0 %} Hết chỗ {% elif available_seats <=5 %} Chỉ còn {{ available_seats }}
+                        chỗ! {% else %} Còn {{ available_seats }} chỗ {% endif %} </div>
+                        {% if available_seats > 0 and trip.status == 'Scheduled' %}
+                        <!-- Update to pass outbound+return logic if needed, but here simple book_seat -->
+                        <a href="{{ url_for('book_seat', trip_id=trip.id) }}{% if request.args.get('return_date') %}?return_date={{ request.args.get('return_date') }}{% endif %}"
+                            class="bt-book-btn">
+                            <i class="ri-ticket-2-line"></i> Đặt vé ngay
+                        </a>
+                        {% else %}
+                        <button class="bt-book-btn" disabled style="opacity:0.5; cursor:not-allowed;"
+                            title="Không thể đặt vé">
+                            <i class="ri-close-circle-line"></i>
+                            {% if available_seats <= 0 %}Hết chỗ{% else %}Đã đóng{% endif %} </button>
+                                {% endif %}
+                </div>
+            </div>
+            {% endmacro %}
+
+            <!-- Bắt đầu Grid -->
+            <div class="bt-trips-grid" id="outbound-trips" style="margin-bottom: 2rem;">
+                {% for trip in trips %}
+                {{ render_trip(trip) }}
+                {% else %}
+                <div class="bt-empty">
+                    <div class="bt-empty-icon">🚌</div>
+                    <div class="bt-empty-title">Không tìm thấy chuyến xe</div>
+                    <p class="bt-empty-desc">Thử tìm kiếm với thông tin khác.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if request.args.get('return_date') %}
+            <div class="bt-section-header" style="text-align: left; margin-top: 3rem; margin-bottom: 1.5rem;">
+                <div class="bt-section-tag"><i class="ri-arrow-left-line"></i> Chuyến về</div>
+                <h2 class="bt-section-title" style="font-size: 1.8rem;">
+                    {{ request.args.get('end_point') }} &rarr; {{ request.args.get('start_point') }}
+                </h2>
+                <p class="bt-section-desc">Ngày về: {{ request.args.get('return_date') }}</p>
+            </div>
+
+            <div class="bt-trips-grid" id="return-trips">
+                {% for trip in return_trips %}
+                {{ render_trip(trip) }}
+                {% else %}
+                <div class="bt-empty">
+                    <div class="bt-empty-icon">🚌</div>
+                    <div class="bt-empty-title">Không tìm thấy chuyến về</div>
+                    <p class="bt-empty-desc">Thử tìm chuyến đi vào ngày khác.</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+</section>
+
+<!-- ====== POPULAR DESTINATIONS ====== -->
+<section class="bt-destinations" id="bt-destinations">
+    <div style="max-width:var(--max-width); margin:0 auto;">
+        <div class="bt-section-header">
+            <div class="bt-section-tag"><i class="ri-map-pin-2-line"></i> Điểm đến</div>
+            <h2 class="bt-section-title">Điểm đến phổ biến</h2>
+            <p class="bt-section-desc">Khám phá 63 tỉnh thành Việt Nam bằng những chuyến xe thoải mái</p>
+        </div>
+        <div class="bt-dest-grid">
+            <div class="bt-dest-card" onclick="quickSearch('TP. Hồ Chí Minh')">
+                <img src="{{ url_for('static', filename='img/dest_hcmc.png') }}" alt="TP. Hồ Chí Minh"
+                    onerror="this.style.background='linear-gradient(135deg, #2887ff,#1a237e)'; this.src=''; this.alt='';">
+                <div class="bt-dest-overlay">
+                    <div class="bt-dest-city">TP. Hồ Chí Minh</div>
+                    <div class="bt-dest-routes">Hàng trăm tuyến đường</div>
+                </div>
+                <div class="bt-dest-badge">🔥 Hot</div>
+            </div>
+            <div class="bt-dest-card" onclick="quickSearch('Hà Nội')">
+                <img src="{{ url_for('static', filename='img/dest_hanoi.png') }}" alt="Hà Nội"
+                    onerror="this.style.background='linear-gradient(135deg, #1a237e,#0f1547)'; this.src=''; this.alt='';">
+                <div class="bt-dest-overlay">
+                    <div class="bt-dest-city">Hà Nội</div>
+                    <div class="bt-dest-routes">Thủ đô ngàn năm</div>
+                </div>
+            </div>
+            <div class="bt-dest-card" onclick="quickSearch('Đà Nẵng')">
+                <img src="{{ url_for('static', filename='img/dest_danang.png') }}" alt="Đà Nẵng"
+                    onerror="this.style.background='linear-gradient(135deg, #0095da,#2887ff)'; this.src=''; this.alt='';">
+                <div class="bt-dest-overlay">
+                    <div class="bt-dest-city">Đà Nẵng</div>
+                    <div class="bt-dest-routes">Thành phố đáng sống</div>
+                </div>
+                <div class="bt-dest-badge">⭐ Top</div>
+            </div>
+            <div class="bt-dest-card" onclick="quickSearch('Đà Lạt')">
+                <img src="{{ url_for('static', filename='img/dest_dalat.png') }}" alt="Đà Lạt"
+                    onerror="this.style.background='linear-gradient(135deg, #10b981,#065f46)'; this.src=''; this.alt='';">
+                <div class="bt-dest-overlay">
+                    <div class="bt-dest-city">Đà Lạt</div>
+                    <div class="bt-dest-routes">Thành phố sương mù</div>
+                </div>
+            </div>
+            <div class="bt-dest-card" onclick="quickSearch('Nha Trang')">
+                <img src="{{ url_for('static', filename='img/dest_nhatrang.png') }}" alt="Nha Trang"
+                    onerror="this.style.background='linear-gradient(135deg, #0ea5e9,#0284c7)'; this.src='';">
+                <div class="bt-dest-overlay">
+                    <div class="bt-dest-city">Nha Trang</div>
+                    <div class="bt-dest-routes">Thành phố biển xanh</div>
+                </div>
+            </div>
+            <div class="bt-dest-card" onclick="quickSearch('Cần Thơ')">
+                <img src="{{ url_for('static', filename='img/dest_cantho.png') }}" alt="Cần Thơ"
+                    onerror="this.style.background='linear-gradient(135deg, #f59e0b,#d97706)'; this.src='';">
+                <div class="bt-dest-overlay">
+                    <div class="bt-dest-city">Cần Thơ</div>
+                    <div class="bt-dest-routes">Tây Đô miền sông nước</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ====== FEATURES ====== -->
+<section class="bt-features" id="bt-features">
+    <div style="max-width:var(--max-width); margin:0 auto;">
+        <div class="bt-section-header">
+            <div class="bt-section-tag"><i class="ri-star-line"></i> Vì sao chọn chúng tôi</div>
+            <h2 class="bt-section-title">Trải nghiệm đặt vé tuyệt vời</h2>
+            <p class="bt-section-desc">Chúng tôi cam kết mang đến dịch vụ đặt vé xe chất lượng cao nhất</p>
+        </div>
+        <div class="bt-features-grid">
+            <div class="bt-feature-card">
+                <div class="bt-feature-icon"><i class="ri-shield-check-line"></i></div>
+                <h3 class="bt-feature-title">An toàn 100%</h3>
+                <p class="bt-feature-desc">Đội ngũ tài xế chuyên nghiệp, xe mới đạt chuẩn, bảo hiểm đầy đủ trên mỗi
+                    chuyến đi.</p>
+            </div>
+            <div class="bt-feature-card">
+                <div class="bt-feature-icon"><i class="ri-time-line"></i></div>
+                <h3 class="bt-feature-title">Đúng giờ</h3>
+                <p class="bt-feature-desc">Cam kết xuất bến đúng giờ, hành trình tối ưu. Không bắt khách dọc đường.</p>
+            </div>
+            <div class="bt-feature-card">
+                <div class="bt-feature-icon"><i class="ri-wallet-line"></i></div>
+                <h3 class="bt-feature-title">Giá tốt nhất</h3>
+                <p class="bt-feature-desc">So sánh hàng trăm tuyến xe, tìm vé giá rẻ nhất. Hoàn tiền nếu tìm được giá
+                    thấp hơn.</p>
+            </div>
+            <div class="bt-feature-card">
+                <div class="bt-feature-icon"><i class="ri-smartphone-line"></i></div>
+                <h3 class="bt-feature-title">Đặt vé 3 phút</h3>
+                <p class="bt-feature-desc">Giao diện thân thiện, chọn chỗ trực tuyến, thanh toán đa kênh. Nhận vé ngay
+                    qua email.</p>
+            </div>
+            <div class="bt-feature-card">
+                <div class="bt-feature-icon"><i class="ri-customer-service-2-line"></i></div>
+                <h3 class="bt-feature-title">Hỗ trợ 24/7</h3>
+                <p class="bt-feature-desc">Đội ngũ hỗ trợ sẵn sàng 24/7. Giải quyết mọi vấn đề trong vòng 15 phút.</p>
+            </div>
+            <div class="bt-feature-card">
+                <div class="bt-feature-icon"><i class="ri-refund-2-line"></i></div>
+                <h3 class="bt-feature-title">Hoàn vé dễ dàng</h3>
+                <p class="bt-feature-desc">Hủy vé nhanh chóng trước 24h. Hoàn tiền về trong 3-5 ngày làm việc.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ====== STATS BANNER ====== -->
+<section class="bt-stats">
+    <div class="bt-stats-grid">
+        <div class="bt-stat-item">
+            <div class="bt-stat-num">2M+</div>
+            <div class="bt-stat-label">Hành khách hài lòng</div>
+        </div>
+        <div class="bt-stat-item">
+            <div class="bt-stat-num">500+</div>
+            <div class="bt-stat-label">Tuyến xe trải dài Việt Nam</div>
+        </div>
+        <div class="bt-stat-item">
+            <div class="bt-stat-num">63</div>
+            <div class="bt-stat-label">Tỉnh thành được phục vụ</div>
+        </div>
+        <div class="bt-stat-item">
+            <div class="bt-stat-num">4.8⭐</div>
+            <div class="bt-stat-label">Điểm đánh giá trung bình</div>
+        </div>
+    </div>
+</section>
+
+<!-- ====== SHOWCASE ====== -->
+<section class="bt-showcase">
+    <div class="bt-showcase-inner">
+        <div class="bt-showcase-img">
+            <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&q=80" alt="Xe khách cao cấp"
+                onerror="this.style.background='linear-gradient(135deg, #2887ff,#1a237e)'; this.src='';">
+        </div>
+        <div class="bt-showcase-content">
+            <div class="bt-section-tag"><i class="ri-vip-crown-line"></i> Chất lượng cao</div>
+            <h2 class="bt-showcase-title">Mỗi chuyến đi là một trải nghiệm đáng nhớ</h2>
+            <p class="bt-showcase-desc">
+                Chúng tôi không chỉ bán vé xe – chúng tôi tạo ra những hành trình thoải mái và an toàn.
+                Từ giường nằm cao cấp limousine đến ghế recliner hiện đại, mọi nhu cầu
+                của bạn đều được đáp ứng.
+            </p>
+            <div class="bt-showcase-perks">
+                <div class="bt-perk">
+                    <i class="ri-check-line"></i>
+                    <span>Ghế ngả 180° thoải mái như nằm</span>
+                </div>
+                <div class="bt-perk">
+                    <i class="ri-check-line"></i>
+                    <span>WiFi tốc độ cao + USB charging mỗi chỗ</span>
+                </div>
+                <div class="bt-perk">
+                    <i class="ri-check-line"></i>
+                    <span>Điều hoà nhiệt độ cá nhân</span>
+                </div>
+                <div class="bt-perk">
+                    <i class="ri-check-line"></i>
+                    <span>Bảo hiểm hành khách toàn chặng</span>
+                </div>
+                <div class="bt-perk">
+                    <i class="ri-check-line"></i>
+                    <span>Theo dõi hành trình thời gian thực</span>
+                </div>
+            </div>
+            <a href="#bt-search" class="bt-btn bt-btn-primary" style="font-size:1rem; padding:0.9rem 2rem;">
+                <i class="ri-bus-line"></i> Đặt chỗ ngay
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ====== TESTIMONIALS ====== -->
+<section class="bt-testimonials">
+    <div style="max-width:var(--max-width); margin:0 auto;">
+        <div class="bt-section-header">
+            <div class="bt-section-tag"><i class="ri-chat-3-line"></i> Đánh giá</div>
+            <h2 class="bt-section-title">Khách hàng nói gì về chúng tôi</h2>
+        </div>
+        <div class="bt-testimonials-grid">
+            <div class="bt-testimonial-card">
+                <div class="bt-testimonial-stars">★★★★★</div>
+                <p class="bt-testimonial-text">"Đặt vé siêu nhanh, chỉ mất 3 phút là xong. Xe đúng giờ, tài xế thân
+                    thiện. Sẽ tiếp tục sử dụng!"</p>
+                <div class="bt-testimonial-author">
+                    <div class="bt-author-avatar">N</div>
+                    <div>
+                        <div class="bt-author-name">Nguyễn Văn An</div>
+                        <div class="bt-author-route">Hà Nội → Đà Nẵng</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bt-testimonial-card">
+                <div class="bt-testimonial-stars">★★★★★</div>
+                <p class="bt-testimonial-text">"Giá vé cạnh tranh, nhiều lựa chọn nhà xe. Ghế limousine thoải mái tuyệt
+                    vời. Recommend mạnh!"</p>
+                <div class="bt-testimonial-author">
+                    <div class="bt-author-avatar">T</div>
+                    <div>
+                        <div class="bt-author-name">Trần Thị Bích</div>
+                        <div class="bt-author-route">TP.HCM → Đà Lạt</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bt-testimonial-card">
+                <div class="bt-testimonial-stars">★★★★½</div>
+                <p class="bt-testimonial-text">"Hủy vé rất dễ, hoàn tiền nhanh trong 3 ngày. CSKH nhiệt tình. App dễ
+                    dùng trên điện thoại!"</p>
+                <div class="bt-testimonial-author">
+                    <div class="bt-author-avatar">L</div>
+                    <div>
+                        <div class="bt-author-name">Lê Minh Khoa</div>
+                        <div class="bt-author-route">TP.HCM → Cần Thơ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ====== HOW IT WORKS ====== -->
+<section class="bt-section bt-bg-white">
+    <div style="max-width:var(--max-width); margin:0 auto;">
+        <div class="bt-section-header">
+            <div class="bt-section-tag"><i class="ri-road-map-line"></i> Hướng dẫn</div>
+            <h2 class="bt-section-title">Đặt vé chỉ 3 bước đơn giản</h2>
+        </div>
+        <div
+            style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:2rem; position:relative;">
+            {% for step in [
+            ('ri-search-2-line','1. Tìm chuyến','Nhập điểm đi, điểm đến và ngày xuất phát mong muốn.','#2887ff'),
+            ('ri-seat-line','2. Chọn chỗ','Xem sơ đồ ghế, chọn ghế yêu thích trực tiếp trên xe.','#ff6b35'),
+            ('ri-bank-card-line','3. Thanh toán','Thanh toán an toàn qua chuyển khoản, thẻ, ví điện tử.','#10b981'),
+            ('ri-ticket-2-line','4. Nhận vé','Vé được gửi ngay qua email. Xuất trình QR code khi lên xe.','#7c3aed')
+            ] %}
+            <div style="text-align:center; padding:2rem 1.5rem; background:white; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); position:relative; transition:var(--transition);"
+                onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='var(--shadow-xl)';"
+                onmouseout="this.style.transform=''; this.style.boxShadow='var(--shadow-md)';">
+                <div
+                    style="width:70px; height:70px; margin:0 auto 1.25rem; background:{{ step[3] }}15; border-radius:var(--radius-lg); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:{{ step[3] }};">
+                    <i class="{{ step[0] }}"></i>
+                </div>
+                <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-dark); margin-bottom:0.75rem;">{{
+                    step[1] }}</h3>
+                <p style="color:var(--text-gray); font-size:0.9rem; line-height:1.6;">{{ step[2] }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const TODAY = '{{ today }}';
+
+    function switchTab(btn, mode) {
+        document.querySelectorAll('.bt-search-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        const returnContainer = document.getElementById('return-date-container');
+        const searchForm = document.querySelector('.bt-search-form');
+
+        if (mode === 'khu-hoi') {
+            returnContainer.style.display = 'block';
+            searchForm.style.gridTemplateColumns = '1fr 44px 1fr 140px 140px auto';
+        } else {
+            returnContainer.style.display = 'none';
+            document.getElementById('return_date').value = '';
+            searchForm.style.gridTemplateColumns = '1fr 44px 1fr 180px auto';
+        }
+    }
+
+    function swapLocations() {
+        const startInput = document.getElementById('input-start');
+        const endInput = document.getElementById('input-end');
+        const startHid = document.getElementById('start_point');
+        const endHid = document.getElementById('end_point');
+        const tmp = startInput.value;
+        startInput.value = endInput.value;
+        endInput.value = tmp;
+        startHid.value = startInput.value;
+        endHid.value = endInput.value;
+        const swapBtn = document.getElementById('swap-btn');
+        swapBtn.style.transform = 'rotate(360deg)';
+        setTimeout(() => swapBtn.style.transform = '', 400);
+    }
+
+    function quickSearch(start, end) {
+        document.getElementById('input-start').value = start || '';
+        document.getElementById('input-end').value = end || '';
+        document.getElementById('start_point').value = start || '';
+        document.getElementById('end_point').value = end || '';
+        document.getElementById('bt-search').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function filterBusType(type) {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.style.background = 'white';
+            btn.style.color = 'var(--text-gray)';
+            btn.style.borderColor = 'var(--bg-light)';
+        });
+        event.target.style.background = 'var(--primary)';
+        event.target.style.color = 'white';
+        event.target.style.borderColor = 'var(--primary)';
+
+        document.querySelectorAll('.bt-trip-card').forEach(card => {
+            if (!type || card.dataset.bustype === type) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // AI Suggestions
+    async function loadAISuggestions() {
+        try {
+            const res = await fetch('/api/ai/suggestions');
+            const data = await res.json();
+            if (data.suggestions && data.suggestions.length > 0) {
+                const section = document.getElementById('bt-ai-section');
+                const list = document.getElementById('bt-ai-list');
+                section.style.display = 'block';
+                list.innerHTML = data.suggestions.map(s => `
+                <div class="bt-ai-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                        <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--primary); background:rgba(40,135,255,0.08); padding:0.25rem 0.6rem; border-radius:50px;">✨ Smart Pick</span>
+                        <span style="font-size:0.75rem; color:var(--text-light);">Chuyến #${s.trip_id}</span>
+                    </div>
+                    <p style="font-size:0.88rem; color:var(--text-gray); line-height:1.5; margin-bottom:1rem; font-style:italic;">"${s.reason}"</p>
+                    <a href="/book/${s.trip_id}" class="bt-btn bt-btn-primary" style="width:100%; text-align:center; padding:0.6rem; font-size:0.85rem; border-radius:8px; display:block;">
+                        <i class="ri-ticket-2-line"></i> Đặt ngay
+                    </a>
+                </div>
+            `).join('');
+            }
+        } catch (e) { console.log('AI suggestions unavailable'); }
+    }
+
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.bt-trip-card, .bt-feature-card, .bt-testimonial-card').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(24px)';
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(el);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAISuggestions();
+        // Set min date on date input
+        const dateInput = document.querySelector('input[name="date"]');
+        if (dateInput && !dateInput.value) dateInput.min = TODAY;
+
+        const returnDateInput = document.getElementById('return_date');
+        if (returnDateInput) {
+            returnDateInput.min = TODAY;
+            // auto activate if return date exists
+            if (returnDateInput.value) {
+                const tabs = document.querySelectorAll('.bt-search-tab');
+                if (tabs.length > 1) switchTab(tabs[1], 'khu-hoi');
+            }
+        }
+    });
+</script>
+{% endblock %}

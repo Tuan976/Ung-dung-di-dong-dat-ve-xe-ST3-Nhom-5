@@ -1,0 +1,323 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title">Công cụ Tối ưu hóa Hoạt động</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+
+    <!-- 1. VEHICLE OPTIMIZATION -->
+    <div class="card">
+        <h2 style="font-size: 18px; margin-bottom: 20px; color: var(--primary-color);">
+            <i class="fas fa-chart-line"></i> Đề xuất Xe Tối ưu
+        </h2>
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+            Dựa trên số liệu lịch sử và khung giờ cao điểm, hệ thống tính toán phương án xe tối ưu.
+        </p>
+
+        <div class="form-group">
+            <label>Tuyến đường</label>
+            <select id="opt_route" class="form-input">
+                <option value="1">TP.HCM - Đà Lạt</option>
+                <option value="2">TP.HCM - Nha Trang</option>
+                <option value="3">TP.HCM - Cần Thơ</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Khung giờ khởi hành dự kiến</label>
+            <select id="opt_hour" class="form-input">
+                <option value="8">08:00 (Sáng)</option>
+                <option value="12">12:00 (Trưa)</option>
+                <option value="19">19:00 (Tối)</option>
+                <option value="22">22:00 (Khuya)</option>
+            </select>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="opt_weekend" style="width: 16px; height: 16px;">
+            <label for="opt_weekend" style="margin: 0; font-weight: 500;">Là Cuối tuần / Lễ</label>
+        </div>
+        <button onclick="predictVehicle()" class="btn-primary" style="width: 100%;">
+            <i class="fas fa-calculator"></i> Tính toán Phương án
+        </button>
+
+        <!-- Result Area -->
+        <div id="vehicle_result"
+            style="margin-top: 24px; padding: 16px; background: #e3f2fd; border-radius: 8px; display: none;">
+            <h3 style="font-size: 16px; color: var(--primary-color); margin-bottom: 8px;">Kết quả đề xuất:</h3>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Dự báo khách:</span>
+                <strong id="res_pax">--</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Loại xe khuyên dùng:</span>
+                <strong id="res_bus" style="color: var(--green-400); font-size: 1.1em;">--</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Tiết kiệm nhiên liệu:</span>
+                <strong id="res_fuel" style="color: var(--accent-color);">--%</strong>
+            </div>
+            <p id="res_reason" style="font-size: 13px; color: #555; font-style: italic; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <!-- 2. CARGO LOADING (BIN PACKING) -->
+    <div class="card">
+        <h2 style="font-size: 18px; margin-bottom: 20px; color: var(--primary-color);">
+            <i class="fas fa-boxes"></i> Xếp hàng hóa (Cargo Loading)
+        </h2>
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+            Nhập danh sách kiện hàng để tính toán cách sắp xếp 2D vào hầm xe. (Giả lập hầm xe 2.4m x 10m)
+        </p>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <input type="text" id="box_dims" class="form-input" placeholder="Nhập kích thước (VD: 50x50)...">
+            <button onclick="addBox()" class="btn-secondary" style="white-space: nowrap;">Thêm</button>
+        </div>
+
+        <!-- Standard Presets -->
+        <div style="margin-bottom: 16px; display: flex; gap: 8px;">
+            <button class="badge" onclick="addPreset(30, 30)"
+                style="cursor: pointer; background: #e0e0e0; color: #333; border: none;">Nhỏ (30x30)</button>
+            <button class="badge" onclick="addPreset(50, 40)"
+                style="cursor: pointer; background: #bdbdbd; color: #333; border: none;">Trung (50x40)</button>
+            <button class="badge" onclick="addPreset(80, 50)"
+                style="cursor: pointer; background: #9e9e9e; color: white; border: none;">Lớn (80x50)</button>
+            <button class="badge" onclick="addPreset(100, 60)"
+                style="cursor: pointer; background: #757575; color: white; border: none;">Đại (100x60)</button>
+        </div>
+
+        <div id="box_list" style="margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px;">
+            <!-- Tags generated here -->
+        </div>
+
+        <button onclick="calculatePacking()" class="btn-primary" style="width: 100%; background: var(--accent-color);">
+            <i class="fas fa-th"></i> Tính toán Sắp xếp
+        </button>
+
+        <!-- Visualization Area -->
+        <div style="position: relative; margin-top: 24px;">
+            <div id="packing_viz"
+                style="border: 2px solid #333; height: 300px; position: relative; background: #fff; overflow: hidden;">
+                <div style="position: absolute; top: 10px; right: 10px; font-size: 12px; color: #999;">Khoang hàng: 2.4m
+                    x 10m</div>
+                <div
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #f0f0f0; font-size: 24px; font-weight: 700; z-index: 0;">
+                    MÔ PHỎNG
+                </div>
+                <!-- Items will be injected here with z-index 1 -->
+            </div>
+
+            <!-- Overflow Warning Overlay -->
+            <div id="overflow_warning"
+                style="display: none; position: absolute; bottom: 0; left: 0; right: 0; background: rgba(239, 68, 68, 0.9); color: white; padding: 8px; text-align: center; font-weight: bold;">
+                <i class="fas fa-exclamation-triangle"></i> HẦM XE ĐÃ ĐẦY! (Không thể xếp thêm kiện hàng)
+            </div>
+        </div>
+
+        <!-- Space Usage Indicator -->
+        <div style="margin-top: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px;">
+                <span>Trạng thái Khoang hàng:</span>
+                <strong id="usage_percent">0%</strong>
+            </div>
+            <div style="height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden;">
+                <div id="usage_bar"
+                    style="height: 100%; width: 0%; background: var(--green-400); transition: width 0.3s;"></div>
+            </div>
+        </div>
+
+        <div id="packing_stats" style="margin-top: 10px; font-size: 14px; text-align: right;"></div>
+    </div>
+
+</div>
+
+<script>
+    // --- VEHICLE PREDICTION ---
+    async function predictVehicle() {
+        const route = document.getElementById('opt_route').value;
+        const hour = document.getElementById('opt_hour').value;
+        const isWeekend = document.getElementById('opt_weekend').checked;
+
+        const btn = document.querySelector('button[onclick="predictVehicle()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tính toán...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/predict/bus-type', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ route_id: route, hour: hour, is_weekend: isWeekend })
+            });
+            const data = await response.json();
+
+            document.getElementById('vehicle_result').style.display = 'block';
+            document.getElementById('res_pax').innerText = data.predicted_demand + " khách";
+            document.getElementById('res_bus').innerText = data.recommended_bus_type;
+            document.getElementById('res_fuel').innerText = data.fuel_saving_est;
+            document.getElementById('res_reason').innerText = data.reason;
+
+        } catch (e) {
+            alert('Lỗi kết nối!');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // --- BIN PACKING LOGIC (CLIENT SIDE) ---
+    let boxes = []; // {w, h, color}
+
+    function addPreset(w, h) {
+        boxes.push({
+            w: w,
+            h: h,
+            color: '#' + (Math.random() * 0xFFFFFF << 0).toString(16),
+            id: boxes.length + 1
+        });
+        renderBoxList();
+    }
+
+    function addBox() {
+        const input = document.getElementById('box_dims');
+        const raw = input.value.split(','); // Allow multiple "50x50, 100x20"
+
+        if (!raw[0]) return;
+
+        raw.forEach(s => {
+            const parts = s.trim().split('x').map(x => parseInt(x));
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                boxes.push({
+                    w: parts[0],
+                    h: parts[1],
+                    color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+                    id: boxes.length + 1
+                });
+            }
+        });
+
+        renderBoxList();
+        input.value = '';
+        input.focus();
+    }
+
+    function renderBoxList() {
+        const container = document.getElementById('box_list');
+        container.innerHTML = boxes.map((b, i) =>
+            `<span class="badge" style="background: ${b.color}; color: white; display: flex; align-items: center; gap: 4px; padding: 4px 8px;">
+                ${b.w}x${b.h} 
+                <i class="fas fa-times" onclick="removeBox(${i})" style="cursor: pointer; opacity: 0.8; margin-left: 4px;"></i>
+            </span>`
+        ).join('');
+    }
+
+    function removeBox(idx) {
+        boxes.splice(idx, 1);
+        renderBoxList();
+    }
+
+    function calculatePacking() {
+        const container = document.getElementById('packing_viz');
+        // Reset and keep bg text
+        container.innerHTML = '<div style="position: absolute; top: 10px; right: 10px; font-size: 12px; color: #999;">Khoang hàng: 2.4m x 10m</div><div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #f0f0f0; font-size: 24px; font-weight: 700; z-index: 0;">MÔ PHỎNG</div>';
+
+        const warningEl = document.getElementById('overflow_warning');
+        warningEl.style.display = 'none';
+
+        const binWidth = container.clientWidth;
+        const binHeight = 300;
+
+        // Use fixed scaling to be realistic relative to container size?
+        // Let's assume container width = 2.4m (240cm).
+        const scaleFactor = binWidth / 240;
+
+        // Sort by height desc
+        const sortedBoxes = [...boxes].sort((a, b) => b.h - a.h);
+
+        let currentX = 0;
+        let currentY = 0;
+        let rowMaxHeight = 0;
+        let placedCount = 0;
+        let overFlowCount = 0;
+        let usedAreaPx = 0;
+        let totalBinAreaPx = binWidth * binHeight;
+
+        sortedBoxes.forEach(box => {
+            const drawW = box.w * scaleFactor;
+            const drawH = box.h * scaleFactor;
+
+            // Check Row Fit
+            if (currentX + drawW > binWidth) {
+                currentX = 0;
+                currentY += rowMaxHeight;
+                rowMaxHeight = 0;
+            }
+
+            // Check Bin Fit (Height)
+            if (currentY + drawH > binHeight) {
+                overFlowCount++;
+                return; // Skip rendering this box
+            }
+
+            // Render Box
+            const div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = currentX + 'px';
+            div.style.top = currentY + 'px';
+            div.style.width = drawW + 'px';
+            div.style.height = drawH + 'px';
+            div.style.backgroundColor = box.color;
+            div.style.border = '1px solid rgba(255,255,255,0.7)';
+            div.style.zIndex = "10";
+
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.justifyContent = 'center';
+            div.style.color = '#fff';
+            div.style.fontSize = Math.min(10, drawH / 2) + 'px'; // Scale font
+            div.innerText = `${box.w}x${box.h}`;
+
+            container.appendChild(div);
+
+            currentX += drawW;
+            if (drawH > rowMaxHeight) rowMaxHeight = drawH;
+
+            placedCount++;
+            usedAreaPx += (drawW * drawH);
+        });
+
+        // Calculate Statistics
+        // Use pixel area for % calculation to allow for empty gaps being "lost" space
+        // Total usable height is technically infinite in real life until length reached.
+        // Here we fixed length to 300px (representing 10m scaled?). 
+        // If 240cm = binWidth (~600px), then 1000cm (10m) should be ~2500px.
+        // But for UI we limited to 300px. Let's treat 300px as the "Available Space" for this trip.
+
+        let percentFull = (usedAreaPx / totalBinAreaPx) * 100;
+        if (percentFull > 100) percentFull = 100;
+
+        // Update UI
+        document.getElementById('usage_percent').innerText = percentFull.toFixed(1) + '%';
+        document.getElementById('usage_bar').style.width = percentFull + '%';
+
+        if (percentFull > 80) {
+            document.getElementById('usage_bar').style.backgroundColor = 'var(--red-300)';
+        } else if (percentFull > 50) {
+            document.getElementById('usage_bar').style.backgroundColor = 'var(--accent-color)';
+        } else {
+            document.getElementById('usage_bar').style.backgroundColor = 'var(--green-400)';
+        }
+
+        if (overFlowCount > 0) {
+            warningEl.style.display = 'block';
+            warningEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> HẦM XE ĐÃ ĐẦY! Có ${overFlowCount} kiện hàng không vừa.`;
+        }
+
+        document.getElementById('packing_stats').innerHTML = `
+            Đã xếp: <strong>${placedCount} / ${boxes.length}</strong> kiện.<br>
+            Không gian sử dụng: <strong>${(usedAreaPx / scaleFactor / scaleFactor / 10000).toFixed(2)} m²</strong>.
+        `;
+    }
+</script>
+{% endblock %}

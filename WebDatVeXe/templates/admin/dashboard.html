@@ -1,0 +1,161 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title">Tổng quan Dashboard</h1>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div style="color: var(--text-secondary); font-size: 14px; font-weight: 500;">Tổng doanh thu vé</div>
+        <div style="font-size: 24px; font-weight: 700; color: var(--primary-color); margin-top: 8px;">
+            {{ "{:,.0f}".format(total_revenue or 0) }} vnđ
+        </div>
+        <div style="color: var(--green-400); font-size: 13px; margin-top: 4px;"><i class="fas fa-chart-line"></i> Đã xác
+            nhận</div>
+    </div>
+
+    <div class="stat-card">
+        <div style="color: var(--text-secondary); font-size: 14px; font-weight: 500;">Chuyến xe sắp chạy</div>
+        <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;">{{ trips|length }}
+        </div>
+        <div style="color: var(--primary-light); font-size: 13px; margin-top: 4px;">Trong 7 ngày tới</div>
+    </div>
+
+    <div class="stat-card">
+        <div style="color: var(--text-secondary); font-size: 14px; font-weight: 500;">Tổng số xe</div>
+        <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;">{{ buses|length }}
+        </div>
+        <div style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">Hoạt động tốt</div>
+    </div>
+
+    <div class="stat-card">
+        <div style="color: var(--text-secondary); font-size: 14px; font-weight: 500;">Tổng số tuyến</div>
+        <div style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-top: 8px;">{{ routes|length }}
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+    <!-- Recent Trips -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="font-size: 18px; font-weight: 700;">Chuyến xe gần đây</h2>
+            <a href="{{ url_for('admin_trips_page') }}"
+                style="color: var(--primary-color); font-size: 14px; font-weight: 500;">Xem tất cả</a>
+        </div>
+
+        <table class="admin-table" style="margin-top: 0;">
+            <thead>
+                <tr>
+                    <th>Tuyến</th>
+                    <th>Giờ chạy</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in trips[:5] %}
+                <tr>
+                    <td>{{ trip.route.start_point }} - {{ trip.route.end_point }}</td>
+                    <td>{{ trip.departure_time.strftime('%H:%M %d/%m') }}</td>
+                    <td><span class="badge badge-primary">{{ trip.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">Thao tác nhanh</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="{{ url_for('admin_trips_page') }}" class="btn-primary" style="text-align: center;">
+                <i class="fas fa-plus"></i> Lên lịch chạy ngay
+            </a>
+            <a href="{{ url_for('admin_optimization') }}" class="btn-secondary"
+                style="border: 1px solid var(--primary-light); text-align: center; color: var(--primary-color); background: #f0f7ff;">
+                <i class="fas fa-brain"></i> Công cụ Tối ưu & AI
+            </a>
+            <a href="{{ url_for('admin_food') }}" class="btn-secondary"
+                style="border: 1px solid var(--border-color); text-align: center; color: var(--text-primary);">
+                <i class="fas fa-utensils"></i> Quản lý Thực đơn
+            </a>
+            <a href="{{ url_for('admin_reports') }}" class="btn-secondary"
+                style="border: 1px solid var(--border-color); text-align: center; color: var(--text-primary);">
+                <i class="fas fa-file-invoice-dollar"></i> Xem Báo cáo Chi tiết
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- AI Insights Section -->
+<div class="card"
+    style="margin-top: 32px; background: linear-gradient(to right, #ffffff, #f8f9ff); border-left: 5px solid var(--primary-color);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="width: 45px; height: 45px; background: #eef2ff; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary-color);">
+                <i class="fas fa-brain" style="font-size: 20px;"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;">Phân tích & Gợi ý từ AI</h2>
+                <p style="margin: 0; font-size: 13px; color: #666;">Dựa trên dữ liệu vận hành thời gian thực</p>
+            </div>
+        </div>
+        <button id="btn-generate-ai" class="btn-primary" style="padding: 8px 16px; font-size: 14px; width: auto;">
+            <i class="fas fa-sync-alt"></i> Làm mới phân tích
+        </button>
+    </div>
+
+    <div id="ai-insights-content" style="min-height: 100px; line-height: 1.6; color: #444;">
+        <div style="text-align: center; color: #999; padding: 40px 0;">
+            <i class="fas fa-sparkles" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+            Bấm "Làm mới phân tích" để AI đưa ra nhận xét về hoạt động kinh doanh của bạn.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let lastAnalysisTime = 0;
+    const COOLDOWN_SEC = 30;
+
+    document.getElementById('btn-generate-ai').addEventListener('click', async function () {
+        const now = Date.now();
+        const timePassed = (now - lastAnalysisTime) / 1000;
+
+        if (timePassed < COOLDOWN_SEC) {
+            alert(`Vui lòng đợi thêm ${Math.ceil(COOLDOWN_SEC - timePassed)} giây trước khi yêu cầu phân tích mới.`);
+            return;
+        }
+
+        const content = document.getElementById('ai-insights-content');
+        const btn = this;
+        const originalText = btn.innerHTML;
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân tích...';
+        btn.disabled = true;
+        content.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--primary-color);"></i><p style="margin-top: 15px;">Hệ thống AI đang đọc dữ liệu nhà xe...</p></div>';
+
+        try {
+            const response = await fetch('/api/ai/admin-insights');
+            const data = await response.json();
+
+            lastAnalysisTime = Date.now();
+
+            // Simple formatting for bold and breaks
+            let html = data.analysis.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\b(1|2|3)\. /g, '<br><strong>$1. </strong>');
+            html = html.replace(/\n/g, '<br>');
+
+            content.innerHTML = `<div style="background: white; padding: 25px; border-radius: 12px; border: 1px solid #eef2ff; font-size: 15px; color: #333; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);">${html}</div>`;
+        } catch (e) {
+            content.innerHTML = '<div style="color: #e74c3c; padding: 20px; text-align: center;">Lỗi khi kết nối với AI. Vui lòng kiểm tra lại cấu hình API hoặc thử lại sau.</div>';
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="padding-top: 40px; padding-bottom: 80px;">
+    <h1 class="section-title">Hệ thống Quản lý Nhà xe</h1>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+        <!-- 1. Quản lý Tuyến -->
+        <article class="card">
+            <h2 style="margin-bottom: 20px; color: var(--primary-color);">1. Tạo Tuyến đường</h2>
+            <form action="{{ url_for('add_route') }}" method="POST">
+                <div class="form-group">
+                    <label>Điểm đi</label>
+                    <input type="text" name="start_point" class="form-input" required placeholder="TP.HCM">
+                </div>
+                <div class="form-group">
+                    <label>Điểm đến</label>
+                    <input type="text" name="end_point" class="form-input" required placeholder="Đà Lạt">
+                </div>
+                <div class="form-group">
+                    <label>Giá vé Cơ bản (VNĐ)</label>
+                    <input type="number" name="base_price" class="form-input" required placeholder="350000">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Thêm tuyến</button>
+            </form>
+        </article>
+
+        <!-- 2. Quản lý Đội xe (Fleet) -->
+        <article class="card">
+            <h2 style="margin-bottom: 20px; color: var(--primary-color);">2. Thêm Xe (Fleet)</h2>
+            <form action="{{ url_for('add_bus') }}" method="POST">
+                <div class="form-group">
+                    <label>Biển số xe</label>
+                    <input type="text" name="license_plate" class="form-input" required placeholder="51B-123.45">
+                </div>
+                <div class="form-group">
+                    <label>Loại xe</label>
+                    <select name="bus_type" class="form-input" required>
+                        <option value="sleeper">Giường nằm (Sleeper)</option>
+                        <option value="limousine">Limousine VIP</option>
+                        <option value="seat">Ghế ngồi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Số lượng ghế</label>
+                    <input type="number" name="total_seats" class="form-input" required placeholder="34" value="34">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Thêm xe mới</button>
+            </form>
+        </article>
+
+        <!-- 3. Lên Lịch Trình (Schedule) -->
+        <article class="card">
+            <h2 style="margin-bottom: 20px; color: var(--primary-color);">3. Lên Lịch Chạy</h2>
+            <form action="{{ url_for('add_trip') }}" method="POST">
+                <div class="form-group">
+                    <label>Chọn Tuyến</label>
+                    <select name="route_id" class="form-input" required>
+                        {% for route in routes %}
+                        <option value="{{ route.id }}">{{ route.start_point }} - {{ route.end_point }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Chọn Xe</label>
+                    <select name="bus_id" class="form-input" required>
+                        {% for bus in buses %}
+                        <option value="{{ bus.id }}">{{ bus.license_plate }} ({{ bus.bus_type }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Giờ khởi hành</label>
+                    <input type="datetime-local" name="departure_time" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Hệ số giá (Dịp lễ/Cuối tuần)</label>
+                    <input type="number" step="0.1" name="price_multiplier" class="form-input" value="1.0">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Lên lịch ngay</button>
+            </form>
+        </article>
+    </div>
+
+    <div class="admin-header">
+        <h1 class="section-title" style="margin-bottom: 0;">Dashboard Quản Trị</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('admin_food') }}" class="btn-secondary"
+                style="background: var(--accent-color); border: none; color: white;">
+                <i class="fas fa-utensils"></i> Quản lý Trạm dừng
+            </a>
+            <a href="{{ url_for('add_route') }}" class="btn-primary"
+                onclick="alert('Feature in modal below'); return false;" style="display: none;">Thêm Tuyến</a>
+        </div>
+    </div>
+    <h2 class="section-title" style="margin-top: 80px;">Danh sách Lịch trình Chạy (Trips)</h2>
+    <div class="card" style="overflow-x: auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Trip ID</th>
+                    <th>Tuyến đường</th>
+                    <th>Xe & Tài xế</th>
+                    <th>Giờ chạy</th>
+                    <th>Giá vé</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in trips %}
+                <tr>
+                    <td>#{{ trip.id }}</td>
+                    <td>{{ trip.route.start_point }} -> {{ trip.route.end_point }}</td>
+                    <td>
+                        <strong>{{ trip.bus.license_plate }}</strong><br>
+                        <small>{{ trip.bus.bus_type }}</small>
+                    </td>
+                    <td>{{ trip.departure_time.strftime('%H:%M %d/%m/%Y') }}</td>
+                    <td>{{ "{:,.0f}".format(trip.route.base_price * trip.price_multiplier) }}đ</td>
+                    <td><span class="badge badge-primary">{{ trip.status }}</span></td>
+                    <td>
+                        <a href="{{ url_for('trip_passengers', trip_id=trip.id) }}" class="btn-primary"
+                            style="padding: 6px 12px; font-size: 13px;">Phơi khách</a>
+                        <a href="{{ url_for('trip_cargo', trip_id=trip.id) }}" class="btn-secondary"
+                            style="padding: 6px 12px; font-size: 13px; text-decoration: none; margin-left: 8px;">Hàng
+                            hóa</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

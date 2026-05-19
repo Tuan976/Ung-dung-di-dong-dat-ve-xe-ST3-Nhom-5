@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="padding-top: 40px; padding-bottom: 80px;">
+    <h1 class="section-title">Đặt món ăn trạm dừng</h1>
+    <div
+        style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 32px;">
+        <p><strong>Chuyến xe:</strong> {{ booking.trip.route.start_point }} - {{ booking.trip.route.end_point }}</p>
+        <p><strong>Khởi hành:</strong> {{ booking.trip.departure_time.strftime('%H:%M %d/%m/%Y') }}</p>
+    </div>
+
+    {% if existing_order %}
+    <div
+        style="background: #e3f2fd; padding: 24px; border-radius: 12px; margin-bottom: 32px; border-left: 5px solid #2196f3;">
+        <h3><i class="fas fa-receipt"></i> Đơn hàng của bạn</h3>
+        <p>Trạng thái: <strong>{{ existing_order.status }}</strong></p>
+        <div style="margin: 16px 0;">
+            {% set details = existing_order.order_details | from_json %}
+            {% for name, info in details.items() %}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>{{ name }} (x{{ info.qty }})</span>
+                <strong>{{ "{:,.0f}".format(info.price * info.qty) }}đ</strong>
+            </div>
+            {% endfor %}
+            <hr>
+            <div style="display: flex; justify-content: space-between; font-size: 1.2em; color: #d32f2f;">
+                <strong>Tổng cộng:</strong>
+                <strong>{{ "{:,.0f}".format(existing_order.total_price) }}đ</strong>
+            </div>
+        </div>
+        <p style="font-size: 0.9em; color: #666;">Vui lòng thanh toán cho nhân viên khi nhận món tại trạm.</p>
+    </div>
+    {% endif %}
+
+    <form action="" method="POST">
+        {% for stop in stops %}
+        <div class="grade-card"
+            style="margin-bottom: 32px; cursor: default; transform: none; box-shadow: none; border: 1px solid #eee;">
+            <div style="padding: 24px; background: #f8f9fa; border-bottom: 1px solid #eee;">
+                <h2 style="margin: 0; color: #333;">{{ stop.name }}</h2>
+                <p style="margin: 4px 0 0; color: #666;"><i class="fas fa-map-marker-alt"></i> {{ stop.location }}</p>
+            </div>
+
+            <div style="padding: 24px;">
+                <h4 style="margin-bottom: 16px;">Thực đơn:</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    {% for item in stop.items %}
+                    <div
+                        style="border: 1px solid #eee; border-radius: 8px; padding: 16px; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <strong style="font-size: 1.1em;">{{ item.name }}</strong>
+                            <span style="color: #d32f2f; font-weight: bold;">{{ "{:,.0f}".format(item.price) }}đ</span>
+                        </div>
+                        <p style="color: #777; font-size: 0.9em; flex-grow: 1;">{{ item.description }}</p>
+
+                        <div style="display: flex; align-items: center; margin-top: 12px;">
+                            <label style="margin-right: 12px; font-size: 0.9em;">Số lượng:</label>
+                            <input type="number" name="qty_{{ item.id }}" value="0" min="0" max="10"
+                                class="form-control" style="width: 80px;">
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>Chưa có món ăn nào.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Review Section (Only if stopped/completed - simplified for now just form) -->
+            <div style="padding: 16px 24px; background: #fffbe6; border-top: 1px solid #ffe58f;">
+                <h5 style="margin-bottom: 8px;">Đánh giá trạm dừng này</h5>
+                <!-- Use API to submit review without page reload or separate form? Let's use separate small form or Modal. 
+                      Actually, let's just link to a review action or Keep it simple. -->
+                <button type="button" class="btn-secondary" style="font-size: 13px;"
+                    onclick="document.getElementById('review{{stop.id}}').style.display='block'">
+                    <i class="fas fa-star"></i> Viết đánh giá
+                </button>
+            </div>
+        </div>
+
+        <!-- Rating Modal/Form (Inline) -->
+        <div id="review{{stop.id}}"
+            style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+            <div
+                style="background: white; width: 90%; max-width: 500px; margin: 100px auto; padding: 24px; border-radius: 12px;">
+                <h3>Đánh giá {{ stop.name }}</h3>
+                <!-- Separate Form for Rating -->
+                <!-- We cannot nest forms. So we use JS or place this outside. 
+                     For simplicity, we assume this page is main form for ORDER. 
+                     The review should be a separate API endpoint call. -->
+            </div>
+            <!-- Moved outside loop or handled differently. Let's effectively specific handling. -->
+        </div>
+        {% endfor %}
+
+        {% if not existing_order %}
+        <div
+            style="position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 16px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); text-align: center;">
+            <button type="submit" class="btn-primary"
+                style="padding: 12px 48px; font-size: 1.1em; box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);">
+                Xác nhận đặt món
+            </button>
+        </div>
+        {% endif %}
+    </form>
+
+    <!-- Separate forms for ratings -->
+    {% for stop in stops %}
+    <form action="{{ url_for('rate_stop') }}" method="POST" id="formReview{{stop.id}}" style="display: none;">
+        <div
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 400px;">
+                <h3>Đánh giá {{ stop.name }}</h3>
+                <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                <input type="hidden" name="stop_id" value="{{ stop.id }}">
+                <div class="form-group">
+                    <label>Điểm số (1-5)</label>
+                    <select name="rating" class="form-control">
+                        <option value="5">5 - Tuyệt vời</option>
+                        <option value="4">4 - Tốt</option>
+                        <option value="3">3 - Bình thường</option>
+                        <option value="2">2 - Tệ</option>
+                        <option value="1">1 - Rất tệ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Bình luận</label>
+                    <textarea name="comment" class="form-control" rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                    <button type="submit" class="btn-primary" style="flex: 1;">Gửi</button>
+                    <button type="button" class="btn-secondary" style="flex: 1;"
+                        onclick="document.getElementById('formReview{{stop.id}}').style.display='none'">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </form>
+    <script>
+        // Helper to open review
+        // Reuse the button above to trigger this form show
+        document.getElementById('review{{stop.id}}').remove(); // Remove the placeholder
+        // Re-bind button (handled via onclick in HTML)
+    </script>
+    <script>
+        function openReview(id) {
+            document.getElementById('formReview' + id).style.display = 'block';
+        }
+    </script>
+    {% endfor %}
+
+    <!-- Fix button onclick -->
+    <script>
+        document.querySelectorAll('button[onclick^="document.getElementById(\'review"]').forEach(btn => {
+            btn.onclick = function () {
+                var id = this.getAttribute('onclick').match(/\d+/)[0];
+                document.getElementById('formReview' + id).style.visibility = 'visible'; // Use visibility/display
+                document.getElementById('formReview' + id).style.display = 'block';
+            };
+        });
+    </script>
+
+</div>
+{% endblock %}

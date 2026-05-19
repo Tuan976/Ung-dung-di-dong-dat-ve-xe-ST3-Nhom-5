@@ -1,0 +1,143 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title" style="color: #DC2626;"> <i class="fas fa-exclamation-triangle"></i> Xử lý Sự cố / Sang Xe
+    </h1>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+    <!-- Trip Info -->
+    <div>
+        <div class="card" style="border-top: 4px solid #DC2626; margin-bottom: 24px;">
+            <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Thông tin Chuyến bị hỏng</h2>
+            <div style="background: #FEF2F2; padding: 20px; border-radius: 12px;">
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 13px; color: #991B1B; font-weight: 600;">Tuyến đường</label>
+                    <div style="font-size: 18px; font-weight: 700;">{{ trip.route.start_point }} <i
+                            class="fas fa-arrow-right"></i> {{ trip.route.end_point }}</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px;">
+                    <div>
+                        <label style="font-size: 12px; color: #991B1B;">Xe hiện tại</label>
+                        <div style="font-weight: 700;">{{ trip.bus.license_plate }}</div>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #991B1B;">Tài xế</label>
+                        <div style="font-weight: 700;">{{ trip.driver_ref.name if trip.driver_id else 'N/A' }}</div>
+                    </div>
+                </div>
+                <div style="padding-top: 12px; border-top: 1px dashed #FECACA;">
+                    <label style="font-size: 12px; color: #991B1B;">Số hành khách đang trên xe</label>
+                    <div style="font-size: 24px; font-weight: 800; color: #DC2626;">
+                        {{ trip.bookings|selectattr('status', 'equalto', 'CONFIRMED')|list|length }} Người
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Danh sách hành khách (Cần thông báo)
+            </h2>
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Hành khách</th>
+                            <th>SĐT</th>
+                            <th>Ghế</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in trip.bookings if b.status == 'CONFIRMED' %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ b.passenger_name }}</td>
+                            <td>{{ b.passenger_phone }}</td>
+                            <td><span class="badge badge-primary">{{ b.seat_number }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Action -->
+    <div>
+        <div class="card" style="border-top: 4px solid #10B981; position: sticky; top: 20px;">
+            <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">Hệ thống gợi ý Xe thay thế</h2>
+
+            <form action="{{ url_for('execute_transfer', trip_id=trip.id) }}" method="POST">
+                <div class="form-group">
+                    <label style="font-weight: 700; display: block; margin-bottom: 8px;">1. Chọn xe trống gần
+                        nhất</label>
+                    {% if available_buses %}
+                    <div style="display: grid; gap: 12px;">
+                        {% for bus in available_buses %}
+                        <label
+                            style="border: 2px solid #E5E7EB; padding: 16px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s;"
+                            class="bus-option">
+                            <input type="radio" name="new_bus_id" value="{{ bus.id }}" required
+                                style="width: 20px; height: 20px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 700; font-size: 16px;">{{ bus.license_plate }}</div>
+                                <div style="font-size: 12px; color: #666;">{{ bus.bus_type }} | {{ bus.total_seats }}
+                                    Chỗ</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span
+                                    style="font-size: 11px; background: #ECFDF5; color: #065F46; padding: 4px 8px; border-radius: 20px; font-weight: 600;">Sẵn
+                                    sàng</span>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div
+                        style="padding: 20px; background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; color: #9A3412; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"><i class="fas fa-bus-alt"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 16px;">Không tìm thấy xe phù hợp</div>
+                        <p style="font-size: 13px; margin-top: 8px;">Hiện tại không có xe trống cùng chủng loại ({{
+                            trip.bus.bus_type }}) và số chỗ ({{ trip.bus.total_seats }} chỗ).
+                            Vui lòng điều động xe từ bãi khác.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group" style="margin-top: 24px;">
+                    <label style="font-weight: 700; display: block; margin-bottom: 8px;">2. Chọn tài xế thay thế</label>
+                    <select name="new_driver_id" class="form-input" required>
+                        <option value="">-- Giữ nguyên tài xế cũ --</option>
+                        {% for driver in available_drivers %}
+                        <option value="{{ driver.id }}">{{ driver.name }} - {{ driver.phone }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="margin-top: 32px; padding: 20px; background: #F3F4F6; border-radius: 12px;">
+                    <p style="font-size: 13px; color: #4B5563; margin-bottom: 16px;">
+                        <i class="fas fa-info-circle"></i> Khi bấm xác nhận, hệ thống sẽ:
+                    <ul style="font-size: 12px; margin-left: 20px; margin-top: 8px; color: #6B7280;">
+                        <li>Chuyển toàn bộ hành khách sang xe mới.</li>
+                        <li>Thông báo cho nhân viên điều hành.</li>
+                        <li>Cập nhật trạng thái chuyến đi về bình thường.</li>
+                    </ul>
+                    </p>
+                    <button type="submit" class="btn-primary"
+                        style="width: 100%; height: 50px; font-size: 16px; background: #10B981;">
+                        Xác nhận Sang Xe
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bus-option:has(input:checked) {
+        border-color: #10B981 !important;
+        background: #F0FDF4;
+    }
+</style>
+{% endblock %}

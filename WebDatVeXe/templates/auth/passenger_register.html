@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng ký Hành khách | Hutech Bus{% endblock %}
+
+{% block content %}
+<section class="auth-shell passenger-auth">
+    <div class="auth-card" style="max-width:520px;">
+        <div style="text-align:center; margin-bottom:1.8rem;">
+            <a href="/" class="auth-brand">
+                <span class="auth-brand-icon"><i class="ri-bus-fill"></i></span>
+                <span>Hutech Bus</span>
+            </a>
+            <h1 class="auth-heading" style="margin-top:1.2rem;">Tạo tài khoản miễn phí</h1>
+            <p class="auth-copy" style="margin-top:.45rem;">Đặt vé nhanh hơn, theo dõi vé của bạn và quản lý thông tin cá nhân ở một nơi.</p>
+        </div>
+
+        <form action="{{ url_for('passenger_register') }}" method="POST">
+            <div class="auth-field">
+                <label class="auth-label">Họ và tên *</label>
+                <div class="input-icon-wrap">
+                    <i class="ri-user-line"></i>
+                    <input type="text" name="name" required placeholder="Nguyễn Văn An" class="auth-input">
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label class="auth-label">Email *</label>
+                <div class="input-icon-wrap">
+                    <i class="ri-mail-line"></i>
+                    <input type="email" name="email" required placeholder="example@gmail.com" class="auth-input">
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label class="auth-label">Số điện thoại *</label>
+                <div class="input-icon-wrap">
+                    <i class="ri-phone-line"></i>
+                    <input type="text" name="phone" required placeholder="0901 234 567" class="auth-input">
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label class="auth-label">Mật khẩu *</label>
+                <div class="input-icon-wrap">
+                    <i class="ri-lock-line"></i>
+                    <input type="password" name="password" id="register-pw" required placeholder="Tối thiểu 8 ký tự" class="auth-input" style="padding-right:3rem;">
+                    <button type="button" onclick="toggleRegisterPw()" style="position:absolute; right:.95rem; top:50%; transform:translateY(-50%); background:none; color:#94a3b8; padding:.2rem;">
+                        <i class="ri-eye-line" id="register-pw-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="profile-note" style="margin-bottom:1rem;">
+                <div style="font-weight:800; color:#0f172a; margin-bottom:.25rem;">Lưu ý bảo mật</div>
+                <div style="font-size:.88rem;">Sử dụng email và số điện thoại chính chủ để nhận thông báo vé, hoàn tiền và hỗ trợ sau bán.</div>
+            </div>
+
+            <div class="auth-actions">
+                <button type="submit" class="btn-primary" style="width:100%;"><i class="ri-user-add-line"></i> Tạo tài khoản</button>
+            </div>
+        </form>
+
+        <div class="auth-footer">
+            Đã có tài khoản?
+            <a href="{{ url_for('passenger_login') }}">Đăng nhập ngay</a>
+        </div>
+    </div>
+</section>
+
+<script>
+function toggleRegisterPw() {
+    const field = document.getElementById('register-pw');
+    const eye = document.getElementById('register-pw-eye');
+    if (field.type === 'password') {
+        field.type = 'text';
+        eye.className = 'ri-eye-off-line';
+    } else {
+        field.type = 'password';
+        eye.className = 'ri-eye-line';
+    }
+}
+</script>
+{% endblock %}

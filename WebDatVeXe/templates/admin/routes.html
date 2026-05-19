@@ -1,0 +1,369 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title">🗺️ Quản lý Tuyến Đường</h1>
+    <p style="color:#64748b; font-size:0.9rem; margin-top:0.25rem;">Quản lý tất cả tuyến xe của công ty</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start;">
+
+    <!-- ===== FORM THÊM TUYẾN ===== -->
+    <div class="card" style="position:sticky; top:80px;">
+        <h2
+            style="font-size:16px; font-weight:800; margin-bottom:20px; padding-bottom:12px; border-bottom:2px solid #f1f5f9; display:flex; align-items:center; gap:8px;">
+            <span
+                style="width:28px; height:28px; background:linear-gradient(135deg,#2887ff,#1a237e); border-radius:6px; display:inline-flex; align-items:center; justify-content:center; color:white; font-size:12px;">+</span>
+            Thêm Tuyến Mới
+        </h2>
+
+        <form action="{{ url_for('add_route') }}" method="POST" id="add-route-form">
+
+            <!-- Điểm đi -->
+            <div class="form-group">
+                <label
+                    style="display:flex; align-items:center; gap:6px; font-weight:700; color:#374151; font-size:13px; margin-bottom:6px;">
+                    <span style="color:#2887ff;">🔵</span> Điểm xuất phát
+                </label>
+                <div style="position:relative;">
+                    <input type="text" id="start-search" placeholder="Tìm kiếm tỉnh/thành..." autocomplete="off"
+                        style="width:100%; padding:10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-family:inherit; transition:border-color 0.2s; outline:none; margin-bottom:4px;"
+                        onfocus="this.style.borderColor='#2887ff'"
+                        onblur="setTimeout(()=>hideDropdown('start-dropdown'),200)"
+                        oninput="filterProvinces(this.value, 'start-dropdown', 'start_point')">
+                    <select name="start_point" id="start_point" required
+                        style="width:100%; padding:10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-family:inherit; background:#f8faff; outline:none; appearance:none; cursor:pointer; color:#111; font-weight:600;"
+                        onfocus="this.style.borderColor='#2887ff'; this.style.background='white';"
+                        onblur="this.style.borderColor='#e5e7eb'; this.style.background='#f8faff';">
+                        <option value="">-- Chọn điểm đi --</option>
+                        {% for p in vietnam_provinces %}
+                        <option value="{{ p }}">{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Swap icon -->
+            <div style="text-align:center; margin:-8px 0; position:relative; z-index:1;">
+                <button type="button" onclick="swapRoutePoints()" title="Đổi chiều"
+                    style="width:36px; height:36px; border-radius:50%; background:#f1f5f9; border:2px solid #e5e7eb; color:#2887ff; font-size:16px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center;"
+                    onmouseover="this.style.background='#2887ff'; this.style.color='white'; this.style.borderColor='#2887ff';"
+                    onmouseout="this.style.background='#f1f5f9'; this.style.color='#2887ff'; this.style.borderColor='#e5e7eb';">
+                    ⇅
+                </button>
+            </div>
+
+            <!-- Điểm đến -->
+            <div class="form-group">
+                <label
+                    style="display:flex; align-items:center; gap:6px; font-weight:700; color:#374151; font-size:13px; margin-bottom:6px;">
+                    <span style="color:#ff6b35;">🔴</span> Điểm đến
+                </label>
+                <select name="end_point" id="end_point" required
+                    style="width:100%; padding:10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-family:inherit; background:#f8faff; outline:none; appearance:none; cursor:pointer; color:#111; font-weight:600;"
+                    onfocus="this.style.borderColor='#ff6b35'; this.style.background='white';"
+                    onblur="this.style.borderColor='#e5e7eb'; this.style.background='#f8faff';">
+                    <option value="">-- Chọn điểm đến --</option>
+                    {% for p in vietnam_provinces %}
+                    <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Giá vé -->
+            <div class="form-group">
+                <label style="font-weight:700; color:#374151; font-size:13px; margin-bottom:6px; display:block;">
+                    💰 Giá vé cơ bản (VNĐ)
+                </label>
+                <div style="position:relative;">
+                    <input type="number" name="base_price" required placeholder="VD: 250000" min="10000" step="5000"
+                        style="width:100%; padding:10px 70px 10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-family:inherit; transition:border-color 0.2s; outline:none; font-weight:600;"
+                        onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e5e7eb'">
+                    <span
+                        style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:12px; font-weight:700;">VNĐ</span>
+                </div>
+                <!-- Quick price buttons -->
+                <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+                    {% for price in [100000, 150000, 200000, 250000, 350000, 500000] %}
+                    <button type="button" onclick="setPrice({{ price }})"
+                        style="padding:3px 8px; border-radius:6px; border:1px solid #e5e7eb; background:white; font-size:11px; cursor:pointer; color:#374151; font-weight:600; transition:all 0.2s;"
+                        onmouseover="this.style.background='#2887ff'; this.style.color='white'; this.style.borderColor='#2887ff';"
+                        onmouseout="this.style.background='white'; this.style.color='#374151'; this.style.borderColor='#e5e7eb';">
+                        {{ "{:,.0f}".format(price) }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Khoảng cách & Thời gian (2 cột) -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700; color:#374151; font-size:13px; margin-bottom:6px; display:block;">📏
+                        Khoảng cách (km)</label>
+                    <input type="number" step="1" name="distance_km" placeholder="VD: 300" min="0"
+                        style="width:100%; padding:10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-family:inherit; transition:border-color 0.2s; outline:none;"
+                        onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#e5e7eb'">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700; color:#374151; font-size:13px; margin-bottom:6px; display:block;">⏱️
+                        Thời gian (giờ)</label>
+                    <input type="number" step="0.5" name="duration_hours" placeholder="VD: 6.5" min="0"
+                        style="width:100%; padding:10px 12px; border:2px solid #e5e7eb; border-radius:10px; font-size:14px; font-family:inherit; transition:border-color 0.2s; outline:none;"
+                        onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#e5e7eb'">
+                </div>
+            </div>
+
+            <div style="margin-top:20px;">
+                <button type="submit" class="btn-primary"
+                    style="width:100%; padding:12px; font-size:15px; font-weight:800; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    ➕ Lưu Tuyến Đường
+                </button>
+            </div>
+        </form>
+
+        <!-- Quick add popular routes -->
+        <div style="margin-top:20px; padding-top:16px; border-top:2px dashed #f1f5f9;">
+            <p
+                style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#9ca3af; margin-bottom:10px;">
+                🔥 Tuyến phổ biến (nhấn để điền):</p>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                {% set popular_routes = [
+                ('TP. Hồ Chí Minh', 'Hà Nội', 800000, 1700, 30),
+                ('TP. Hồ Chí Minh', 'Đà Nẵng', 350000, 980, 18),
+                ('TP. Hồ Chí Minh', 'Đà Lạt', 200000, 310, 7),
+                ('TP. Hồ Chí Minh', 'Cần Thơ', 120000, 170, 3),
+                ('TP. Hồ Chí Minh', 'Nha Trang', 250000, 440, 8),
+                ('Hà Nội', 'Hải Phòng', 120000, 120, 2),
+                ('Hà Nội', 'Đà Nẵng', 400000, 770, 14),
+                ('Hà Nội', 'Ninh Bình', 100000, 90, 2)
+                ] %}
+                {% for s, e, price, km, h in popular_routes %}
+                <button type="button" onclick="fillRoute('{{ s }}','{{ e }}',{{ price }},{{ km }},{{ h }})"
+                    style="padding:8px 12px; border-radius:8px; border:1px solid #e5e7eb; background:#f8faff; text-align:left; cursor:pointer; font-size:12px; font-family:inherit; transition:all 0.2s; color:#374151;"
+                    onmouseover="this.style.background='rgba(40,135,255,0.06)'; this.style.borderColor='#2887ff'; this.style.color='#2887ff';"
+                    onmouseout="this.style.background='#f8faff'; this.style.borderColor='#e5e7eb'; this.style.color='#374151';">
+                    <span style="font-weight:700;">{{ s }} → {{ e }}</span>
+                    <span style="float:right; color:#9ca3af;">{{ "{:,.0f}".format(price) }}đ · {{ km }}km · {{ h
+                        }}h</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== BẢNG DANH SÁCH TUYẾN ===== -->
+    <div>
+        <!-- Stats row -->
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
+            <div
+                style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #2887ff;">
+                <div style="font-size:24px; font-weight:900; color:#2887ff;">{{ routes|length }}</div>
+                <div style="font-size:12px; color:#64748b; font-weight:600;">Tổng tuyến đường</div>
+            </div>
+            <div
+                style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #10b981;">
+                <div style="font-size:24px; font-weight:900; color:#10b981;">{{
+                    routes|selectattr('distance_km')|list|length }}</div>
+                <div style="font-size:12px; color:#64748b; font-weight:600;">Có thông tin km</div>
+            </div>
+            <div
+                style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid #f59e0b;">
+                <div style="font-size:24px; font-weight:900; color:#f59e0b;">
+                    {% if routes %}{{ "{:,.0f}".format(routes|map(attribute='base_price')|list|sum / routes|length)
+                    }}đ{% else %}—{% endif %}
+                </div>
+                <div style="font-size:12px; color:#64748b; font-weight:600;">Giá trung bình</div>
+            </div>
+        </div>
+
+        <!-- Search filter -->
+        <div
+            style="background:white; border-radius:12px; padding:14px 16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); display:flex; gap:10px; align-items:center;">
+            <i class="fas fa-search" style="color:#9ca3af;"></i>
+            <input type="text" id="table-search" placeholder="Tìm tuyến đường..." oninput="filterTable(this.value)"
+                style="flex:1; border:none; outline:none; font-size:14px; font-family:inherit; color:#374151;">
+        </div>
+
+        <!-- Table -->
+        <div class="table-container"
+            style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+            <table class="admin-table" id="routes-table">
+                <thead>
+                    <tr style="background:linear-gradient(135deg,#0f1547,#1a237e);">
+                        <th
+                            style="color:white; padding:14px 16px; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            ID</th>
+                        <th
+                            style="color:white; padding:14px 16px; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            Điểm đi</th>
+                        <th
+                            style="color:white; padding:14px 16px; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            Điểm đến</th>
+                        <th
+                            style="color:white; padding:14px 16px; text-align:right; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            Giá cơ bản</th>
+                        <th
+                            style="color:white; padding:14px 16px; text-align:center; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            Khoảng cách</th>
+                        <th
+                            style="color:white; padding:14px 16px; text-align:center; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            Thời gian</th>
+                        <th
+                            style="color:white; padding:14px 16px; text-align:center; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="routes-tbody">
+                    {% if routes %}
+                    {% for route in routes %}
+                    <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s;"
+                        onmouseover="this.style.background='#f8faff'" onmouseout="this.style.background='white'">
+                        <td style="padding:14px 16px; font-size:13px; color:#6b7280; font-weight:600;">#{{ route.id }}
+                        </td>
+                        <td style="padding:14px 16px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span
+                                    style="width:8px; height:8px; background:#2887ff; border-radius:50%; flex-shrink:0;"></span>
+                                <span style="font-weight:700; color:#111; font-size:14px;">{{ route.start_point
+                                    }}</span>
+                            </div>
+                        </td>
+                        <td style="padding:14px 16px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span
+                                    style="width:8px; height:8px; background:#ff6b35; border-radius:50%; flex-shrink:0;"></span>
+                                <span style="font-weight:700; color:#111; font-size:14px;">{{ route.end_point }}</span>
+                            </div>
+                        </td>
+                        <td style="padding:14px 16px; text-align:right;">
+                            <span style="font-weight:900; color:#10b981; font-size:15px;">{{
+                                "{:,.0f}".format(route.base_price) }}</span>
+                            <span style="font-size:11px; color:#9ca3af;">đ</span>
+                        </td>
+                        <td
+                            style="padding:14px 16px; text-align:center; font-size:13px; color:#374151; font-weight:600;">
+                            {% if route.distance_km %}
+                            <span
+                                style="background:#eff6ff; color:#1d4ed8; padding:4px 10px; border-radius:50px; font-size:12px;">{{
+                                route.distance_km|int }} km</span>
+                            {% else %}<span style="color:#d1d5db;">—</span>{% endif %}
+                        </td>
+                        <td style="padding:14px 16px; text-align:center;">
+                            {% if route.duration_hours %}
+                            <span
+                                style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:50px; font-size:12px; font-weight:700;">
+                                {{ route.duration_hours|int }}h{% if (route.duration_hours * 60)|int % 60 > 0 %}{{
+                                (route.duration_hours * 60)|int % 60 }}p{% endif %}
+                            </span>
+                            {% else %}<span style="color:#d1d5db;">—</span>{% endif %}
+                        </td>
+                        <td style="padding:14px 16px; text-align:center;">
+                            <form action="{{ url_for('delete_route', route_id=route.id) }}" method="POST"
+                                onsubmit="return confirm('Xóa tuyến {{ route.start_point }} → {{ route.end_point }}?\nLưu ý: Sẽ ảnh hưởng đến các chuyến đi đang chạy!')">
+                                <button type="submit"
+                                    style="padding:6px 12px; border-radius:8px; border:1px solid #fee2e2; background:#fff5f5; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:inherit;"
+                                    onmouseover="this.style.background='#dc2626'; this.style.color='white'; this.style.borderColor='#dc2626';"
+                                    onmouseout="this.style.background='#fff5f5'; this.style.color='#dc2626'; this.style.borderColor='#fee2e2';">
+                                    🗑️ Xóa
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:48px; color:#9ca3af;">
+                            <div style="font-size:48px; margin-bottom:12px;">🗺️</div>
+                            <div style="font-weight:700; font-size:16px; margin-bottom:6px;">Chưa có tuyến đường nào
+                            </div>
+                            <div style="font-size:13px;">Hãy thêm tuyến đường đầu tiên ở bên trái!</div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Fill route quick-add
+    function fillRoute(start, end, price, km, hours) {
+        document.getElementById('start_point').value = start;
+        document.getElementById('end_point').value = end;
+        document.querySelector('input[name="base_price"]').value = price;
+        document.querySelector('input[name="distance_km"]').value = km;
+        document.querySelector('input[name="duration_hours"]').value = hours;
+        document.getElementById('add-route-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Set quick price
+    function setPrice(price) {
+        document.querySelector('input[name="base_price"]').value = price;
+    }
+
+    // Swap start <-> end
+    function swapRoutePoints() {
+        const start = document.getElementById('start_point');
+        const end = document.getElementById('end_point');
+        const tmp = start.value;
+        start.value = end.value;
+        end.value = tmp;
+    }
+
+    // Filter table
+    function filterTable(query) {
+        const rows = document.querySelectorAll('#routes-tbody tr');
+        const q = query.toLowerCase();
+        rows.forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // Province filter for select (optional: highlight matching)
+    document.getElementById('start_point').addEventListener('change', function () {
+        // Auto-suggest distance & time based on common routes
+        const known = {
+            'TP. Hồ Chí Minh_Hà Nội': [1700, 30, 800000],
+            'TP. Hồ Chí Minh_Đà Nẵng': [980, 18, 350000],
+            'TP. Hồ Chí Minh_Đà Lạt': [310, 7, 200000],
+            'TP. Hồ Chí Minh_Cần Thơ': [170, 3, 120000],
+            'TP. Hồ Chí Minh_Nha Trang': [440, 8, 250000],
+            'Hà Nội_Hải Phòng': [120, 2, 120000],
+            'Hà Nội_Đà Nẵng': [770, 14, 400000],
+            'Hà Nội_Ninh Bình': [90, 2, 100000],
+        };
+        checkAutoFill(known);
+    });
+    document.getElementById('end_point').addEventListener('change', function () {
+        const known = {
+            'TP. Hồ Chí Minh_Hà Nội': [1700, 30, 800000],
+            'TP. Hồ Chí Minh_Đà Nẵng': [980, 18, 350000],
+            'TP. Hồ Chí Minh_Đà Lạt': [310, 7, 200000],
+            'TP. Hồ Chí Minh_Cần Thơ': [170, 3, 120000],
+            'TP. Hồ Chí Minh_Nha Trang': [440, 8, 250000],
+            'Hà Nội_Hải Phòng': [120, 2, 120000],
+            'Hà Nội_Đà Nẵng': [770, 14, 400000],
+            'Hà Nội_Ninh Bình': [90, 2, 100000],
+        };
+        checkAutoFill(known);
+    });
+
+    function checkAutoFill(known) {
+        const s = document.getElementById('start_point').value;
+        const e = document.getElementById('end_point').value;
+        if (!s || !e) return;
+        const key1 = s + '_' + e;
+        const key2 = e + '_' + s;
+        const data = known[key1] || known[key2];
+        if (data) {
+            const kmInput = document.querySelector('input[name="distance_km"]');
+            const hInput = document.querySelector('input[name="duration_hours"]');
+            const pInput = document.querySelector('input[name="base_price"]');
+            if (!kmInput.value) kmInput.value = data[0];
+            if (!hInput.value) hInput.value = data[1];
+            if (!pInput.value) pInput.value = data[2];
+        }
+    }
+</script>
+{% endblock %}

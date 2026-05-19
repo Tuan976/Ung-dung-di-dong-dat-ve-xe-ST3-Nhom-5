@@ -1,0 +1,10 @@
+# Cấu hình bắt buộc chuyển tiếp mọi yêu cầu cho Passenger (Python)
+RewriteEngine On
+RewriteBase /
+
+# Nếu là file thật thì phục vụ luôn (ví dụ: ảnh, css, js)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule . - [L]
+
+# Mọi yêu cầu khác (kể cả / và /api) đều chuyển cho passenger_wsgi.py
+RewriteRule ^(.*)$ passenger_wsgi.py [QSA,L]

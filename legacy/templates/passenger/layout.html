@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="passenger-shell">
+    <section class="passenger-hero">
+        <div class="passenger-hero__row">
+            <div class="passenger-avatar">{{ user.name[0]|upper if user else '?' }}</div>
+            <div>
+                <div class="passenger-name">{{ user.name }}</div>
+                <div class="passenger-email">{{ user.email }}</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="passenger-body">
+        <aside class="passenger-side">
+            {% set menu_items = [
+                ('my_tickets', 'ri-ticket-2-line', 'Vé của tôi', 'history'),
+                ('my_profile', 'ri-user-settings-line', 'Hồ sơ cá nhân', 'profile')
+            ] %}
+            {% for route, icon, label, page in menu_items %}
+            <a href="{{ url_for(route) }}" class="passenger-nav-link {% if active_page == page %}active{% endif %}">
+                <i class="{{ icon }}"></i>
+                <span>{{ label }}</span>
+            </a>
+            {% endfor %}
+            <a href="{{ url_for('logout') }}" class="passenger-nav-link logout">
+                <i class="ri-logout-box-line"></i>
+                <span>Đăng xuất</span>
+            </a>
+        </aside>
+
+        <section class="passenger-content">
+            {% block passenger_content %}{% endblock %}
+        </section>
+    </div>
+</div>
+{% endblock %}

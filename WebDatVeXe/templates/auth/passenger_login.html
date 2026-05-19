@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng nhập Hành khách | Hutech Bus{% endblock %}
+
+{% block content %}
+<section class="auth-shell passenger-auth">
+    <div class="auth-card">
+        <div style="text-align:center; margin-bottom:1.8rem;">
+            <a href="/" class="auth-brand">
+                <span class="auth-brand-icon"><i class="ri-bus-fill"></i></span>
+                <span>Hutech Bus</span>
+            </a>
+            <h1 class="auth-heading" style="margin-top:1.2rem;">Chào mừng trở lại</h1>
+            <p class="auth-copy" style="margin-top:.45rem;">Đăng nhập để tiếp tục đặt vé, quản lý chuyến đi và theo dõi lịch sử thanh toán.</p>
+        </div>
+
+        <form action="{{ url_for('passenger_login') }}" method="POST">
+            <div class="auth-field">
+                <label class="auth-label">Email</label>
+                <div class="input-icon-wrap">
+                    <i class="ri-mail-line"></i>
+                    <input type="email" name="email" required placeholder="example@gmail.com" class="auth-input">
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:.8rem; margin-bottom:.5rem;">
+                    <label class="auth-label" style="margin:0;">Mật khẩu</label>
+                    <a href="/forgot-password" class="auth-meta-link">Quên mật khẩu?</a>
+                </div>
+                <div class="input-icon-wrap">
+                    <i class="ri-lock-line"></i>
+                    <input type="password" name="password" id="pw-field" required placeholder="••••••••" class="auth-input" style="padding-right:3rem;">
+                    <button type="button" onclick="togglePw()" style="position:absolute; right:.95rem; top:50%; transform:translateY(-50%); background:none; color:#94a3b8; padding:.2rem;">
+                        <i class="ri-eye-line" id="pw-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="auth-actions">
+                <button type="submit" class="btn-primary" style="width:100%;"><i class="ri-login-box-line"></i> Đăng nhập</button>
+            </div>
+        </form>
+
+        <div class="auth-divider">hoặc</div>
+
+        <a href="{{ url_for('company_login') }}" class="auth-alt-card">
+            <i class="ri-building-line"></i>
+            <span>Đăng nhập với tư cách Nhà xe</span>
+        </a>
+
+        <div class="auth-footer">
+            Chưa có tài khoản?
+            <a href="{{ url_for('passenger_register') }}">Đăng ký miễn phí</a>
+        </div>
+    </div>
+</section>
+
+<script>
+function togglePw() {
+    const field = document.getElementById('pw-field');
+    const eye = document.getElementById('pw-eye');
+    if (field.type === 'password') {
+        field.type = 'text';
+        eye.className = 'ri-eye-off-line';
+    } else {
+        field.type = 'password';
+        eye.className = 'ri-eye-line';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Thanh toán vé – {{ booking.trip.route.start_point }} → {{ booking.trip.route.end_point }} | Hutech Bus{% endblock %}
+
+{% block content %}
+<section class="booking-hero" style="padding-bottom:2.2rem;">
+    <div class="payment-shell__inner">
+        <a href="/my-tickets" class="booking-back"><i class="ri-arrow-left-line"></i> Quay lại vé của tôi</a>
+        <div style="margin-top:.4rem;">
+            <div class="section-kicker" style="background:rgba(255,255,255,.12); color:white;">Thanh toán</div>
+            <h1 class="booking-route" style="margin-top:.9rem;">💳 Xác nhận thanh toán</h1>
+            <div class="booking-route-meta">
+                <span><i class="ri-road-map-line"></i> {{ booking.trip.route.start_point }} → {{ booking.trip.route.end_point }}</span>
+                <span><i class="ri-seat-line"></i> Ghế {{ booking.seat_number }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="payment-shell">
+    <div class="payment-grid">
+        <div class="payment-card">
+            <div class="payment-card__header">
+                <div class="payment-card__title"><i class="ri-file-list-3-line" style="color:var(--primary);"></i> Thông tin đặt vé</div>
+            </div>
+
+            <div class="payment-summary-grid">
+                <div class="payment-summary-row"><span>Mã đặt chỗ</span><strong style="font-family:ui-monospace,monospace; color:#1d4ed8; letter-spacing:.14em;">{{ booking.ticket_code or '#' ~ booking.id }}</strong></div>
+                <div class="payment-summary-row"><span>Hành khách</span><strong>{{ booking.passenger_name }}</strong></div>
+                <div class="payment-summary-row"><span>Tuyến xe</span><strong>{{ booking.trip.route.start_point }} → {{ booking.trip.route.end_point }}</strong></div>
+                <div class="payment-summary-row"><span>Khởi hành</span><strong>{{ booking.trip.departure_time.strftime('%H:%M %d/%m/%Y') }}</strong></div>
+                <div class="payment-summary-row"><span>Ghế số</span><strong><span class="soft-pill primary">{{ booking.seat_number }}</span></strong></div>
+                <div class="payment-summary-row price"><span>Tổng thanh toán</span><strong>{{ "{:,.0f}".format(booking.ticket_price) }} VNĐ</strong></div>
+            </div>
+
+            {% if booking.expires_at %}
+            <div class="payment-alert">
+                <i class="ri-alarm-warning-line"></i>
+                Vui lòng thanh toán trước <strong>{{ booking.expires_at.strftime('%H:%M %d/%m/%Y') }}</strong> để tránh bị hủy vé tự động.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="payment-card">
+            <div class="payment-card__header">
+                <div class="payment-card__title"><i class="ri-secure-payment-line" style="color:var(--primary);"></i> Chọn hình thức thanh toán</div>
+            </div>
+
+            <form method="POST">
+                <div style="display:grid; gap:.8rem;">
+                    <label onclick="selectPayment('payos')" class="payment-option is-selected" id="opt-payos">
+                        <input type="radio" name="payment_method" value="PayOS" id="payos" required checked>
+                        <div class="payment-option__logo" style="background:#003468; overflow:hidden;"><img src="https://payos.vn/assets/images/payos_logo_short.png" style="width:100%; height:100%; object-fit:contain; padding:5px;" alt="PayOS"></div>
+                        <div class="payment-option__content">
+                            <div class="payment-option__title">Cổng PayOS</div>
+                            <div class="payment-option__desc">QR VietQR & Chuyển khoản nhanh 24/7</div>
+                        </div>
+                        <span class="soft-pill primary">Khuyên dùng</span>
+                    </label>
+
+                    <label onclick="selectPayment('momo')" class="payment-option" id="opt-momo">
+                        <input type="radio" name="payment_method" value="Momo" id="momo" required>
+                        <div class="payment-option__logo" style="background:#ae2070;">MoMo</div>
+                        <div class="payment-option__content">
+                            <div class="payment-option__title">Ví MoMo</div>
+                            <div class="payment-option__desc">Quét mã QR thanh toán nhanh</div>
+                        </div>
+                        <span class="soft-pill success">Phổ biến</span>
+                    </label>
+
+                    <label onclick="selectPayment('vnpay')" class="payment-option" id="opt-vnpay">
+                        <input type="radio" name="payment_method" value="VNPay" id="vnpay">
+                        <div class="payment-option__logo" style="background:#0066cc;">VNPAY</div>
+                        <div class="payment-option__content">
+                            <div class="payment-option__title">VNPay QR</div>
+                            <div class="payment-option__desc">Hỗ trợ 40+ ngân hàng Việt Nam</div>
+                        </div>
+                    </label>
+
+                    <label onclick="selectPayment('zalopay')" class="payment-option" id="opt-zalopay">
+                        <input type="radio" name="payment_method" value="ZaloPay" id="zalopay">
+                        <div class="payment-option__logo" style="background:#007aff;">Zalo</div>
+                        <div class="payment-option__content">
+                            <div class="payment-option__title">ZaloPay</div>
+                            <div class="payment-option__desc">Liên kết ví ZaloPay của bạn</div>
+                        </div>
+                    </label>
+
+                    <label onclick="selectPayment('transfer')" class="payment-option" id="opt-transfer">
+                        <input type="radio" name="payment_method" value="Bank Transfer" id="transfer">
+                        <div class="payment-option__logo" style="background:#1a237e;">🏦</div>
+                        <div class="payment-option__content">
+                            <div class="payment-option__title">Chuyển khoản ngân hàng</div>
+                            <div class="payment-option__desc">Vietcombank – STK 0123456789</div>
+                        </div>
+                    </label>
+
+                    <label onclick="selectPayment('cash')" class="payment-option" id="opt-cash">
+                        <input type="radio" name="payment_method" value="Cash" id="cash">
+                        <div class="payment-option__logo" style="background:#10b981;">💵</div>
+                        <div class="payment-option__content">
+                            <div class="payment-option__title">Tiền mặt</div>
+                            <div class="payment-option__desc">Thanh toán tại quầy vé / nhà xe</div>
+                        </div>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:1rem;">
+                    <i class="ri-secure-payment-line"></i>
+                    Xác nhận thanh toán {{ "{:,.0f}".format(booking.ticket_price) }} VNĐ
+                </button>
+            </form>
+
+            <div class="payment-note">
+                <i class="ri-shield-check-line" style="color:var(--success);"></i>
+                Thanh toán được bảo mật bằng SSL 256-bit. Thông tin của bạn được mã hóa an toàn.
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function selectPayment(id) {
+    document.getElementById(id).checked = true;
+    ['payos', 'momo', 'vnpay', 'zalopay', 'transfer', 'cash'].forEach(name => {
+        const opt = document.getElementById('opt-' + name);
+        if (opt) opt.classList.remove('is-selected');
+    });
+    const selected = document.getElementById('opt-' + id);
+    if (selected) selected.classList.add('is-selected');
+}
+</script>
+{% endblock %}

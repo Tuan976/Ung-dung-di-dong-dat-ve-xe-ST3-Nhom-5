@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Chọn chỗ – {{ trip.route.start_point }} → {{ trip.route.end_point }} | Hutech Bus{% endblock %}
+
+{% block content %}
+<section class="booking-hero">
+    <div class="booking-hero__inner">
+        <a href="/" class="booking-back"><i class="ri-arrow-left-line"></i> Quay lại trang chủ</a>
+        <div class="booking-hero__top">
+            <div>
+                <div class="section-kicker" style="background:rgba(255,255,255,.12); color:white;">Chọn chỗ ngồi</div>
+                <h1 class="booking-route" style="margin-top:.9rem;">
+                    {{ trip.route.start_point }}
+                    <span style="color:rgba(255,255,255,.42);">→</span>
+                    {{ trip.route.end_point }}
+                </h1>
+                <div class="booking-route-meta">
+                    <span><i class="ri-calendar-line"></i> {{ trip.departure_time.strftime('%H:%M, %d/%m/%Y') }}</span>
+                    <span><i class="ri-bus-line"></i> {{ trip.route.company.name }}</span>
+                    <span><i class="ri-car-line"></i>
+                        {% if trip.bus.bus_type == 'sleeper' %}Giường nằm
+                        {% elif trip.bus.bus_type == 'limousine' %}Limousine
+                        {% else %}{{ trip.bus.bus_type|title }}{% endif %}
+                    </span>
+                    {% if trip.route.duration_hours %}
+                    <span><i class="ri-time-line"></i> ~{{ trip.route.duration_hours|int }}h{% if (trip.route.duration_hours * 60)|int % 60 > 0 %} {{ (trip.route.duration_hours * 60)|int % 60 }}p{% endif %}</span>
+                    {% endif %}
+                    <span><i class="ri-map-pin-line"></i> BSX: {{ trip.bus.license_plate }}</span>
+                </div>
+            </div>
+            <div class="booking-price">
+                <div class="booking-price__label">Giá từ</div>
+                <div class="booking-price__value">{{ "{:,.0f}".format(trip.route.base_price * trip.price_multiplier) }}</div>
+                <div style="color:rgba(255,255,255,.6); font-size:.84rem;">VNĐ / khách</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="booking-shell">
+    <div class="booking-grid">
+        <div>
+            <div class="booking-panel">
+                <div class="booking-panel__header">
+                    <div class="booking-panel__title"><i class="ri-map-2-line" style="color:var(--primary);"></i> Chú thích ghế</div>
+                </div>
+                <div class="booking-legend">
+                    <div class="booking-legend-item"><span class="legend-seat"></span><span>Còn trống</span></div>
+                    <div class="booking-legend-item"><span class="legend-seat selected">✓</span><span>Đang chọn</span></div>
+                    <div class="booking-legend-item"><span class="legend-seat occupied">✕</span><span>Đã bán</span></div>
+                    <div class="booking-legend-item"><span class="legend-seat held">⏳</span><span>Đang giữ</span></div>
+                </div>
+            </div>
+
+            <div class="booking-panel" style="margin-top:1rem;">
+                <div class="booking-panel__header">
+                    <div class="booking-panel__title"><i class="ri-seat-line" style="color:var(--primary);"></i> Sơ đồ ghế ngồi</div>
+                    <span style="font-size:.85rem; color:#64748b;">Nhấn vào ghế để chọn</span>
+                </div>
+                <div id="seat-map-wrapper" style="display:flex; gap:30px; justify-content:center; align-items:flex-start; flex-wrap:wrap;"></div>
+            </div>
+        </div>
+
+        <aside class="booking-aside">
+            <div class="booking-aside-card">
+                <div class="booking-panel__title" style="margin-bottom:.8rem;"><i class="ri-file-list-3-line" style="color:var(--primary);"></i> Thông tin chuyến</div>
+                <div class="booking-summary-row"><span>Tuyến</span><strong>{{ trip.route.start_point[:20] }} → {{ trip.route.end_point[:20] }}</strong></div>
+                <div class="booking-summary-row"><span>Khởi hành</span><strong>{{ trip.departure_time.strftime('%H:%M %d/%m') }}</strong></div>
+                <div class="booking-summary-row"><span>Loại xe</span><strong>{% if trip.bus.bus_type == 'sleeper' %}Giường nằm{% elif trip.bus.bus_type == 'limousine' %}Limousine{% else %}{{ trip.bus.bus_type|title }}{% endif %}</strong></div>
+                <div class="booking-summary-row total"><span>Ghế đã chọn</span><strong id="summary-seat">—</strong></div>
+                <div class="booking-summary-row"><span>Giá vé</span><strong style="color:#ff7a18;">{{ "{:,.0f}".format(trip.route.base_price * trip.price_multiplier) }}đ</strong></div>
+            </div>
+
+            <div id="booking-form" class="booking-aside-card" style="display:none;">
+                <div class="booking-panel__title" style="margin-bottom:1rem;"><i class="ri-user-line" style="color:var(--primary);"></i> Thông tin hành khách</div>
+                <form action="{{ url_for('process_booking') }}" method="POST">
+                    <input type="hidden" name="trip_id" value="{{ trip.id }}">
+                    <input type="hidden" name="seat_number" id="seat-input">
+
+                    <div class="booking-field">
+                        <label class="booking-label">Họ và tên *</label>
+                        <div class="input-icon-wrap">
+                            <i class="ri-user-line"></i>
+                            <input type="text" name="name" required value="{{ user.name if user else '' }}" placeholder="Nguyễn Văn A" class="booking-input">
+                        </div>
+                    </div>
+
+                    <div class="booking-field">
+                        <label class="booking-label">Số điện thoại *</label>
+                        <div class="input-icon-wrap">
+                            <i class="ri-phone-line"></i>
+                            <input type="tel" name="phone" required value="{{ user.phone if user else '' }}" placeholder="0901 234 567" class="booking-input">
+                        </div>
+                    </div>
+
+                    <div class="booking-field">
+                        <label class="booking-label">Điểm đón</label>
+                        <div class="input-icon-wrap">
+                            <i class="ri-map-pin-line" style="color:var(--success);"></i>
+                            <select name="pickup_point" class="booking-select">
+                                <option value="{{ trip.route.start_point }}">{{ trip.route.start_point }} (Mặc định)</option>
+                                {% if trip.route.waypoints %}
+                                {% for wp in trip.route.waypoints | from_json %}
+                                <option value="{{ wp }}">{{ wp }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="booking-field">
+                        <label class="booking-label">Điểm trả</label>
+                        <div class="input-icon-wrap">
+                            <i class="ri-map-pin-2-line" style="color:var(--accent);"></i>
+                            <select name="dropoff_point" class="booking-select">
+                                <option value="{{ trip.route.end_point }}">{{ trip.route.end_point }} (Mặc định)</option>
+                                {% if trip.route.waypoints %}
+                                {% for wp in trip.route.waypoints | from_json %}
+                                <option value="{{ wp }}">{{ wp }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+
+                    {% if stops %}
+                    <div class="booking-food-box">
+                        <div style="font-size:.9rem; font-weight:800; color:#0f172a; margin-bottom:.75rem;">🍜 Dịch vụ ăn uống trên đường</div>
+                        {% for stop in stops %}
+                        {% if stop.items %}
+                        <div class="booking-food-stop">
+                            <h5>{{ stop.name }}</h5>
+                            {% for item in stop.items %}
+                            <div class="booking-food-item">
+                                <span>{{ item.name }} <span style="color:#f97316; font-weight:700;">(+{{ "{:,.0f}".format(item.price) }}đ)</span></span>
+                                <input type="number" name="qty_{{ item.id }}" min="0" value="0" class="form-control" style="padding:.55rem .5rem; text-align:center;">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="booking-helper" style="margin:1rem 0;">
+                        <i class="ri-information-line" style="color:var(--primary);"></i>
+                        Vé sẽ được giữ trong <strong>15 phút</strong>. Vui lòng thanh toán trong thời gian đó để tránh tự động hủy.
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width:100%;">
+                        <i class="ri-ticket-2-line"></i> Xác nhận đặt vé – Ghế <span id="confirm-seat">?</span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="select-prompt" class="booking-aside-card booking-empty-prompt">
+                <div class="booking-empty-prompt__icon">🪑</div>
+                <h4 style="font-weight:900; color:#0f172a; margin-bottom:.45rem;">Chưa chọn ghế</h4>
+                <p style="font-size:.9rem; line-height:1.7;">Nhấn vào ghế còn trống trong sơ đồ để bắt đầu đặt vé.</p>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const seatMap = {{ seat_map | tojson | safe }};
+    const occupiedSeats = {{ occupied_seats | tojson | safe }};
+    const heldSeats = {{ held_seats | tojson | safe }};
+
+    const wrapper = document.getElementById('seat-map-wrapper');
+    const seatInput = document.getElementById('seat-input');
+    const bookingForm = document.getElementById('booking-form');
+    const selectPrompt = document.getElementById('select-prompt');
+    const summarySeats = document.querySelectorAll('#summary-seat, #confirm-seat');
+
+    const floorsCount = seatMap.floors || 1;
+
+    for (let f = 0; f < floorsCount; f++) {
+        const floorWrapper = document.createElement('div');
+        floorWrapper.style.textAlign = 'center';
+
+        const title = document.createElement('div');
+        title.style.cssText = 'margin-bottom:12px; font-size:14px; font-weight:800; color:#334155; background:#f8fbff; padding:8px 16px; border-radius:999px; display:inline-block; border:1px solid rgba(148,163,184,0.12);';
+        title.innerText = floorsCount > 1 ? (f === 0 ? '🚌 Tầng dưới' : '⬆️ Tầng trên') : '🚌 Sơ đồ xe';
+        floorWrapper.appendChild(title);
+
+        const busBody = document.createElement('div');
+        busBody.style.cssText = 'background:linear-gradient(180deg,#eef4ff,#ffffff); padding:18px; border-radius:24px; border:1px solid rgba(148,163,184,0.12); box-shadow:0 14px 30px rgba(15,23,42,0.06); position:relative;';
+
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:grid; grid-template-columns:repeat(5, 46px); gap:14px; justify-content:center;';
+
+        if (f === 0) {
+            const wheelRow = document.createElement('div');
+            wheelRow.style.gridColumn = '1';
+            wheelRow.style.gridRow = '1';
+            wheelRow.innerHTML = '<div style="width:46px; height:46px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; color:#94a3b8;" title="Vô lăng">🔘</div>';
+            grid.appendChild(wheelRow);
+        }
+
+        const floorSeats = (seatMap.seats || []).filter(s => (s.floor || 0) === f);
+
+        floorSeats.forEach(s => {
+            const seatDiv = document.createElement('div');
+            seatDiv.className = 'bt-bus-seat';
+            seatDiv.dataset.sid = s.id;
+            seatDiv.dataset.state = 'available';
+
+            if (s.is_double) seatDiv.style.gridColumn = 'span 2';
+            seatDiv.style.cssText = seatDiv.style.cssText + `width:${s.is_double ? '106px' : '46px'}; height:56px; background:white; border:2px solid #cbd5e1; border-radius:14px; position:relative; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:8px; transition:all 0.2s; grid-row:${s.row + 2}; grid-column:${s.is_double ? s.col + 1 : s.col + 1}; box-shadow:0 8px 18px rgba(15,23,42,0.05);`;
+
+            const pillow = document.createElement('div');
+            pillow.style.cssText = 'position:absolute; top:6px; width:70%; height:4px; background:#e2e8f0; border-radius:2px;';
+
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size:11px; font-weight:700; color:#64748b; z-index:1;';
+            label.textContent = s.id;
+
+            seatDiv.appendChild(pillow);
+            seatDiv.appendChild(label);
+
+            if (occupiedSeats.includes(s.id)) {
+                seatDiv.style.background = '#e5e7eb';
+                seatDiv.style.borderColor = '#d1d5db';
+                seatDiv.style.cursor = 'not-allowed';
+                seatDiv.dataset.state = 'occupied';
+                label.style.color = '#9ca3af';
+                label.innerHTML = '✕';
+            } else if (heldSeats.includes(s.id)) {
+                seatDiv.style.background = '#fff7ed';
+                seatDiv.style.borderColor = '#f59e0b';
+                seatDiv.style.cursor = 'not-allowed';
+                seatDiv.dataset.state = 'held';
+                label.style.color = '#d97706';
+                label.textContent = '⏳';
+            } else {
+                seatDiv.addEventListener('mouseenter', () => {
+                    if (seatDiv.dataset.state === 'available') {
+                        seatDiv.style.borderColor = '#10b981';
+                        seatDiv.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.15)';
+                        seatDiv.style.transform = 'translateY(-2px)';
+                    }
+                });
+                seatDiv.addEventListener('mouseleave', () => {
+                    if (seatDiv.dataset.state === 'available') {
+                        seatDiv.style.borderColor = '#cbd5e1';
+                        seatDiv.style.boxShadow = '0 8px 18px rgba(15,23,42,0.05)';
+                        seatDiv.style.transform = '';
+                    }
+                });
+            }
+
+            seatDiv.onclick = () => {
+                if (seatDiv.dataset.state === 'occupied' || seatDiv.dataset.state === 'held') return;
+
+                const wasSelected = seatDiv.dataset.state === 'selected';
+
+                document.querySelectorAll('.bt-bus-seat[data-state="selected"]').forEach(el => {
+                    el.dataset.state = 'available';
+                    el.style.background = 'white';
+                    el.style.borderColor = '#cbd5e1';
+                    el.style.boxShadow = '0 8px 18px rgba(15,23,42,0.05)';
+                    const lbl = el.querySelector('div:last-child');
+                    if (lbl) { lbl.style.color = '#64748b'; lbl.textContent = el.dataset.sid; }
+                });
+
+                if (!wasSelected) {
+                    seatDiv.dataset.state = 'selected';
+                    seatDiv.style.background = 'white';
+                    seatDiv.style.borderColor = '#10b981';
+                    seatDiv.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.2)';
+                    label.style.color = '#10b981';
+                    label.innerHTML = '✓';
+
+                    seatInput.value = s.id;
+                    summarySeats.forEach(el => el.textContent = s.id);
+
+                    bookingForm.style.display = 'block';
+                    selectPrompt.style.display = 'none';
+                    bookingForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    seatInput.value = '';
+                    summarySeats.forEach(el => el.textContent = '—');
+                    bookingForm.style.display = 'none';
+                    selectPrompt.style.display = 'block';
+                }
+            };
+
+            seatDiv.style.gridRow = s.row + 2;
+            if (!s.is_double) seatDiv.style.gridColumn = s.col + 1;
+
+            grid.appendChild(seatDiv);
+        });
+
+        busBody.appendChild(grid);
+        floorWrapper.appendChild(busBody);
+        wrapper.appendChild(floorWrapper);
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('name')) {
+        const ni = document.querySelector('input[name="name"]');
+        if (ni) ni.value = urlParams.get('name');
+    }
+    if (urlParams.get('phone')) {
+        const pi = document.querySelector('input[name="phone"]');
+        if (pi) pi.value = urlParams.get('phone');
+    }
+</script>
+{% endblock %}

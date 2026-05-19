@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 40px auto; padding: 0 16px;">
+    <h1 style="text-align: center; color: var(--primary-color); margin-bottom: 24px;">Vé Ăn HUTECH BUS</h1>
+
+    <div
+        style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #eee;">
+        <!-- Header -->
+        <div style="background: var(--primary-color); color: white; padding: 24px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px;">MEAL TICKET</div>
+            <div style="font-size: 14px; opacity: 0.9;">MÃ ĐẶT CHỖ: #{{ booking.id }}</div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 32px 24px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div style="color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Hành khách
+                </div>
+                <div style="font-size: 20px; font-weight: 700; color: #111;">{{ booking.passenger_name }}</div>
+                <div style="font-size: 14px; color: #999;">{{ booking.passenger_phone }}</div>
+            </div>
+
+            <div style="border-top: 2px dashed #eee; border-bottom: 2px dashed #eee; padding: 20px 0;">
+                <!-- Parse JSON Order Details -->
+                {% set details = order.order_details | from_json %}
+                {% for item_name, info in details.items() %}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 16px; color: #333;">
+                            <span style="color: var(--primary-color); margin-right: 8px;">{{ info.qty }}x</span> {{
+                            item_name }}
+                        </div>
+                    </div>
+                    <!-- Assuming price is per item in JSON or total? Standard logic: info.price is unit price -->
+                    <div style="font-weight: 600;">{{ "{:,.0f}".format(info.price * info.qty) }}đ</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                <div style="font-size: 14px; color: #666;">Tổng Cộng</div>
+                <div style="font-size: 24px; font-weight: 800; color: var(--primary-color);">{{
+                    "{:,.0f}".format(order.total_price) }}đ</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 24px;">
+                <span class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">{{ order.status }}</span>
+            </div>
+        </div>
+
+        <!-- QR Code Placeholder -->
+        <div style="background: #F9FAFB; padding: 24px; text-align: center; border-top: 1px solid #eee;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FOOD_{{ order.id }}_CONFIRMED"
+                alt="QR Ticket" style="width: 120px; height: 120px; mix-blend-mode: multiply;">
+            <p style="margin-top: 12px; font-size: 12px; color: #9CA3AF;">Xuất trình mã này tại quầy để nhận món</p>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;">
+        <a href="{{ url_for('my_tickets') }}" style="color: #666; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Quay lại vé của tôi
+        </a>
+    </div>
+</div>
+{% endblock %}

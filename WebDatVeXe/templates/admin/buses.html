@@ -1,0 +1,115 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title">Quản lý Đội Xe</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 32px;">
+    <!-- Form Thêm Xe -->
+    <div class="card">
+        <h2
+            style="font-size: 18px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            Thêm Xe
+            Mới</h2>
+        <form action="{{ url_for('add_bus') }}" method="POST">
+            <div class="form-group">
+                <label>Biển số xe</label>
+                <input type="text" name="license_plate" class="form-input" required placeholder="51B-123.45">
+            </div>
+            <div class="form-group">
+                <label>Loại xe</label>
+                <select name="bus_type" class="form-input" required>
+                    <option value="standard_sleeper">Giường nằm Phổ thông (Mobihome 40/44)</option>
+                    <option value="vip_34">Limousine 34 Giường (VIP 34)</option>
+                    <option value="luxury_cabin">Cabin Cung điện (Luxury 22/24)</option>
+                    <option value="chair_limo">Ghế ngồi / Limousine ghế (9/11/16/29)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Màu sắc / Nhận diện</label>
+                <input type="text" name="color" class="form-input" placeholder="Xanh dương, Trắng-Đỏ..."
+                    value="Xanh HUTECH">
+            </div>
+            <div class="form-group">
+                <label>Số lượng ghế</label>
+                <input type="number" name="total_seats" class="form-input" required placeholder="34" value="34">
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%;">Thêm Xe</button>
+        </form>
+    </div>
+
+    <!-- Danh sách Xe -->
+    <div class="table-container">
+        <!-- Search & Filter -->
+        <div
+            style="margin-bottom: 16px; background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <form method="GET" style="display: flex; gap: 12px; align-items: center;">
+                <div style="flex: 1;">
+                    <input type="text" name="search" class="form-input" placeholder="Tìm biển số, loại xe..."
+                        value="{{ search }}">
+                </div>
+                <div style="width: 200px;">
+                    <select name="sort_by" class="form-input">
+                        <option value="id_desc" {% if sort_by=='id_desc' %}selected{% endif %}>Mới tạo nhất</option>
+                        <option value="license_asc" {% if sort_by=='license_asc' %}selected{% endif %}>Biển số A-Z
+                        </option>
+                        <option value="seats_desc" {% if sort_by=='seats_desc' %}selected{% endif %}>Số ghế (Nhiều nhất)
+                        </option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-search"></i> Tìm
+                </button>
+            </form>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Biển số</th>
+                    <th>Loại xe</th>
+                    <th>Số ghế</th>
+                    <th>Trạng thái</th>
+                    <th>Lịch sử/Kế hoạch</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if buses %}
+                {% for bus in buses %}
+                <tr>
+                    <td>#{{ bus.id }}</td>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ bus.license_plate }}</td>
+                    <td>
+                        <div style="font-weight: 500;">
+                            {% if bus.bus_type == 'standard_sleeper' %}Giường nằm Phổ thông
+                            {% elif bus.bus_type == 'vip_34' %}Limousine 34 Giường
+                            {% elif bus.bus_type == 'luxury_cabin' %}Cabin Cung điện
+                            {% elif bus.bus_type == 'chair_limo' %}Ghế ngồi / Limousine ghế
+                            {% else %}{{ bus.bus_type }}{% endif %}
+                        </div>
+                        <div style="font-size: 12px; color: #666;">Màu: {{ bus.color or 'N/A' }}</div>
+                    </td>
+                    <td>{{ bus.total_seats }} ghế</td>
+                    <td><span class="badge badge-primary">Hoạt động</span></td>
+                    <td>
+                        <a href="{{ url_for('admin_bus_schedule', bus_id=bus.id) }}" class="btn-secondary"
+                            style="padding: 4px 8px; font-size: 12px;">
+                            <i class="fas fa-calendar-alt"></i> Lịch hoạt động
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-secondary);">Chưa có xe
+                        nào trong đội.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
