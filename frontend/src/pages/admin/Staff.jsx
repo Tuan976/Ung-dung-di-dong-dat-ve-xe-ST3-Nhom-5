@@ -54,7 +54,7 @@ const StaffModal = ({ onClose, onSaved, currentStaff = null }) => {
            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Số điện thoại</label>
-                 <input type="tel" className="w-full bg-white border border-slate-200 rounded py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:border-orange-400 shadow-sm" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                 <input type="tel" className="w-full bg-white border border-slate-200 rounded py-2 px-3 text-sm font-bold text-slate-700 outline-none focus:border-orange-400 shadow-sm" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} />
               </div>
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Vai trò</label>

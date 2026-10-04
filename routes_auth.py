@@ -9,6 +9,7 @@ from flask_mail import Message
 from decorators import admin_only, company_login_required
 from extensions import db, mail
 from models import Booking, Company, Staff, User
+from helpers import send_resend_email
 
 otp_store = {}
 
@@ -211,9 +212,12 @@ def register_auth_routes(app):
                 </div>
                 """
                 try:
-                    mail.send(msg)
-                    flash('Mã OTP đã được gửi đến email của bạn!')
-                    return redirect(url_for('verify_otp'))
+                    success, res = send_resend_email(email, msg.subject, msg.html)
+                    if success:
+                        flash('Mã OTP đã được gửi đến email của bạn!')
+                        return redirect(url_for('verify_otp'))
+                    else:
+                        flash(f'Lỗi gửi email: {res}')
                 except Exception as e:
                     flash(f'Lỗi gửi email: {str(e)}')
             else:
@@ -429,8 +433,11 @@ def register_auth_routes(app):
         </div>
         """
         try:
-            mail.send(msg)
-            return jsonify({'success': True, 'message': 'Mã OTP đã được gửi đến email của bạn!'})
+            success, res = send_resend_email(email, msg.subject, msg.html)
+            if success:
+                return jsonify({'success': True, 'message': 'Mã OTP đã được gửi đến email của bạn!'})
+            else:
+                return jsonify({'success': False, 'message': f'Lỗi gửi email: {res}'})
         except Exception as e:
             return jsonify({'success': False, 'message': f'Lỗi gửi email: {str(e)}'})
 

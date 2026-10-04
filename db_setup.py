@@ -3,7 +3,11 @@ from sqlalchemy import text
 from extensions import db
 
 def init_database(app):
-    os.makedirs(os.path.join(app.root_path, app.config['UPLOAD_FOLDER']), exist_ok=True)
+    try:
+        os.makedirs(os.path.join(app.root_path, app.config.get('UPLOAD_FOLDER', 'static/uploads')), exist_ok=True)
+    except Exception as e:
+        print(f"Warning: Could not create upload folder: {e}")
+
     with app.app_context():
         db.create_all()
 

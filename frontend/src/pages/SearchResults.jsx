@@ -163,7 +163,7 @@ const BookingModal = ({ tripId, onClose }) => {
               <form onSubmit={handleBook} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <input type="text" placeholder="Họ và tên" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                   style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e8f0', borderRadius: 16, fontWeight: 700, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
-                <input type="tel" placeholder="Số điện thoại" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+                <input type="tel" placeholder="Số điện thoại" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value.replace(/\D/g, '') })}
                   style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e8f0', borderRadius: 16, fontWeight: 700, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
                 <input type="text" placeholder="Điểm đón (nếu có)" value={form.pickup} onChange={e => setForm({ ...form, pickup: e.target.value })}
                   style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e8f0', borderRadius: 16, fontWeight: 700, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />

@@ -1,7 +1,7 @@
 
 import csv
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import flash, jsonify, redirect, render_template, request, session, url_for, send_from_directory
 from werkzeug.security import generate_password_hash
@@ -16,7 +16,7 @@ INVALID_TRIP_STATUSES = {'Cancelled', 'Completed', 'Broken'}
 
 
 def _now():
-    return datetime.now()
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
 
 def _extract_display_seat_number(seat_number):
@@ -122,7 +122,10 @@ def register_public_routes(app):
         if date_str:
             try:
                 search_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                query = query.filter(db.func.date(Trip.departure_time) == search_date)
+                query = query.filter(
+                    db.func.date(Trip.departure_time) == search_date,
+                    Trip.departure_time > _now()
+                )
             except ValueError:
                 pass
         else:
@@ -144,6 +147,7 @@ def register_public_routes(app):
                 r_query = Trip.query.join(Route).filter(
                     Trip.status.notin_(list(INVALID_TRIP_STATUSES)),
                     db.func.date(Trip.departure_time) == r_date,
+                    Trip.departure_time > _now(),
                     Route.start_point.ilike(f'{end_point}'),
                     Route.end_point.ilike(f'{start_point}')
                 ).order_by(Trip.departure_time)
@@ -162,7 +166,10 @@ def register_public_routes(app):
 
         # Try to serve React index.html first
         try:
-            return send_from_directory(app.static_folder, 'index.html')
+            from app import find_path
+            import os
+            react_dist = find_path(os.path.join('frontend', 'dist'))
+            return send_from_directory(react_dist, 'index.html')
         except:
             # Fallback to Jinja2 template index.html if React build is missing
             return render_template('index.html')
@@ -368,7 +375,10 @@ def register_public_routes(app):
             if date_str:
                 try:
                     search_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    query = query.filter(db.func.date(Trip.departure_time) == search_date)
+                    query = query.filter(
+                        db.func.date(Trip.departure_time) == search_date,
+                        Trip.departure_time > _now()
+                    )
                 except ValueError:
                     pass
             else:
@@ -397,7 +407,7 @@ def register_public_routes(app):
                         'id': t.id,
                         'start_point': t.route.start_point if t.route else "Unknown",
                         'end_point': t.route.end_point if t.route else "Unknown",
-                        'departure_time': t.departure_time.isoformat() if t.departure_time else datetime.now().isoformat(),
+                        'departure_time': t.departure_time.isoformat() if t.departure_time else _now().isoformat(),
                         'price': base_price * (t.price_multiplier or 1.0),
                         'bus_type': bus_type,
                         'company_name': company_name,
@@ -428,7 +438,20 @@ def register_public_routes(app):
     def handle_404(e):
         if request.path.startswith('/api/'):
             return jsonify({"error": "API route not found"}), 404
-        return send_from_directory(app.static_folder, 'index.html')
+        
+        from app import find_path
+        import os
+        react_dist = find_path(os.path.join('frontend', 'dist'))
+        
+        # Check if the missing file is a React asset (starts with /assets/ or ends with .js/.css/.png/.svg)
+        path = request.path.lstrip('/')
+        if path and os.path.exists(os.path.join(react_dist, path)):
+            return send_from_directory(react_dist, path)
+            
+        try:
+            return send_from_directory(react_dist, 'index.html')
+        except:
+            return render_template('index.html')
     
     def api_popular_routes():
         try:
@@ -465,6 +488,9 @@ def register_public_routes(app):
         if not trip:
             return jsonify({'success': False, 'message': 'Chuyến xe không tồn tại'}), 200
 
+        if trip.departure_time <= _now() or trip.status in INVALID_TRIP_STATUSES:
+            return jsonify({'success': False, 'message': 'Chuyến đi này đã xuất bến hoặc không còn nhận đặt vé.'}), 200
+
         try:
             import random
             import string
@@ -478,10 +504,20 @@ def register_public_routes(app):
             ticket_price = trip.route.base_price * trip.price_multiplier
             total_amount = int(ticket_price) * len(seats)
             
+            import re
+            normalized_seats = set()
+            for s in seats:
+                normalized_seats.add(s)
+                ns = re.sub(r'([A-Za-z])0+(\d+)', r'\1\2', str(s))
+                normalized_seats.add(ns)
+                match = re.match(r'([A-Za-z])(\d+)$', str(s))
+                if match:
+                    normalized_seats.add(f"{match.group(1)}{int(match.group(2)):02d}")
+
             # Check if seats are already occupied
             existing_bookings = Booking.query.filter(
                 Booking.trip_id == trip_id,
-                Booking.seat_number.in_(seats),
+                Booking.seat_number.in_(list(normalized_seats)),
                 Booking.status.in_(['CONFIRMED', 'HOLD'])
             ).all()
             if existing_bookings:
@@ -506,7 +542,7 @@ def register_public_routes(app):
                     payment_method='PayOS' if is_payos else 'Tiền mặt',
                     payment_id=str(order_code) if is_payos else None,
                     ticket_price=ticket_price,
-                    booking_time=datetime.now()
+                    booking_time=_now()
                 )
                 db.session.add(new_booking)
             
@@ -580,7 +616,12 @@ def register_public_routes(app):
 
     def api_trip_details(trip_id):
         trip = Trip.query.get_or_404(trip_id)
-        occupied_seats = [b.seat_number for b in Booking.query.filter_by(trip_id=trip_id).filter(Booking.status != 'CANCELLED').all()]
+        import re
+        def _norm_seat(sid):
+            return re.sub(r'([A-Za-z])0+(\d+)', r'\1\2', str(sid)) if sid else ""
+
+        occupied_seats_raw = [b.seat_number for b in Booking.query.filter_by(trip_id=trip_id).filter(Booking.status != 'CANCELLED').all()]
+        occupied_seats = [_norm_seat(s) for s in occupied_seats_raw]
         
         # Sơ đồ ghế mặc định nếu không có trong DB
         import json
@@ -602,7 +643,7 @@ def register_public_routes(app):
                 for floor_data in raw:
                     for row in floor_data.get('rows', []):
                         for seat in row:
-                            seat['status'] = 'occupied' if seat.get('id') in occupied else 'available'
+                            seat['status'] = 'occupied' if _norm_seat(seat.get('id')) in occupied else 'available'
                 return raw
             
             # Format 2: Object with seats list {seats:[{id, floor, row, col}], floors, cols}
@@ -623,7 +664,7 @@ def register_public_routes(app):
                     floors_dict[f][r].append({
                         'id': seat.get('id', '??'),
                         'name': seat.get('id', '??'),
-                        'status': 'occupied' if seat.get('id') in occupied else 'available',
+                        'status': 'occupied' if _norm_seat(seat.get('id')) in occupied else 'available',
                         'type': seat.get('type', 'standard')
                     })
                 
@@ -654,7 +695,7 @@ def register_public_routes(app):
                         cols.append({
                             'id': seat_code,
                             'name': f"{c}{r}",
-                            'status': 'occupied' if seat_code in occupied_seats else 'available',
+                            'status': 'occupied' if _norm_seat(seat_code) in occupied_seats else 'available',
                             'type': 'vip' if r <= 2 else 'standard'
                         })
                     rows.append(cols)
@@ -673,7 +714,7 @@ def register_public_routes(app):
             'id': trip.id,
             'bus_type': bus_type,
             'company_name': company_name,
-            'departure_time': trip.departure_time.isoformat() if trip.departure_time else datetime.now().isoformat(),
+            'departure_time': trip.departure_time.isoformat() if trip.departure_time else _now().isoformat(),
             'price': base_price * (trip.price_multiplier or 1.0),
             'seat_map': seat_map,
             'occupied_seats': occupied_seats

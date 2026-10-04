@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -9,8 +9,10 @@ import {
   Settings, 
   LogOut,
   Truck,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
+import axios from 'axios';
 import { getPermissions } from '../utils/permissions';
 
 const AdminSidebarItem = ({ to, icon: Icon, label, end, permission }) => {
@@ -36,7 +38,34 @@ const AdminSidebarItem = ({ to, icon: Icon, label, end, permission }) => {
 
 const AdminLayout = ({ children }) => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [sosAlerts, setSosAlerts] = useState([]);
   
+  useEffect(() => {
+    // Poll for SOS alerts every 5 seconds
+    const interval = setInterval(() => {
+      const baseUrl = window.location.origin.includes('localhost') ? 'http://127.0.0.1:5000' : window.location.origin;
+      axios.get(`${baseUrl}/api/v1/sos_alerts`)
+        .then(res => {
+          if (res.data.success) {
+            setSosAlerts(res.data.data);
+          }
+        })
+        .catch(err => console.error("Error fetching SOS alerts", err));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleResolveSOS = (id) => {
+    const baseUrl = window.location.origin.includes('localhost') ? 'http://127.0.0.1:5000' : window.location.origin;
+    axios.post(`${baseUrl}/api/v1/sos_alerts/${id}/resolve`)
+      .then(res => {
+        if (res.data.success) {
+          setSosAlerts(prev => prev.filter(a => a.id !== id));
+        }
+      })
+      .catch(err => console.error("Error resolving SOS alert", err));
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     window.location.href = '/auth';
@@ -87,6 +116,49 @@ const AdminLayout = ({ children }) => {
           {children}
         </div>
       </main>
+
+      {/* SOS ALERTS MODAL */}
+      {sosAlerts.length > 0 && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-red-600 w-full max-w-3xl rounded-2xl shadow-[0_0_50px_rgba(255,0,0,0.5)] border-4 border-red-400 p-8 m-4 animate-pulse">
+            <div className="flex items-center gap-4 mb-6 text-white border-b border-red-500 pb-4">
+              <AlertTriangle size={48} className="animate-bounce" />
+              <h2 className="text-3xl font-black uppercase tracking-widest">Cảnh báo SOS Khẩn cấp!</h2>
+            </div>
+            
+            <div className="space-y-4">
+              {sosAlerts.map(alert => (
+                <div key={alert.id} className="bg-white/10 rounded-xl p-6 flex flex-col gap-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-2">Hành khách: {alert.passenger_name || 'Không rõ'}</h3>
+                      <p className="text-red-200 text-sm font-bold">SĐT: {alert.passenger_phone || 'Không rõ'}</p>
+                      <p className="text-white mt-3 italic text-lg">"{alert.message}"</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-red-300 font-mono mb-2">Thời gian: {new Date(alert.created_at).toLocaleString('vi-VN')}</p>
+                      <a 
+                        href={`https://maps.google.com/?q=${alert.latitude},${alert.longitude}`}
+                        target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-2 bg-white text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-50 transition-colors"
+                      >
+                        <MapPin size={18} />
+                        Xem Vị Trí (GPS)
+                      </a>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleResolveSOS(alert.id)}
+                    className="w-full mt-2 bg-red-800 hover:bg-red-900 text-white font-black py-4 rounded-xl uppercase tracking-widest shadow-inner transition-colors"
+                  >
+                    Đã Tiếp Nhận & Đang Xử Lý Hỗ Trợ
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -71,7 +71,7 @@ const CheckTicket = () => {
                   required
                   placeholder="Nhập số điện thoại..." 
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
                   style={{ width: '100%', padding: '16px 20px', borderRadius: 16, border: '2px solid #f1f5f9', fontSize: 14, fontWeight: 700, color: '#1e293b', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.borderColor = '#EF5222'}
                   onBlur={e => e.target.style.borderColor = '#f1f5f9'}

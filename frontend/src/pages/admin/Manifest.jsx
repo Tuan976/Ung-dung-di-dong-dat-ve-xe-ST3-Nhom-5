@@ -106,6 +106,10 @@ const Manifest = () => {
 
   const handleSeatClick = (seatId) => {
     const p = getPassengerAtSeat(seatId);
+    if (trip && trip.status === 'Completed' && !p) {
+        alert('Chuyến xe này đã hoàn thành, không thể đặt thêm vé!');
+        return;
+    }
     setSelectedSeat(seatId);
     if (p) {
       setEditingBooking(p);
@@ -239,9 +243,11 @@ const Manifest = () => {
                                  {p.phone}
                               </div>
                            ) : (
-                              <div className="w-5 h-5 bg-white border border-blue-500 text-blue-500 rounded flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm">
-                                 <Plus size={12} strokeWidth={3} />
-                              </div>
+                              trip?.status !== 'Completed' && (
+                                 <div className="w-5 h-5 bg-white border border-blue-500 text-blue-500 rounded flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm">
+                                    <Plus size={12} strokeWidth={3} />
+                                 </div>
+                              )
                            )}
                         </div>
 

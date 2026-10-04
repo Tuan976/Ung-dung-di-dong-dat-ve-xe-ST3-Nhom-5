@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from flask import jsonify, request, session
 
@@ -9,6 +9,10 @@ from models import Booking, Route, Trip, User
 
 
 ACTIVE_TRIP_STATUSES = ('Scheduled', 'Running')
+
+
+def _now():
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
 
 def _default_ai_state():
@@ -83,7 +87,7 @@ def _available_seats_for_trip(trip):
         Booking.trip_id == trip.id,
         Booking.status == 'HOLD',
         Booking.expires_at.isnot(None),
-        Booking.expires_at > datetime.now()
+        Booking.expires_at > _now()
     ).count()
     return max(0, trip.bus.total_seats - confirmed_count - hold_count)
 
@@ -127,6 +131,7 @@ def _search_trips(criteria, limit=5):
         trips = Trip.query.filter(
             Trip.route_id == route.id,
             db.func.date(Trip.departure_time) == target_date,
+            Trip.departure_time > _now(),
             Trip.status.in_(ACTIVE_TRIP_STATUSES)
         ).order_by(Trip.departure_time.asc()).all()
 
@@ -150,7 +155,7 @@ def _search_trips(criteria, limit=5):
         for route_score, route in matching_routes[:3]:
             future_trips = Trip.query.filter(
                 Trip.route_id == route.id,
-                Trip.departure_time >= datetime.now(),
+                Trip.departure_time >= _now(),
                 Trip.status.in_(ACTIVE_TRIP_STATUSES)
             ).order_by(Trip.departure_time.asc()).limit(6).all()
             for trip in future_trips:
@@ -340,7 +345,7 @@ def register_ai_routes(app):
             if user:
                 user_history = list(set([f"{b.trip.route.start_point} - {b.trip.route.end_point}" for b in user.bookings[-5:]]))
 
-        upcoming_trips = Trip.query.filter(Trip.departure_time >= datetime.now()).order_by(Trip.departure_time).limit(20).all()
+        upcoming_trips = Trip.query.filter(Trip.departure_time >= _now()).order_by(Trip.departure_time).limit(20).all()
         trips_data = [{
             'id': t.id,
             'route': f"{t.route.start_point} - {t.route.end_point}",

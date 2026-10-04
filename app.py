@@ -18,12 +18,12 @@ def find_path(folder_name):
     if os.path.exists(path): return path
     return os.path.join(BASE_DIR, folder_name)
 
-static_dir = find_path(os.path.join('frontend', 'dist'))
+static_dir = find_path('static')
 template_dir = find_path('templates')
 
 app = Flask(__name__, 
             static_folder=static_dir, 
-            static_url_path='', 
+            static_url_path='/static', 
             template_folder=template_dir)
 
 # --- TEST CỰC MẠNH: ĐẶT NGAY ĐẦU APP ---
@@ -32,7 +32,7 @@ def test_now():
     return jsonify({'message': 'Day dung la file app.py chung ta dang sua!', 'path': __file__})
 
 # Cấu hình CORS chuẩn: Cho phép tất cả để test local không bị chặn
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-123')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///bus_booking.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -57,13 +57,7 @@ from helpers import from_json, timedelta_hours_jinja
 app.add_template_filter(from_json, 'from_json')
 app.add_template_filter(timedelta_hours_jinja, 'timedelta_hours')
 
-# Route xử lý file tĩnh
-@app.route('/static/<path:filename>')
-def legacy_static(filename):
-    for path in [os.path.join(BASE_DIR, 'static'), os.path.join(BASE_DIR, 'WebDatVeXe', 'static')]:
-        if os.path.exists(os.path.join(path, filename)):
-            return send_from_directory(path, filename)
-    return send_from_directory(app.static_folder, filename)
+# React assets will be served via the 404 handler in routes_public.py
 
 @app.route('/api/ai/chatbot', methods=['GET', 'POST'])
 def ai_chatbot_direct():
@@ -102,6 +96,10 @@ register_driver_routes(app)
 register_booking_routes(app)
 register_ai_routes(app)
 register_public_routes(app)
+
+# --- Register New Mobile API Blueprint ---
+from api.v1 import api_v1_bp
+app.register_blueprint(api_v1_bp)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, use_reloader=False, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

@@ -362,9 +362,30 @@ const CreateTripModal = ({ onClose, onCreated }) => {
 
   useEffect(() => {
     fetch('/api/admin/routes').then(r => r.json()).then(res => setData(p => ({ ...p, routes: Array.isArray(res) ? res : [] })));
-    fetch('/api/admin/buses').then(r => r.json()).then(res => setData(p => ({ ...p, buses: Array.isArray(res) ? res : [] })));
-    fetch('/api/admin/staff/DRIVER').then(r => r.json()).then(res => setData(p => ({ ...p, drivers: Array.isArray(res) ? res : [] })));
   }, []);
+
+  useEffect(() => {
+    let urlBus = '/api/admin/buses';
+    let urlDriver = '/api/admin/staff/DRIVER';
+    if (formData.departure_time && formData.route_id) {
+       urlBus += `?departure_time=${formData.departure_time}&route_id=${formData.route_id}`;
+       urlDriver += `?departure_time=${formData.departure_time}&route_id=${formData.route_id}`;
+    }
+    fetch(urlBus).then(r => r.json()).then(res => {
+      setData(p => ({ ...p, buses: Array.isArray(res) ? res : [] }));
+      // If current bus is no longer in the list, clear it
+      if (Array.isArray(res) && formData.bus_id && !res.find(b => b.id == formData.bus_id)) {
+        setFormData(prev => ({ ...prev, bus_id: '' }));
+      }
+    });
+    fetch(urlDriver).then(r => r.json()).then(res => {
+      setData(p => ({ ...p, drivers: Array.isArray(res) ? res : [] }));
+      // If current driver is no longer in the list, clear it
+      if (Array.isArray(res) && formData.driver_id && !res.find(d => d.id == formData.driver_id)) {
+        setFormData(prev => ({ ...prev, driver_id: '' }));
+      }
+    });
+  }, [formData.departure_time, formData.route_id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

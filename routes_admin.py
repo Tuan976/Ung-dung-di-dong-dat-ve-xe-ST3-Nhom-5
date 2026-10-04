@@ -6,7 +6,9 @@ import time
 from docx import Document
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
 
 from flask import flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_mail import Message
@@ -25,12 +27,16 @@ from extensions import db, mail
 from models import Assistant, Booking, Bus, Cargo, Driver, FoodOrder, MenuItem, Office, RestStop, Route, Staff, Trip
 
 
+def _now():
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
+
+
 def auto_complete_trips():
     """
     Tự động đánh dấu 'Completed' và giải phóng tài xế/phụ xe
     cho những chuyến đã qua thời gian đến dự kiến.
     """
-    now = datetime.now()  # Dùng local time - khớp với departure_time trong DB
+    now = _now()  # Dùng local time - khớp với departure_time trong DB
     
     # Tìm các chuyến Scheduled/Running mà đã qua giờ đến (có arrival_time)
     trips_to_complete = Trip.query.filter(
@@ -46,11 +52,16 @@ def auto_complete_trips():
     ).all()
 
     for trip in trips_no_arrival:
-        duration_h = trip.route.duration_hours or 0
-        if duration_h > 0:  # Chỉ auto-complete nếu biết duration
-            estimated_arrival = trip.departure_time + timedelta(hours=duration_h)
-            if estimated_arrival <= now:
-                trips_to_complete.append(trip)
+        duration_h = trip.route.duration_hours or 12.0
+        estimated_arrival = trip.departure_time + timedelta(hours=duration_h)
+        if estimated_arrival <= now:
+            trips_to_complete.append(trip)
+        elif trip.departure_time <= now and trip.status == 'Scheduled':
+            trip.status = 'Running'
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
     if trips_to_complete:
         for trip in trips_to_complete:
@@ -74,6 +85,8 @@ def register_admin_routes(app):
         company_id = session.get('company_id')
         if not company_id: return jsonify({'error': 'Unauthorized'}), 401
         
+        auto_complete_trips()
+        
         trips = Trip.query.join(Route).filter(Route.company_id == company_id)\
                 .order_by(Trip.departure_time.desc()).all()
         
@@ -92,7 +105,7 @@ def register_admin_routes(app):
         company_id = session.get('company_id')
         if not company_id: return jsonify({'error': 'Unauthorized'}), 401
         
-        now = datetime.now()
+        now = _now()
         
         # 1. Basic Stats
         revenue_tickets = db.session.query(db.func.sum(Booking.ticket_price)).join(Trip).join(Route)\
@@ -246,7 +259,29 @@ def register_admin_routes(app):
         try:
             company_id = session.get('company_id')
             if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+            
+            time_str = request.args.get('departure_time')
+            route_id = request.args.get('route_id')
+            overlap_bus_ids = []
+            if time_str and route_id:
+                try:
+                    departure_time = datetime.fromisoformat(time_str.replace('Z', ''))
+                    route = Route.query.get(route_id)
+                    safety_duration = (route.duration_hours or 12) + 2
+                    time_end = departure_time + timedelta(hours=safety_duration)
+                    time_start = departure_time - timedelta(hours=safety_duration)
+                    overlap_trips = Trip.query.join(Route).filter(
+                        Route.company_id == company_id,
+                        Trip.status.in_(['Scheduled', 'Running']),
+                        Trip.departure_time >= time_start,
+                        Trip.departure_time <= time_end
+                    ).all()
+                    overlap_bus_ids = [t.bus_id for t in overlap_trips if t.bus_id]
+                except Exception: pass
+
             buses = Bus.query.filter_by(company_id=company_id).order_by(Bus.id.desc()).all()
+            buses = [b for b in buses if b.id not in overlap_bus_ids]
+            
             return jsonify([{
                 'id': b.id,
                 'license_plate': b.license_plate,
@@ -451,18 +486,47 @@ def register_admin_routes(app):
             company_id = session.get('company_id')
             if not company_id: return jsonify({'error': 'Unauthorized'}), 401
             
+            time_str = request.args.get('departure_time')
+            route_id = request.args.get('route_id')
+            overlap_driver_ids = []
+            if time_str and route_id:
+                try:
+                    departure_time = datetime.fromisoformat(time_str.replace('Z', ''))
+                    route = Route.query.get(route_id)
+                    safety_duration = (route.duration_hours or 12) + 2
+                    time_end = departure_time + timedelta(hours=safety_duration)
+                    time_start = departure_time - timedelta(hours=safety_duration)
+                    overlap_trips = Trip.query.join(Route).filter(
+                        Route.company_id == company_id,
+                        Trip.status.in_(['Scheduled', 'Running']),
+                        Trip.departure_time >= time_start,
+                        Trip.departure_time <= time_end
+                    ).all()
+                    overlap_driver_ids = [t.driver_id for t in overlap_trips if t.driver_id]
+                except Exception: pass
+            
             if role == 'DRIVER':
                 # Ưu tiên lấy từ bảng Driver (Hồ sơ tài xế cũ)
                 drivers = Driver.query.filter_by(company_id=company_id).all()
                 if not drivers:
                     # Nếu không có Driver, thử tìm Staff có role DRIVER
                     staff = Staff.query.filter(Staff.company_id == company_id, Staff.role.ilike('%DRIVER%')).all()
+                    staff = [s for s in staff if s.id not in overlap_driver_ids]
                     return jsonify([{
                         'id': s.id,
                         'name': s.name,
                         'phone': s.phone,
                         'role': 'DRIVER'
                     } for s in staff])
+                
+                drivers = [d for d in drivers if d.id not in overlap_driver_ids]
+                return jsonify([{
+                    'id': d.id,
+                    'name': d.name,
+                    'phone': d.phone,
+                    'role': 'DRIVER'
+                } for d in drivers])
+                
             # Các vai trò khác lấy từ Staff
             staff = Staff.query.filter_by(company_id=company_id)
             if role != 'ALL':
@@ -777,7 +841,7 @@ def register_admin_routes(app):
         last_7_days_labels = []
         last_7_days_data = []
         for i in range(6, -1, -1):
-            date = (datetime.now() - timedelta(days=i)).date()
+            date = (_now() - timedelta(days=i)).date()
             last_7_days_labels.append(date.strftime('%d/%m'))
             
             daily_rev = db.session.query(db.func.sum(Booking.ticket_price)).join(Trip).join(Route)\
@@ -1356,9 +1420,11 @@ def register_admin_routes(app):
         
         p = doc.add_paragraph()
         p.add_run(f'Tuyến: {trip.route.start_point} - {trip.route.end_point}\n').bold = True
-        p.add_run(f'Biển số xe: {trip.bus.license_plate}\n')
-        p.add_run(f'Tài xế: {trip.driver_ref.name if trip.driver_ref else "N/A"}\n')
-        p.add_run(f'Ngày khởi hành: {trip.departure_time.strftime("%d/%m/%Y %H:%M")}')
+        p.add_run(f'Biển số xe: {trip.bus.license_plate if trip.bus else "N/A"}\n')
+        
+        driver_name = trip.driver_ref.name if trip.driver_ref else (trip.driver_name or "N/A")
+        p.add_run(f'Tài xế: {driver_name}\n')
+        p.add_run(f'Ngày khởi hành: {trip.departure_time.strftime("%d/%m/%Y %H:%M") if trip.departure_time else "N/A"}')
         
         table = doc.add_table(rows=1, cols=5)
         table.style = 'Table Grid'
@@ -1372,11 +1438,11 @@ def register_admin_routes(app):
         bookings = Booking.query.filter_by(trip_id=trip_id).all()
         for b in bookings:
             row_cells = table.add_row().cells
-            row_cells[0].text = b.seat_number
-            row_cells[1].text = b.passenger_name
-            row_cells[2].text = b.passenger_phone
-            row_cells[3].text = b.pickup_point or ''
-            row_cells[4].text = b.status
+            row_cells[0].text = str(b.seat_number or '')
+            row_cells[1].text = str(b.passenger_name or '')
+            row_cells[2].text = str(b.passenger_phone or '')
+            row_cells[3].text = str(b.pickup_point or '')
+            row_cells[4].text = str(b.status or '')
             
         doc.add_paragraph('\n')
         doc.add_paragraph('DANH SÁCH HÀNG HÓA KÝ GỬI').bold = True
@@ -1392,9 +1458,9 @@ def register_admin_routes(app):
         cargos = Cargo.query.filter_by(trip_id=trip_id).all()
         for c in cargos:
             row = cargo_table.add_row().cells
-            row[0].text = f'G: {c.sender_name}\nN: {c.receiver_name}'
-            row[1].text = c.description or ''
-            row[2].text = "{:,.0f}".format(c.cost)
+            row[0].text = f'G: {c.sender_name or ""}\nN: {c.receiver_name or ""}'
+            row[1].text = str(c.description or '')
+            row[2].text = "{:,.0f}".format(c.cost or 0)
             row[3].text = ''
 
         doc.add_paragraph('\n\n')
@@ -1410,12 +1476,12 @@ def register_admin_routes(app):
         f = io.BytesIO()
         doc.save(f)
         f.seek(0)
-        return send_file(
-            f,
-            as_attachment=True,
-            download_name=f'manifest_{trip_id}.docx',
-            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
+        
+        from flask import make_response
+        response = make_response(f.read())
+        response.headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response.headers.set('Content-Disposition', 'attachment', filename=f'manifest_{trip_id}.docx')
+        return response
 
     def download_order(trip_id):
         trip = Trip.query.get_or_404(trip_id)
@@ -1451,12 +1517,12 @@ def register_admin_routes(app):
         f = io.BytesIO()
         doc.save(f)
         f.seek(0)
-        return send_file(
-            f,
-            as_attachment=True,
-            download_name=f'lenh_van_chuyen_{trip_id}.docx',
-            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
+        
+        from flask import make_response
+        response = make_response(f.read())
+        response.headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response.headers.set('Content-Disposition', 'attachment', filename=f'lenh_van_chuyen_{trip_id}.docx')
+        return response
     def admin_food():
         # Show all RestStops (Global)
         stops = RestStop.query.all()
@@ -1561,7 +1627,11 @@ def register_admin_routes(app):
         doc.build(story)
         f.seek(0)
     
-        return send_file(f, as_attachment=True, download_name=f'cargo_manifest_{trip.id}.pdf', mimetype='application/pdf')
+        from flask import make_response
+        response = make_response(f.read())
+        response.headers.set('Content-Type', 'application/pdf')
+        response.headers.set('Content-Disposition', 'attachment', filename=f'cargo_manifest_{trip.id}.pdf')
+        return response
 
     def download_cargo_receipt(cargo_id):
         cargo = Cargo.query.get_or_404(cargo_id)
@@ -1602,7 +1672,7 @@ def register_admin_routes(app):
             
             # Tracking & Date
             elements.append(Paragraph(f"<b>Mã vận đơn: {cargo.tracking_number}</b>", title_style))
-            elements.append(Paragraph(f"Ngày nhận: {datetime.now().strftime('%d/%m/%Y %H:%M')}", label_style))
+            elements.append(Paragraph(f"Ngày nhận: {_now().strftime('%d/%m/%Y %H:%M')}", label_style))
             elements.append(Spacer(1, 12))
 
             # Main Info Table
@@ -1676,7 +1746,11 @@ def register_admin_routes(app):
         doc.build(story)
         f.seek(0)
 
-        return send_file(f, as_attachment=True, download_name=f'receipt_{cargo.tracking_number}.pdf', mimetype='application/pdf')
+        from flask import make_response
+        response = make_response(f.read())
+        response.headers.set('Content-Type', 'application/pdf')
+        response.headers.set('Content-Disposition', 'attachment', filename=f'receipt_{cargo.tracking_number}.pdf')
+        return response
 
     def admin_optimization():
         bus_types = db.session.query(Bus.bus_type).distinct().all()
@@ -1777,10 +1851,10 @@ def register_admin_routes(app):
     app.add_url_rule('/admin/trip/<int:trip_id>/complete', view_func=staff_role_required('STATION_STAFF')(complete_trip), methods=['POST'])
     app.add_url_rule('/admin/trip/<int:trip_id>/status', view_func=staff_role_required('STATION_STAFF')(update_trip_status), methods=['POST'])
     app.add_url_rule('/legacy-admin', view_func=company_login_required(admin))
-    app.add_url_rule('/admin/routes', view_func=admin_only(admin_routes_page))
-    app.add_url_rule('/admin/buses', view_func=admin_only(admin_buses_page))
-    app.add_url_rule('/admin/trips', view_func=company_login_required(admin_trips_page))
-    app.add_url_rule('/admin/staff', view_func=admin_only(admin_staff_page))
+    app.add_url_rule('/legacy-admin/routes', view_func=admin_only(admin_routes_page))
+    app.add_url_rule('/legacy-admin/buses', view_func=admin_only(admin_buses_page))
+    app.add_url_rule('/legacy-admin/trips', view_func=company_login_required(admin_trips_page))
+    app.add_url_rule('/legacy-admin/staff', view_func=admin_only(admin_staff_page))
     app.add_url_rule('/admin/driver/add', view_func=admin_only(add_driver), methods=['POST'])
     app.add_url_rule('/admin/assistant/add', view_func=admin_only(add_assistant), methods=['POST'])
     app.add_url_rule('/admin/trip/<int:trip_id>/breakdown', view_func=admin_only(admin_trip_breakdown), methods=['GET', 'POST'])

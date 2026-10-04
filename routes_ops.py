@@ -3,6 +3,8 @@ import json
 import uuid
 import qrcode
 from datetime import datetime
+
+
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -95,7 +97,11 @@ def print_passengers(trip_id):
     
     doc.build(elements)
     f.seek(0)
-    return send_file(f, as_attachment=True, download_name=f'phoi_khach_{trip_id}.pdf', mimetype='application/pdf')
+    from flask import make_response
+    response = make_response(f.read())
+    response.headers.set('Content-Type', 'application/pdf')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'phoi_khach_{trip_id}.pdf')
+    return response
 
 @ops_bp.route('/ops/print/cargo/<int:trip_id>')
 def print_cargo(trip_id):
@@ -147,7 +153,11 @@ def print_cargo(trip_id):
     
     doc.build(elements)
     f.seek(0)
-    return send_file(f, as_attachment=True, download_name=f'phoi_hang_{trip_id}.pdf', mimetype='application/pdf')
+    from flask import make_response
+    response = make_response(f.read())
+    response.headers.set('Content-Type', 'application/pdf')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'phoi_hang_{trip_id}.pdf')
+    return response
 
 # --- MODULE 3: HỦY CHUYẾN (TRIP CANCELLATION) ---
 

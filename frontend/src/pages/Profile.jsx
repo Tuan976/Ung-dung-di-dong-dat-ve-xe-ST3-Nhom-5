@@ -85,7 +85,7 @@ const Profile = () => {
                     <input 
                       type="text" 
                       value={formData.phone || ''} 
-                      onChange={e => setFormData({...formData, phone: e.target.value})}
+                      onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})}
                       readOnly={!isEditing}
                       className="bg-transparent w-full font-bold text-slate-800 focus:outline-none"
                     />

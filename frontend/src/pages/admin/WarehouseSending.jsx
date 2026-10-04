@@ -127,7 +127,7 @@ const CreateCargoModal = ({ onClose, onCreated, offices, trips, routes, currentC
                <h3 className="text-xs font-bold text-blue-600 uppercase border-b border-blue-100 pb-2 flex items-center gap-2"><User size={14}/> Người gửi</h3>
                <div className="space-y-3">
                   <input type="text" placeholder="Họ tên người gửi" className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-blue-400" required value={formData.sender_name} onChange={e => setFormData({...formData, sender_name: e.target.value})} />
-                  <input type="tel" placeholder="Số điện thoại" className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-blue-400" required value={formData.sender_phone} onChange={e => setFormData({...formData, sender_phone: e.target.value})} />
+                  <input type="tel" placeholder="Số điện thoại" className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-blue-400" required value={formData.sender_phone} onChange={e => setFormData({...formData, sender_phone: e.target.value.replace(/\D/g, '')})} />
                   <select className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-blue-400" required value={formData.sender_office_id} onChange={e => setFormData({...formData, sender_office_id: e.target.value})}>
                      <option value="">Chọn văn phòng gửi</option>
                      {offices.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -138,7 +138,7 @@ const CreateCargoModal = ({ onClose, onCreated, offices, trips, routes, currentC
                <h3 className="text-xs font-bold text-green-600 uppercase border-b border-green-100 pb-2 flex items-center gap-2"><User size={14}/> Người nhận</h3>
                <div className="space-y-3">
                   <input type="text" placeholder="Họ tên người nhận" className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-green-400" required value={formData.receiver_name} onChange={e => setFormData({...formData, receiver_name: e.target.value})} />
-                  <input type="tel" placeholder="Số điện thoại" className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-green-400" required value={formData.receiver_phone} onChange={e => setFormData({...formData, receiver_phone: e.target.value})} />
+                  <input type="tel" placeholder="Số điện thoại" className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-green-400" required value={formData.receiver_phone} onChange={e => setFormData({...formData, receiver_phone: e.target.value.replace(/\D/g, '')})} />
                   <select className="w-full border border-slate-200 rounded-md py-2 px-3 text-sm outline-none focus:border-green-400" required value={formData.receiver_office_id} onChange={e => setFormData({...formData, receiver_office_id: e.target.value})}>
                      <option value="">Chọn văn phòng nhận</option>
                      {offices.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}

@@ -198,7 +198,7 @@ const CreateCargoModal = ({ onClose, onCreated, offices, trips, routes, currentC
                <input type="text" placeholder="Tên người gửi" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold outline-none focus:border-blue-400 shadow-sm" required 
                  value={formData.sender_name} onChange={e => setFormData({...formData, sender_name: e.target.value})} />
                <input type="tel" placeholder="SĐT người gửi" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold outline-none focus:border-blue-400 shadow-sm" required 
-                 value={formData.sender_phone} onChange={e => setFormData({...formData, sender_phone: e.target.value})} />
+                 value={formData.sender_phone} onChange={e => setFormData({...formData, sender_phone: e.target.value.replace(/\D/g, '')})} />
                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold outline-none focus:border-blue-400 text-slate-700 shadow-sm" required
                   value={formData.sender_office_id} onChange={e => setFormData({...formData, sender_office_id: e.target.value})}>
                   <option value="">Văn phòng gửi</option>
@@ -210,7 +210,7 @@ const CreateCargoModal = ({ onClose, onCreated, offices, trips, routes, currentC
                <input type="text" placeholder="Tên người nhận" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold outline-none focus:border-blue-400 shadow-sm" required 
                  value={formData.receiver_name} onChange={e => setFormData({...formData, receiver_name: e.target.value})} />
                <input type="tel" placeholder="SĐT người nhận" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold outline-none focus:border-blue-400 shadow-sm" required 
-                 value={formData.receiver_phone} onChange={e => setFormData({...formData, receiver_phone: e.target.value})} />
+                 value={formData.receiver_phone} onChange={e => setFormData({...formData, receiver_phone: e.target.value.replace(/\D/g, '')})} />
                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold outline-none focus:border-blue-400 text-slate-700 shadow-sm" required
                   value={formData.receiver_office_id} onChange={e => setFormData({...formData, receiver_office_id: e.target.value})}>
                   <option value="">Văn phòng nhận</option>

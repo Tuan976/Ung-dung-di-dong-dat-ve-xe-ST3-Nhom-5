@@ -254,7 +254,7 @@ const Auth = () => {
                       type="tel" 
                       required 
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})}
                       placeholder="Nhập số điện thoại" 
                       className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3.5 pl-12 pr-4 font-bold text-slate-800 focus:ring-2 focus:ring-[#EF5222]/10 focus:border-[#EF5222] outline-none transition-all" 
                     />

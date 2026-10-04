@@ -4,10 +4,12 @@ import json
 import random
 import string
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+
 from flask import flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from payos.type import ItemData, PaymentData
 
@@ -29,7 +31,7 @@ def generate_ticket_code():
 
 
 def _now():
-    return datetime.now()
+    return datetime.now(timezone(timedelta(hours=7))).replace(tzinfo=None)
 
 
 def _to_base36(num):
@@ -211,6 +213,25 @@ def _confirm_paid_booking(booking, method):
     booking.payment_status = 'Paid'
     booking.payment_method = method
     booking.expires_at = None
+
+    # Gửi email xác nhận nếu có email
+    if booking.user and getattr(booking.user, 'email', None):
+        try:
+            subject = f"Xác nhận đặt vé thành công - {booking.ticket_code}"
+            html_content = f"""
+            <h3>Chào {booking.passenger_name},</h3>
+            <p>Vé của bạn đã được thanh toán và xác nhận thành công.</p>
+            <p><strong>Mã vé:</strong> {booking.ticket_code}</p>
+            <p><strong>Tuyến:</strong> {booking.trip.route.start_point} - {booking.trip.route.end_point}</p>
+            <p><strong>Số ghế:</strong> {booking.seat_number}</p>
+            <p><strong>Giá vé:</strong> {"{:,.0f}".format(booking.ticket_price)} VNĐ</p>
+            <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+            """
+            from helpers import send_resend_email
+            send_resend_email(booking.user.email, subject, html_content)
+        except Exception as e:
+            print("Lỗi gửi email xác nhận:", e)
+
 
 
 def register_booking_routes(app):
@@ -582,12 +603,11 @@ def register_booking_routes(app):
         document.save(f)
         f.seek(0)
 
-        return send_file(
-            f,
-            as_attachment=True,
-            download_name=f'ticket_{booking.id}.docx',
-            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
+        from flask import make_response
+        response = make_response(f.read())
+        response.headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response.headers.set('Content-Disposition', 'attachment', filename=f'ticket_{booking.id}.docx')
+        return response
 
     def food_order(booking_id):
         booking = Booking.query.get_or_404(booking_id)

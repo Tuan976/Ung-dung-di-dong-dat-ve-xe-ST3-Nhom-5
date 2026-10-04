@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "273501927314",
+    "project_id": "ung-dung-di-dong-9bb20",
+    "storage_bucket": "ung-dung-di-dong-9bb20.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273501927314:android:09c1260ba09c172875734b",
+        "android_client_info": {
+          "package_name": "com.example.vibecode"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDvX5VsSMfJub0M361fv36_6w3MdJhj14"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
