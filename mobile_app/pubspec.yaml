@@ -51,6 +51,8 @@ dependencies:
   latlong2: ^0.9.1
   shake: ^3.0.0
   flutter_ringtone_player: ^4.0.0+4
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
 
 
 dev_dependencies:

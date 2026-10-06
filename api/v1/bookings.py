@@ -225,6 +225,46 @@ def send_sos():
         )
         db.session.add(new_sos)
         db.session.commit()
+        
+        # --- Gửi cảnh báo FCM cho người ở gần ---
+        try:
+            import math
+            def haversine(lat1, lon1, lat2, lon2):
+                lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+                dlon = lon2 - lon1 
+                dlat = lat2 - lat1 
+                a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                return 2 * math.asin(math.sqrt(a)) * 6371
+            
+            from models import User
+            # Tìm những người dùng có fcm_token và có last_lat, last_lng
+            active_users = User.query.filter(User.fcm_token.isnot(None), User.last_lat.isnot(None)).all()
+            nearby_tokens = []
+            
+            sos_lat, sos_lng = new_sos.latitude, new_sos.longitude
+            for u in active_users:
+                if u.id == (user.id if user else None): continue # Không gửi cho chính mình
+                distance = haversine(sos_lat, sos_lng, u.last_lat, u.last_lng)
+                if distance <= 5.0: # Trong vòng 5km
+                    nearby_tokens.append(u.fcm_token)
+            
+            # Nếu có thiết bị ở gần, đẩy FCM
+            if nearby_tokens:
+                try:
+                    from firebase_admin import messaging
+                    message = messaging.MulticastMessage(
+                        notification=messaging.Notification(
+                            title='CẢNH BÁO SOS! 🚨',
+                            body=f'Có hành khách cách bạn {distance:.1f}km đang gặp nguy hiểm.'
+                        ),
+                        tokens=nearby_tokens,
+                    )
+                    messaging.send_multicast(message)
+                except Exception as fcm_err:
+                    print("Lỗi khi gửi FCM:", fcm_err)
+        except Exception as notify_err:
+            print("Lỗi logic gửi thông báo gần đó:", notify_err)
+            
         return api_success({
             "message": "Tín hiệu SOS đã được gửi đến nhà xe và cơ quan chức năng! Hãy giữ an toàn, chúng tôi đang tới.", 
             "received": True
@@ -232,6 +272,38 @@ def send_sos():
     except Exception as e:
         db.session.rollback()
         return api_error(message=f"Lỗi lưu SOS: {str(e)}", error_code="SOS_ERROR", status=500)
+
+@api_v1_bp.route('/update_device_info', methods=['POST'])
+def update_device_info():
+    # API để app gọi lên cập nhật token FCM và tọa độ mới nhất
+    try:
+        import jwt as _jwt, os as _os
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return api_error(message="Yêu cầu đăng nhập", status=401)
+            
+        token = auth_header.split(' ')[1]
+        secret = _os.getenv('JWT_SECRET_KEY', 'local-dev-jwt-secret-key-12345')
+        payload = _jwt.decode(token, secret, algorithms=['HS256'])
+        from models import User
+        user = User.query.get(payload.get('sub'))
+        if not user:
+            return api_error(message="Không tìm thấy user", status=404)
+            
+        data = request.json or {}
+        if 'fcm_token' in data:
+            user.fcm_token = data['fcm_token']
+        if 'lat' in data and 'lng' in data:
+            user.last_lat = float(data['lat'])
+            user.last_lng = float(data['lng'])
+            import datetime
+            user.last_location_time = datetime.datetime.now()
+            
+        db.session.commit()
+        return api_success({"message": "Đã cập nhật thông tin thiết bị"})
+    except Exception as e:
+        db.session.rollback()
+        return api_error(message=str(e), status=500)
 
 @api_v1_bp.route('/sos_alerts', methods=['GET'])
 def get_sos_alerts():

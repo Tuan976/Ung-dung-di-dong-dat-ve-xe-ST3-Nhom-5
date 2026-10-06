@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:developer';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -16,6 +19,41 @@ class NotificationService {
     const initSettings = InitializationSettings(android: androidSettings);
     
     await _notifications.initialize(settings: initSettings);
+    
+    // --- KHỞI TẠO FIREBASE FCM ---
+    try {
+      await Firebase.initializeApp();
+      
+      // Xin quyền gửi thông báo (dành cho Android 13+ và iOS)
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission();
+      
+      // Lấy FCM Token để gửi lên Server
+      String? token = await messaging.getToken();
+      log("FCM Token: $token");
+      
+      // Bắt sự kiện khi app đang mở (Foreground)
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        log('Nhận thông báo khi đang mở app: ${message.notification?.title}');
+        _notifications.show(
+          id: DateTime.now().millisecond,
+          title: message.notification?.title,
+          body: message.notification?.body,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'sos_channel',
+              'SOS Alerts',
+              importance: Importance.max,
+              priority: Priority.high,
+              playSound: true,
+            ),
+          ),
+        );
+      });
+    } catch (e) {
+      print("Lỗi khởi tạo Firebase: $e");
+    }
+
     _initialized = true;
   }
 

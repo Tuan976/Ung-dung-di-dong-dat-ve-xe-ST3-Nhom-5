@@ -57,6 +57,20 @@ from helpers import from_json, timedelta_hours_jinja
 app.add_template_filter(from_json, 'from_json')
 app.add_template_filter(timedelta_hours_jinja, 'timedelta_hours')
 
+# --- Khởi tạo Firebase Admin SDK ---
+try:
+    import firebase_admin
+    from firebase_admin import credentials
+    firebase_cred_path = os.path.join(BASE_DIR, 'firebase-adminsdk.json')
+    if os.path.exists(firebase_cred_path):
+        cred = credentials.Certificate(firebase_cred_path)
+        firebase_admin.initialize_app(cred)
+        print("Firebase Admin SDK initialized successfully.")
+    else:
+        print("WARNING: firebase-adminsdk.json not found! FCM notifications will not work.")
+except Exception as e:
+    print(f"Failed to initialize Firebase Admin: {e}")
+
 # React assets will be served via the 404 handler in routes_public.py
 
 @app.route('/api/ai/chatbot', methods=['GET', 'POST'])

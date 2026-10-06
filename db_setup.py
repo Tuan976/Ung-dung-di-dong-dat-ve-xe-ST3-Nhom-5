@@ -38,7 +38,12 @@ def init_database(app):
             "ALTER TABLE driver ADD COLUMN status TEXT DEFAULT 'Active'",
             "ALTER TABLE driver ADD COLUMN joined_at DATETIME",
             "ALTER TABLE assistant ADD COLUMN status TEXT DEFAULT 'Active'",
-            "ALTER TABLE assistant ADD COLUMN joined_at DATETIME"
+            "ALTER TABLE assistant ADD COLUMN joined_at DATETIME",
+            
+            "ALTER TABLE user ADD COLUMN fcm_token VARCHAR(255)",
+            "ALTER TABLE user ADD COLUMN last_lat REAL",
+            "ALTER TABLE user ADD COLUMN last_lng REAL",
+            "ALTER TABLE user ADD COLUMN last_location_time DATETIME"
         ]
 
         try:

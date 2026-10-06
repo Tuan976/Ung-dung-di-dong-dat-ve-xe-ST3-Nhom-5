@@ -17,6 +17,13 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     phone = db.Column(db.String(20))
+    
+    # New fields for SOS & Location tracking
+    fcm_token = db.Column(db.String(255), nullable=True)
+    last_lat = db.Column(db.Float, nullable=True)
+    last_lng = db.Column(db.Float, nullable=True)
+    last_location_time = db.Column(db.DateTime, nullable=True)
+    
     bookings = db.relationship('Booking', backref='user', lazy=True)
 
 
