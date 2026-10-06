@@ -125,11 +125,11 @@ class _SplashScreenState extends State<SplashScreen> {
               right: 0,
               child: Center(
                 child: Text(
-                  'Phiên bản 3.4.0 • Phát triển bởi transit-tech VN',
+                  'Phiên bản 3.4.0 • Phát triển bởi Nhóm 5',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     color: Color(0xFF9CA3AF),
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
