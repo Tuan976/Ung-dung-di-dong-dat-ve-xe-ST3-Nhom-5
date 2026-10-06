@@ -61,121 +61,73 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     final fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     final seatMap = _trip.seatMap ?? [];
 
-    // Group seats by row (A, B, C...)
-    final Map<String, List<String>> rows = {};
-    for (final seat in seatMap) {
-      final row = seat.replaceAll(RegExp(r'[0-9]'), '');
-      rows.putIfAbsent(row, () => []).add(seat);
-    }
+    final seatsA = seatMap.where((s) => s.startsWith('A')).toList();
+    final seatsB = seatMap.where((s) => s.startsWith('B')).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, size: 20, color: Color(0xFF0F172A)),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 22, color: Color(0xFF475569)),
+            onPressed: _refreshSeatMap,
+          )
+        ],
+      ),
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: const Icon(Icons.arrow_back_ios, size: 20, color: Color(0xFF0F172A)),
-                  ),
-                  const Expanded(
-                    child: Text('Chọn ghế',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w800)),
-                  ),
-                  GestureDetector(
-                    onTap: _refreshSeatMap,
-                    child: const Icon(Icons.refresh, size: 22, color: Color(0xFF475569)),
-                  ),
+                  const Text('CHỌN GHẾ & ĐẶT VÉ',
+                      style: TextStyle(color: Color(0xFF0F172A), fontSize: 22, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic)),
+                  const SizedBox(height: 8),
+                  Text('${_trip.departureStation} - ${_trip.arrivalStation} • ${_trip.departureTime}'.toUpperCase(),
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
                 ],
               ),
             ),
 
-            // Route info strip
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              color: const Color(0xFFE0F2FE),
-              child: Text(
-                '${_trip.departureStation} → ${_trip.arrivalStation} • ${_trip.departureTime}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF0B192C), fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ),
+            const SizedBox(height: 16),
 
             // Legend
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _legendItem(const Color(0xFFF1F5F9), const Color(0xFFE2E8F0), 'Trống'),
-                  _legendItem(const Color(0xFF0B192C), const Color(0xFF0B192C), 'Đang chọn'),
-                  _legendItem(const Color(0xFF94A3B8), const Color(0xFF94A3B8), 'Đã đặt'),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _legendItem(Colors.white, const Color(0xFFE2E8F0), 'TRỐNG'),
+                const SizedBox(width: 16),
+                _legendItem(const Color(0xFFEA580C), const Color(0xFFEA580C), 'ĐANG CHỌN'),
+                const SizedBox(width: 16),
+                _legendItem(const Color(0xFFCBD5E1), const Color(0xFFCBD5E1), 'ĐÃ BÁN'),
+              ],
             ),
 
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            const SizedBox(height: 24),
 
             // Seat map
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF0B192C)))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Bus front indicator
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 24),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.directions_bus, size: 16, color: Color(0xFF94A3B8)),
-                                SizedBox(width: 6),
-                                Text('Đầu xe', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                          if (rows.isEmpty)
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              alignment: WrapAlignment.center,
-                              children: seatMap.map((s) => _buildSeat(s)).toList(),
-                            )
-                          else
-                            ...rows.entries.map((e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 24,
-                                        alignment: Alignment.center,
-                                        child: Text(e.key,
-                                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w600)),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ...e.value.map((s) => Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                                            child: _buildSeat(s),
-                                          )),
-                                    ],
-                                  ),
-                                )),
+                          if (seatsA.isNotEmpty) _buildFloor('TẦNG DƯỚI', seatsA),
+                          if (seatsA.isNotEmpty && seatsB.isNotEmpty) const SizedBox(width: 20),
+                          if (seatsB.isNotEmpty) _buildFloor('TẦNG TRÊN', seatsB),
                         ],
                       ),
                     ),
@@ -245,16 +197,40 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     return Row(
       children: [
         Container(
-          width: 20, height: 20,
+          width: 16, height: 16,
           decoration: BoxDecoration(
             color: fill,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: border, width: 1.5),
+            border: Border.all(color: border, width: 1),
           ),
         ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w500)),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w700)),
       ],
+    );
+  }
+
+  Widget _buildFloor(String title, List<String> seats) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            Text(title, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: seats.map((s) => _buildSeat(s)).toList(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -267,15 +243,15 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
     Color textColor;
 
     if (isOccupied) {
-      fill = const Color(0xFF94A3B8);
-      border = const Color(0xFF94A3B8);
+      fill = const Color(0xFFCBD5E1);
+      border = const Color(0xFFCBD5E1);
       textColor = Colors.white;
     } else if (isSelected) {
-      fill = const Color(0xFF0B192C);
-      border = const Color(0xFF0B192C);
+      fill = const Color(0xFFEA580C);
+      border = const Color(0xFFEA580C);
       textColor = Colors.white;
     } else {
-      fill = const Color(0xFFF1F5F9);
+      fill = Colors.white;
       border = const Color(0xFFE2E8F0);
       textColor = const Color(0xFF0F172A);
     }
@@ -284,20 +260,20 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
       onTap: () => _onSeatTap(seat),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        width: 48,
-        height: 48,
+        width: 46,
+        height: 46,
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: border, width: isSelected ? 2 : 1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: border, width: 1.5),
           boxShadow: isSelected
-              ? [const BoxShadow(color: Color(0x400B192C), blurRadius: 8, offset: Offset(0, 2))]
+              ? [const BoxShadow(color: Color(0x40EA580C), blurRadius: 8, offset: Offset(0, 2))]
               : null,
         ),
         alignment: Alignment.center,
         child: Text(
           seat,
-          style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w700),
+          style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w800),
         ),
       ),
     );

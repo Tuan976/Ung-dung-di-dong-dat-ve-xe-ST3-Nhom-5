@@ -9,6 +9,7 @@ import 'routing/app_router.dart';
 import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/trip_service.dart';
+import 'widgets/global_shake_listener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
