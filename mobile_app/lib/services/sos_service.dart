@@ -124,6 +124,7 @@ class SosService {
     required String idempotencyKey,
   }) async {
     try {
+      final deviceId = await DeviceIdentity.id();
       final r = await _api.post(
         '/sos',
         data: {
@@ -131,8 +132,9 @@ class SosService {
           if (fix != null && fix.hasFix) 'lng': fix.longitude,
           if (fix != null && fix.hasFix && fix.accuracy != null) 'accuracy': fix.accuracy,
           'incident_type': incidentType,
+          'idempotency_key': idempotencyKey,
+          'device_id': deviceId,
         },
-        headers: {'Idempotency-Key': idempotencyKey, 'X-Device-Id': await DeviceIdentity.id()},
       );
       return SosIncident.fromJson(_data(r));
     } catch (e) {

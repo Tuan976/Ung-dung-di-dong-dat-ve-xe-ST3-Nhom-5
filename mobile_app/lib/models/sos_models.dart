@@ -66,15 +66,15 @@ class SosIncident {
   bool get hasLocation => locationStatus == 'known' && latitude != null && longitude != null;
 
   factory SosIncident.fromJson(Map<String, dynamic> j) => SosIncident(
-        eventId: j['event_id'] as String,
+        eventId: (j['event_id'] ?? 'sos-${DateTime.now().millisecondsSinceEpoch}') as String,
         status: (j['status'] ?? 'active') as String,
         incidentType: (j['incident_type'] ?? 'general') as String,
-        locationStatus: (j['location_status'] ?? 'unknown') as String,
-        latitude: _toDouble(j['latitude']),
-        longitude: _toDouble(j['longitude']),
-        accuracyMeters: _toDouble(j['accuracy_meters']),
+        locationStatus: (j['location_status'] ?? (j['latitude'] != null || j['lat'] != null ? 'known' : 'unknown')) as String,
+        latitude: _toDouble(j['latitude'] ?? j['lat']),
+        longitude: _toDouble(j['longitude'] ?? j['lng']),
+        accuracyMeters: _toDouble(j['accuracy_meters'] ?? j['accuracy']),
         address: j['address'] as String?,
-        createdAt: _parseUtc(j['created_at']),
+        createdAt: _parseUtc(j['created_at']) ?? DateTime.now(),
         lastLocationUpdateAt: _parseUtc(j['last_location_update_at']),
         resolvedAt: _parseUtc(j['resolved_at']),
         distributionSuppressed: (j['distribution_suppressed'] ?? false) as bool,

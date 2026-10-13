@@ -32,7 +32,7 @@ def test_now():
     return jsonify({'message': 'Day dung la file app.py chung ta dang sua!', 'path': __file__})
 
 # Cấu hình CORS chuẩn: Cho phép tất cả để test local không bị chặn
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
+CORS(app, resources={r"/api/*": {"origins": "*", "allow_headers": "*"}}, supports_credentials=False)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-123')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///bus_booking.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
