@@ -26,6 +26,23 @@ def create_booking():
     passenger_phone = data.get('passenger_phone')
     pickup_point = data.get('pickup_point', '')
     dropoff_point = data.get('dropoff_point', '')
+    pickup_station_id = data.get('pickup_station_id')
+    dropoff_station_id = data.get('dropoff_station_id')
+
+    if pickup_station_id or dropoff_station_id:
+        from .map_routes import STATIONS_DATA
+        if pickup_station_id:
+            st = next((s for s in STATIONS_DATA if s['id'] == pickup_station_id and s['is_active']), None)
+            if not st:
+                return api_error(message="Điểm đón được chọn không hợp lệ hoặc đã ngừng hoạt động", error_code="INVALID_PICKUP_STATION", status=400)
+            if not pickup_point:
+                pickup_point = f"{st['name']} ({st['address']})"
+        if dropoff_station_id:
+            st = next((s for s in STATIONS_DATA if s['id'] == dropoff_station_id and s['is_active']), None)
+            if not st:
+                return api_error(message="Điểm đến được chọn không hợp lệ hoặc đã ngừng hoạt động", error_code="INVALID_DROPOFF_STATION", status=400)
+            if not dropoff_point:
+                dropoff_point = f"{st['name']} ({st['address']})"
 
     if not all([trip_id, seat_number, passenger_name, passenger_phone]):
         return api_error(message="Vui lòng cung cấp đầy đủ thông tin", error_code="MISSING_DATA", status=400)

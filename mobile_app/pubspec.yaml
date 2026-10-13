@@ -53,6 +53,7 @@ dependencies:
   flutter_ringtone_player: ^4.0.0+4
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
+  image_picker: ^1.2.4
 
 
 dev_dependencies:

@@ -6,11 +6,19 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../services/trip_service.dart';
 import '../../models/trip.dart';
+import '../../models/map_station.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final int tripId;
+  final MapStation? pickupStop;
+  final MapStation? dropoffStop;
 
-  const TripDetailScreen({super.key, required this.tripId});
+  const TripDetailScreen({
+    super.key,
+    required this.tripId,
+    this.pickupStop,
+    this.dropoffStop,
+  });
 
   @override
   State<TripDetailScreen> createState() => _TripDetailScreenState();
@@ -322,7 +330,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ],
                     ),
                     ElevatedButton(
-                      onPressed: () => context.push('/seat_selection', extra: trip),
+                      onPressed: () => context.push('/seat_selection', extra: {
+                        'trip': trip,
+                        'pickup': widget.pickupStop != null ? '${widget.pickupStop!.name} (${widget.pickupStop!.address})' : null,
+                        'dropoff': widget.dropoffStop != null ? '${widget.dropoffStop!.name} (${widget.dropoffStop!.address})' : null,
+                        'pickup_station_id': widget.pickupStop?.id,
+                        'dropoff_station_id': widget.dropoffStop?.id,
+                      }),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0B192C),
                         foregroundColor: Colors.white,

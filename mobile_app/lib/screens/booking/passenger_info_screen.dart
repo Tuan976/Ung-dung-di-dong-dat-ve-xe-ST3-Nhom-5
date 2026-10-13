@@ -8,11 +8,19 @@ import '../../models/trip.dart';
 class PassengerInfoScreen extends StatefulWidget {
   final Trip trip;
   final String seat;
+  final String? initialPickup;
+  final String? initialDropoff;
+  final String? pickupStationId;
+  final String? dropoffStationId;
 
   const PassengerInfoScreen({
     super.key,
     required this.trip,
     required this.seat,
+    this.initialPickup,
+    this.initialDropoff,
+    this.pickupStationId,
+    this.dropoffStationId,
   });
 
   @override
@@ -42,8 +50,24 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
       _nameController.text = user.name;
       _phoneController.text = user.phone;
     }
-    _selectedPickup = _pickups.first;
-    _selectedDropoff = _dropoffs.first;
+
+    if (widget.initialPickup != null && widget.initialPickup!.isNotEmpty) {
+      if (!_pickups.contains(widget.initialPickup)) {
+        _pickups.insert(0, widget.initialPickup!);
+      }
+      _selectedPickup = widget.initialPickup;
+    } else {
+      _selectedPickup = _pickups.first;
+    }
+
+    if (widget.initialDropoff != null && widget.initialDropoff!.isNotEmpty) {
+      if (!_dropoffs.contains(widget.initialDropoff)) {
+        _dropoffs.insert(0, widget.initialDropoff!);
+      }
+      _selectedDropoff = widget.initialDropoff;
+    } else {
+      _selectedDropoff = _dropoffs.first;
+    }
   }
 
   @override
@@ -68,6 +92,8 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
         passengerPhone: _phoneController.text.trim(),
         pickupPoint: _selectedPickup,
         dropoffPoint: _selectedDropoff,
+        pickupStationId: widget.pickupStationId,
+        dropoffStationId: widget.dropoffStationId,
       );
 
       if (!mounted) return;

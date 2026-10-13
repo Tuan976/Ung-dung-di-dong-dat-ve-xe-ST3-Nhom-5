@@ -4,17 +4,22 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../services/trip_service.dart';
 import '../../models/trip.dart';
+import '../../models/map_station.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String from;
   final String to;
   final String date;
+  final MapStation? pickupStop;
+  final MapStation? dropoffStop;
 
   const SearchResultsScreen({
     super.key,
     required this.from,
     required this.to,
     required this.date,
+    this.pickupStop,
+    this.dropoffStop,
   });
 
   @override
@@ -109,6 +114,44 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               ),
             ),
 
+            if (widget.pickupStop != null || widget.dropoffStop != null)
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFFEDD5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.map_outlined, size: 20, color: Color(0xFFFF6B00)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.pickupStop != null)
+                            Text(
+                              'Đón: ${widget.pickupStop!.name}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF9A3412)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          if (widget.dropoffStop != null)
+                            Text(
+                              'Trả: ${widget.dropoffStop!.name}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // List
             Expanded(
               child: FutureBuilder<List<Trip>>(
@@ -194,7 +237,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       final trip = trips[index];
                       final isLowSeat = trip.availableSeats <= 5;
                       return GestureDetector(
-                        onTap: () => context.push('/trip/${trip.id}'),
+                        onTap: () => context.push('/trip/${trip.id}', extra: {
+                          'pickup_stop': widget.pickupStop,
+                          'dropoff_stop': widget.dropoffStop,
+                        }),
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,

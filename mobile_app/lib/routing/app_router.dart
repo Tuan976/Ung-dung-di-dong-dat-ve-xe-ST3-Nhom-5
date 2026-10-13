@@ -18,8 +18,11 @@ import '../screens/booking/passenger_info_screen.dart';
 import '../screens/booking/booking_confirmation_screen.dart';
 import '../screens/payment/payment_screen.dart';
 import '../screens/sos/sos_screen.dart';
+import '../screens/vision/vision_assistant_screen.dart';
+import '../screens/map_booking/map_booking_screen.dart';
 import '../models/trip.dart';
 import '../models/booking.dart';
+import '../models/map_station.dart';
 import '../widgets/global_shake_listener.dart';
 
 class AppRouter {
@@ -35,6 +38,11 @@ class AppRouter {
           ),
           GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
           GoRoute(path: '/sos', builder: (context, state) => const SosScreen()),
+          GoRoute(path: '/vision', builder: (context, state) => const VisionAssistantScreen()),
+          GoRoute(
+            path: '/map_booking',
+            builder: (context, state) => const MapBookingScreen(),
+          ),
           GoRoute(
             path: '/register',
             builder: (context, state) => const RegisterScreen(),
@@ -77,22 +85,56 @@ class AppRouter {
               final from = state.uri.queryParameters['from'] ?? '';
               final to = state.uri.queryParameters['to'] ?? '';
               final date = state.uri.queryParameters['date'] ?? '';
-              return SearchResultsScreen(from: from, to: to, date: date);
+              final extra = state.extra as Map<String, dynamic>?;
+              return SearchResultsScreen(
+                from: from,
+                to: to,
+                date: date,
+                pickupStop: extra?['pickup_stop'] as MapStation?,
+                dropoffStop: extra?['dropoff_stop'] as MapStation?,
+              );
             },
           ),
           GoRoute(
             path: '/trip/:id',
             builder: (context, state) {
               final id = int.parse(state.pathParameters['id']!);
-              return TripDetailScreen(tripId: id);
+              final extra = state.extra as Map<String, dynamic>?;
+              return TripDetailScreen(
+                tripId: id,
+                pickupStop: extra?['pickup_stop'] as MapStation?,
+                dropoffStop: extra?['dropoff_stop'] as MapStation?,
+              );
             },
           ),
           GoRoute(
             path: '/seat_selection',
             builder: (context, state) {
-              final trip = state.extra as Trip?;
+              Trip? trip;
+              String? initialPickup;
+              String? initialDropoff;
+              String? pickupStationId;
+              String? dropoffStationId;
+
+              if (state.extra is Trip) {
+                trip = state.extra as Trip;
+              } else if (state.extra is Map<String, dynamic>) {
+                final map = state.extra as Map<String, dynamic>;
+                trip = map['trip'] as Trip?;
+                initialPickup = map['pickup'] as String?;
+                initialDropoff = map['dropoff'] as String?;
+                pickupStationId = map['pickup_station_id'] as String?;
+                dropoffStationId = map['dropoff_station_id'] as String?;
+              }
+
               if (trip == null) return const HomeScreen();
-              return SeatSelectionScreen(initialTrip: trip);
+              return SeatSelectionScreen(
+                initialTrip: trip,
+                initialPickup: initialPickup,
+                initialDropoff: initialDropoff,
+                pickupStationId: pickupStationId,
+                dropoffStationId: dropoffStationId,
+              );
             },
           ),
           GoRoute(
@@ -102,7 +144,18 @@ class AppRouter {
               if (extra == null) return const HomeScreen();
               final trip = extra['trip'] as Trip;
               final seat = extra['seat'] as String;
-              return PassengerInfoScreen(trip: trip, seat: seat);
+              final pickup = extra['pickup'] as String?;
+              final dropoff = extra['dropoff'] as String?;
+              final pickupStationId = extra['pickup_station_id'] as String?;
+              final dropoffStationId = extra['dropoff_station_id'] as String?;
+              return PassengerInfoScreen(
+                trip: trip,
+                seat: seat,
+                initialPickup: pickup,
+                initialDropoff: dropoff,
+                pickupStationId: pickupStationId,
+                dropoffStationId: dropoffStationId,
+              );
             },
           ),
           GoRoute(

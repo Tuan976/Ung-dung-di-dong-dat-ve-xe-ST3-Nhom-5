@@ -7,3 +7,8 @@ instance/*.db
 *.zip
 server_log.txt
 error_log.txt
+firebase-adminsdk.json
+*.apk
+*.exe
+cloudflared*
+ai_vision_service/uploads/

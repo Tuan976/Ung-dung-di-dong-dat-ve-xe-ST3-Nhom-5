@@ -47,6 +47,8 @@ class BookingService {
     required String passengerPhone,
     String? pickupPoint,
     String? dropoffPoint,
+    String? pickupStationId,
+    String? dropoffStationId,
   }) async {
     try {
       final response = await _apiClient.post('/bookings', data: {
@@ -56,6 +58,8 @@ class BookingService {
         'passenger_phone': passengerPhone,
         if (pickupPoint != null) 'pickup_point': pickupPoint,
         if (dropoffPoint != null) 'dropoff_point': dropoffPoint,
+        if (pickupStationId != null) 'pickup_station_id': pickupStationId,
+        if (dropoffStationId != null) 'dropoff_station_id': dropoffStationId,
       });
       if (response.data['success'] == true) {
         return Booking.fromCreateResponse(

@@ -4,12 +4,22 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../services/trip_service.dart';
 import '../../models/trip.dart';
-import '../../core/constants/app_colors.dart';
 
 class SeatSelectionScreen extends StatefulWidget {
   final Trip initialTrip;
+  final String? initialPickup;
+  final String? initialDropoff;
+  final String? pickupStationId;
+  final String? dropoffStationId;
 
-  const SeatSelectionScreen({super.key, required this.initialTrip});
+  const SeatSelectionScreen({
+    super.key,
+    required this.initialTrip,
+    this.initialPickup,
+    this.initialDropoff,
+    this.pickupStationId,
+    this.dropoffStationId,
+  });
 
   @override
   State<SeatSelectionScreen> createState() => _SeatSelectionScreenState();
@@ -168,6 +178,10 @@ class _SeatSelectionScreenState extends State<SeatSelectionScreen> {
                               final result = await context.push('/passenger_info', extra: {
                                 'trip': _trip,
                                 'seat': _selectedSeat,
+                                'pickup': widget.initialPickup,
+                                'dropoff': widget.initialDropoff,
+                                'pickup_station_id': widget.pickupStationId,
+                                'dropoff_station_id': widget.dropoffStationId,
                               });
                               if (result == true) _refreshSeatMap();
                             },
