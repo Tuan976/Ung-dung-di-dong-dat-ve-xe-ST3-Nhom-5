@@ -917,8 +917,10 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c', 'd'],
               userAgentPackageName: 'com.webdatvexe.app',
+              maxZoom: 19,
             ),
             // Tuyến đường xe chạy qua QL13 & QL14: Dual-layer polyline nổi bật
             if (_routePolyline.isNotEmpty)

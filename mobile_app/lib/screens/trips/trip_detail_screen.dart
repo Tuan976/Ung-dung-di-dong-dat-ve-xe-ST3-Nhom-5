@@ -403,8 +403,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.mobile_app',
+          urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'com.webdatvexe.app',
+          maxZoom: 19,
         ),
         PolylineLayer(
           polylines: [
