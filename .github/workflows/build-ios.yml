@@ -1,0 +1,44 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    name: Build Unsigned iOS IPA
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter packages
+        run: |
+          cd mobile_app
+          flutter pub get
+
+      - name: Build iOS Release (Unsigned)
+        run: |
+          cd mobile_app
+          flutter build ios --release --no-codesign
+
+      - name: Package into IPA
+        run: |
+          cd mobile_app/build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r -q WebDatVeXe.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebDatVeXe-iOS-IPA
+          path: mobile_app/build/ios/iphoneos/WebDatVeXe.ipa
+          retention-days: 7
