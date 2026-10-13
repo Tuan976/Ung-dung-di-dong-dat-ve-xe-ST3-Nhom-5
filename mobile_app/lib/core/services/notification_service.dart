@@ -16,9 +16,22 @@ class NotificationService {
     if (kIsWeb || _initialized) return;
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
+    const darwinSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: darwinSettings,
+      macOS: darwinSettings,
+    );
     
-    await _notifications.initialize(settings: initSettings);
+    try {
+      await _notifications.initialize(settings: initSettings);
+    } catch (e) {
+      log("Lỗi khởi tạo local notifications: $e");
+    }
     
     // --- KHỞI TẠO FIREBASE FCM ---
     try {

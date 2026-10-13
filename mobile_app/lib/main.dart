@@ -19,9 +19,25 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('vi_VN', null);
-  await NotificationService().initialize();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  
+  try {
+    await initializeDateFormatting('vi_VN', null);
+  } catch (e) {
+    debugPrint("Init date formatting error: $e");
+  }
+
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint("Init notification service error: $e");
+  }
+
+  try {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint("Firebase background handler error: $e");
+  }
+
   runApp(const MyApp());
 }
 

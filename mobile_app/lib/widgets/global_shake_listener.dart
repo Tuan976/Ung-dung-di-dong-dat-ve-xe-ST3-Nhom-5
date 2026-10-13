@@ -14,20 +14,24 @@ class GlobalShakeListener extends StatefulWidget {
 }
 
 class _GlobalShakeListenerState extends State<GlobalShakeListener> {
-  late ShakeDetector _shakeDetector;
+  ShakeDetector? _shakeDetector;
   bool _isSending = false;
 
   @override
   void initState() {
     super.initState();
-    _shakeDetector = ShakeDetector.autoStart(
-      onPhoneShake: (_) {
-        if (!_isSending) {
-          _sendSos();
-        }
-      },
-      shakeThresholdGravity: 2.7,
-    );
+    try {
+      _shakeDetector = ShakeDetector.autoStart(
+        onPhoneShake: (_) {
+          if (!_isSending) {
+            _sendSos();
+          }
+        },
+        shakeThresholdGravity: 2.7,
+      );
+    } catch (e) {
+      debugPrint("Shake detector initialization error: $e");
+    }
   }
 
   Future<void> _sendSos() async {
@@ -81,7 +85,9 @@ class _GlobalShakeListenerState extends State<GlobalShakeListener> {
 
   @override
   void dispose() {
-    _shakeDetector.stopListening();
+    try {
+      _shakeDetector?.stopListening();
+    } catch (_) {}
     super.dispose();
   }
 
