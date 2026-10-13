@@ -33,8 +33,8 @@ jobs:
         run: |
           cd mobile_app/build/ios/iphoneos
           mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r -q WebDatVeXe.ipa Payload
+          cp -RP Runner.app Payload/
+          zip -r -y -q WebDatVeXe.ipa Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
