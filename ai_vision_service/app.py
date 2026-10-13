@@ -46,6 +46,10 @@ VISION_HOST = os.getenv("VISION_HOST", "127.0.0.1")
 VISION_PORT = int(os.getenv("VISION_PORT", "5050"))
 VISION_DEBUG = os.getenv("VISION_DEBUG", "false").lower() == "true"
 
+LMSTUDIO_BASE_URL = os.getenv("LMSTUDIO_BASE_URL", "http://127.0.0.1:1234")
+LMSTUDIO_MODEL = os.getenv("LMSTUDIO_MODEL", "qwen2.5-coder-1.5b-instruct")
+USE_LMSTUDIO = os.getenv("USE_LMSTUDIO", "true").lower() == "true"
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 VISION_MODEL = os.getenv("VISION_MODEL", "moondream:latest")
 REASONING_MODEL = os.getenv("REASONING_MODEL", "qwen2.5:1.5b")
@@ -231,6 +235,43 @@ def call_ollama(model: str, prompt: str, image_bytes: Optional[bytes] = None, op
         return False, "Không thể kết nối đến Ollama. Vui lòng đảm bảo tiến trình 'ollama serve' đang chạy."
     except Exception as e:
         return False, f"Lỗi không xác định khi gọi Ollama: {str(e)}"
+
+
+def call_lmstudio(prompt: str, model: Optional[str] = None, system_prompt: Optional[str] = None, temperature: float = 0.25, max_tokens: int = 400) -> Tuple[bool, str]:
+    """Generic helper to call LM Studio OpenAI-compatible API."""
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+
+    payload = {
+        "model": model or LMSTUDIO_MODEL,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False
+    }
+
+    try:
+        resp = requests.post(
+            f"{LMSTUDIO_BASE_URL}/v1/chat/completions",
+            json=payload,
+            timeout=REQUEST_TIMEOUT_SECONDS
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            choices = data.get("choices", [])
+            if choices and "message" in choices[0]:
+                content = choices[0]["message"].get("content", "").strip()
+                return True, content
+            return False, "LM Studio không trả về nội dung hợp lệ"
+        return False, f"LM Studio lỗi HTTP {resp.status_code}: {resp.text}"
+    except requests.exceptions.Timeout:
+        return False, f"Hết thời gian chờ LM Studio ({REQUEST_TIMEOUT_SECONDS}s)."
+    except requests.exceptions.ConnectionError:
+        return False, "Không thể kết nối đến LM Studio. Đảm bảo LM Studio Model Server đang bật trên cổng 1234."
+    except Exception as e:
+        return False, f"Lỗi không xác định khi gọi LM Studio: {str(e)}"
 
 
 def remove_accents(input_str: str) -> str:
@@ -664,41 +705,67 @@ Hãy mô tả chi tiết, nhận diện rõ tên địa điểm, Quận/Huyện 
 4. Đánh giá bối cảnh & Lưu ý cho hành khách:
 """
 
-    # Step 2: Execute Reasoning Synthesis (crisp, informative, fast)
-    ok_r, final_text = call_ollama(
-        model=REASONING_MODEL,
-        prompt=synth_prompt,
-        options={
-            "temperature": 0.25,
-            "repeat_penalty": 1.2,
-            "top_p": 0.9,
-            "num_predict": 320
-        }
-    )
+    # Step 2: Execute Reasoning Synthesis (LM Studio on port 1234 or Ollama fallback)
+    ok_r = False
+    final_text = ""
 
-    # Fallback to direct visual_facts if reasoning model fails or is unavailable
+    if USE_LMSTUDIO:
+        ok_r, final_text = call_lmstudio(
+            prompt=synth_prompt,
+            model=LMSTUDIO_MODEL,
+            temperature=0.25,
+            max_tokens=400
+        )
+        if ok_r:
+            logger.info(f"Hoàn tất suy luận lý luận qua LM Studio ({LMSTUDIO_MODEL}) cổng 1234.")
+        else:
+            logger.warning(f"LM Studio không phản hồi ({final_text}), fallback sang Ollama ({REASONING_MODEL}).")
+
     if not ok_r:
-        logger.warning(f"Reasoning model {REASONING_MODEL} không khả dụng, sử dụng visual facts trực tiếp: {final_text}")
+        ok_r, final_text = call_ollama(
+            model=REASONING_MODEL,
+            prompt=synth_prompt,
+            options={
+                "temperature": 0.25,
+                "repeat_penalty": 1.2,
+                "top_p": 0.9,
+                "num_predict": 320
+            }
+        )
+
+    # Fallback to direct visual_facts if both reasoning backends fail
+    if not ok_r:
+        logger.warning(f"Không thể suy luận qua LM Studio/Ollama, sử dụng visual facts trực tiếp: {final_text}")
         final_text = visual_facts
 
     # Step 3: Quality Gate (Detect Repetition)
     if detect_phrase_repetition(final_text):
-        logger.warning("Phát hiện văn bản bị lặp, thực hiện retry với temperature thấp và repeat_penalty tăng cường...")
-        # Auto-retry with stricter penalties
-        _, retry_text = call_ollama(
-            model=REASONING_MODEL,
-            prompt=synth_prompt + "\nLƯU Ý ĐẶC BIỆT: Tuyệt đối không lặp lại bất kỳ từ ngữ nào liên tiếp.",
-            options={
-                "temperature": 0.1,
-                "repeat_penalty": 1.35,
-                "top_p": 0.8,
-                "num_predict": 400
-            }
-        )
-        if not detect_phrase_repetition(retry_text):
-            final_text = retry_text
-        else:
-            return False, "Hệ thống phát hiện kết quả phân tích chưa đạt độ tin cậy do lỗi lặp token. Vui lòng thử lại hoặc chụp góc gần hơn."
+        logger.warning("Phát hiện văn bản bị lặp, thực hiện retry...")
+        retry_prompt = synth_prompt + "\nLƯU Ý ĐẶC BIỆT: Trả lời ngắn gọn, rõ ràng, tuyệt đối không lặp lại bất kỳ từ ngữ nào liên tiếp."
+        if USE_LMSTUDIO:
+            ok_retry, retry_text = call_lmstudio(
+                prompt=retry_prompt,
+                model=LMSTUDIO_MODEL,
+                temperature=0.15,
+                max_tokens=400
+            )
+            if ok_retry and not detect_phrase_repetition(retry_text):
+                final_text = retry_text
+        if detect_phrase_repetition(final_text):
+            _, retry_text = call_ollama(
+                model=REASONING_MODEL,
+                prompt=retry_prompt,
+                options={
+                    "temperature": 0.1,
+                    "repeat_penalty": 1.35,
+                    "top_p": 0.8,
+                    "num_predict": 400
+                }
+            )
+            if not detect_phrase_repetition(retry_text):
+                final_text = retry_text
+            else:
+                return False, "Hệ thống phát hiện kết quả phân tích chưa đạt độ tin cậy do lỗi lặp token. Vui lòng thử lại hoặc chụp góc gần hơn."
 
     # Remove markdown bold/italic asterisks (**) according to user preference
     final_text = final_text.replace("**", "").replace("### ", "").replace("## ", "")
@@ -745,13 +812,36 @@ def health_check():
     except Exception as e:
         ollama_msg = f"Không thể kết nối đến Ollama: {str(e)}"
 
-    is_model_ready = any(VISION_MODEL.split(":")[0] in m for m in available_models)
+    lmstudio_ok = False
+    lmstudio_models = []
+    lmstudio_msg = "Chưa kết nối"
+    try:
+        resp_lm = requests.get(f"{LMSTUDIO_BASE_URL}/v1/models", timeout=3)
+        if resp_lm.status_code == 200:
+            lmstudio_ok = True
+            lmstudio_models = [m.get("id") for m in resp_lm.json().get("data", [])]
+            lmstudio_msg = "LM Studio đang hoạt động bình thường trên cổng 1234"
+    except Exception as e:
+        lmstudio_msg = f"Không thể kết nối LM Studio (cổng 1234): {str(e)}"
 
-    status_code = 200 if (ollama_ok and is_model_ready) else 503
+    is_model_ready = any(VISION_MODEL.split(":")[0] in m for m in available_models)
+    is_healthy = lmstudio_ok or (ollama_ok and is_model_ready)
+    status_code = 200 if is_healthy else 503
+
+    active_reasoner = f"LM Studio ({LMSTUDIO_MODEL})" if lmstudio_ok else f"Ollama ({REASONING_MODEL})"
+
     return jsonify({
         "status": "healthy" if status_code == 200 else "degraded",
         "service": "AI Vision Service - Đặt vé xe khách",
         "timestamp": int(time.time()),
+        "active_reasoning_backend": active_reasoner,
+        "lmstudio": {
+            "status": "connected" if lmstudio_ok else "disconnected",
+            "url": LMSTUDIO_BASE_URL,
+            "message": lmstudio_msg,
+            "model": LMSTUDIO_MODEL,
+            "models_loaded": lmstudio_models
+        },
         "ollama": {
             "status": "connected" if ollama_ok else "disconnected",
             "message": ollama_msg,

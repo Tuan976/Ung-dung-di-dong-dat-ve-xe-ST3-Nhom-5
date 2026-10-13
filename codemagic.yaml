@@ -1,0 +1,44 @@
+workflows:
+  ios-workflow:
+    name: Build iOS IPA (Unsigned)
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    scripts:
+      - name: Set up Flutter dependencies
+        script: |
+          cd mobile_app
+          flutter packages pub get
+      - name: Install CocoaPods dependencies
+        script: |
+          cd mobile_app/ios
+          pod install
+      - name: Build iOS Release (Unsigned)
+        script: |
+          cd mobile_app
+          flutter build ios --release --no-codesign
+      - name: Package into IPA file
+        script: |
+          cd mobile_app/build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r -q WebDatVeXe.ipa Payload
+    artifacts:
+      - mobile_app/build/ios/iphoneos/*.ipa
+    publishing:
+      email:
+        recipients:
+          - nghethodlt2018@gmail.com
+        notify:
+          success: true
+          failure: true
