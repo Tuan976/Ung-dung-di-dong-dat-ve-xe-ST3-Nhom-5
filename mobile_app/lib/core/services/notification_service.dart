@@ -11,6 +11,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  String? fcmToken;
 
   Future<void> initialize() async {
     if (kIsWeb || _initialized) return;
@@ -43,6 +44,7 @@ class NotificationService {
       
       // Lấy FCM Token để gửi lên Server
       String? token = await messaging.getToken();
+      fcmToken = token;
       log("FCM Token: $token");
       
       // Bắt sự kiện khi app đang mở (Foreground)

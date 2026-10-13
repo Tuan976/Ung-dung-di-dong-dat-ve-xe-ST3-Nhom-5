@@ -65,6 +65,7 @@ class Route(db.Model):
     distance_km = db.Column(db.Float, nullable=True)
     duration_hours = db.Column(db.Float, nullable=True)
     base_price = db.Column(db.Float, nullable=False)
+    routing_mode = db.Column(db.String(30), default='standard') # 'standard', 'map_stops', 'route_map'
     trips = db.relationship('Trip', backref='route', lazy=True)
     stops = db.relationship('RestStop', secondary='route_stops', backref='routes', lazy='subquery')
 
@@ -338,3 +339,121 @@ class Notification(db.Model):
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat() + 'Z' if self.created_at else None
         }
+
+
+class LocationStop(db.Model):
+    __tablename__ = 'location_stops'
+    id = db.Column(db.String(50), primary_key=True) # e.g. 'sg_bxmd_cu', 'dl_bx_lien_tinh'
+    name = db.Column(db.String(150), nullable=False)
+    area = db.Column(db.String(100), nullable=False) # e.g. 'TP. Hồ Chí Minh', 'Đà Lạt', 'Cần Thơ', 'Cư Jút'
+    address = db.Column(db.String(255), nullable=True)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    location_type = db.Column(db.String(50), default='terminal') # 'terminal', 'rest_stop', 'agency'
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'area': self.area,
+            'address': self.address,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'location_type': self.location_type,
+            'is_active': self.is_active
+        }
+
+
+class RouteStop(db.Model):
+    __tablename__ = 'route_stops_map'
+    id = db.Column(db.Integer, primary_key=True)
+    route_code = db.Column(db.String(50), nullable=False) # e.g. 'sg_cj', 'sg_dl', 'sg_ct', 'hn_hp'
+    stop_id = db.Column(db.String(50), db.ForeignKey('location_stops.id'), nullable=False)
+    sequence = db.Column(db.Integer, nullable=False)
+    stop_type = db.Column(db.String(20), default='both') # 'pickup', 'dropoff', 'both'
+    direction = db.Column(db.String(20), default='forward') # 'forward', 'reverse', 'both'
+    pickup_allowed = db.Column(db.Boolean, default=True)
+    dropoff_allowed = db.Column(db.Boolean, default=True)
+
+    stop = db.relationship('LocationStop', backref=db.backref('route_mappings', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'route_code': self.route_code,
+            'stop_id': self.stop_id,
+            'sequence': self.sequence,
+            'stop_type': self.stop_type,
+            'direction': self.direction,
+            'pickup_allowed': self.pickup_allowed,
+            'dropoff_allowed': self.dropoff_allowed,
+            'station': self.stop.to_dict() if self.stop else None
+        }
+
+
+# ======================= SOS NEARBY EMERGENCY ALERT =======================
+class UserLocation(db.Model):
+    """Vi tri gan nhat cua nguoi dung DA DONG Y chia se (1 dong / nguoi dung).
+    Chi duoc cap nhat khi app dang mo va co quyen vi tri; bi xoa khi dang xuat / het han luu tru."""
+    __tablename__ = 'user_location'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    latitude = db.Column(db.Float, nullable=True, index=True)
+    longitude = db.Column(db.Float, nullable=True, index=True)
+    accuracy_meters = db.Column(db.Float, nullable=True)
+    updated_at = db.Column(db.DateTime, nullable=True, index=True)   # lan cuoi co toa do
+    last_seen_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)  # heartbeat
+    permission_status = db.Column(db.String(30), default='unknown')
+    sharing_enabled = db.Column(db.Boolean, default=True)
+    device_id = db.Column(db.String(64), nullable=True)
+
+
+class SOSIncident(db.Model):
+    __tablename__ = 'sos_incident'
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    reporter_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    accuracy_meters = db.Column(db.Float, nullable=True)
+    location_status = db.Column(db.String(20), default='known')  # known | unknown
+    address_text = db.Column(db.String(200), nullable=True)
+    incident_type = db.Column(db.String(30), default='general')
+    status = db.Column(db.String(20), default='active', index=True)  # active|resolved|cancelled|expired
+    idempotency_key = db.Column(db.String(64), nullable=True, index=True)
+    device_id = db.Column(db.String(64), nullable=True, index=True)
+    flags = db.Column(db.String(200), nullable=True)  # vd: distribution_suppressed
+    legacy_sos_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    last_location_update_at = db.Column(db.DateTime, nullable=True)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    resolved_by = db.Column(db.String(20), nullable=True)  # reporter | staff | system
+
+
+class SOSNotification(db.Model):
+    __tablename__ = 'sos_notification'
+    __table_args__ = (db.UniqueConstraint('incident_id', 'recipient_user_id', name='uq_sos_incident_recipient'),)
+    id = db.Column(db.Integer, primary_key=True)
+    incident_id = db.Column(db.Integer, db.ForeignKey('sos_incident.id'), nullable=False, index=True)
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    distance_m = db.Column(db.Float, nullable=True)
+    ring = db.Column(db.Integer, default=1)
+    delivery_status = db.Column(db.String(20), default='queued')  # queued|delivered|acknowledged|responding|declined
+    response = db.Column(db.String(20), nullable=True)  # helping | cannot_help
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    delivered_at = db.Column(db.DateTime, nullable=True)
+    acknowledged_at = db.Column(db.DateTime, nullable=True)
+    responded_at = db.Column(db.DateTime, nullable=True)
+    push_sent_at = db.Column(db.DateTime, nullable=True)
+
+
+class SOSAuditLog(db.Model):
+    __tablename__ = 'sos_audit_log'
+    id = db.Column(db.Integer, primary_key=True)
+    incident_id = db.Column(db.Integer, nullable=True, index=True)
+    user_id = db.Column(db.Integer, nullable=True)
+    action = db.Column(db.String(40), nullable=False)
+    detail = db.Column(db.String(300), nullable=True)
+    ip = db.Column(db.String(64), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

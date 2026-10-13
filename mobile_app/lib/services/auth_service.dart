@@ -2,6 +2,7 @@ import '../core/network/api_client.dart';
 import '../core/storage/secure_storage.dart';
 import '../models/user.dart';
 import 'package:flutter/foundation.dart';
+import 'nearby_alert_service.dart';
 
 class AuthService extends ChangeNotifier {
   final ApiClient _apiClient;
@@ -96,6 +97,10 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    try {
+      // Phải thực hiện khi token còn hiệu lực: xóa vị trí đã lưu + token push phía server
+      await NearbyAlertService.instance.stopSharing(_apiClient);
+    } catch (_) {}
     await _storage.deleteToken();
     _currentUser = null;
     notifyListeners();

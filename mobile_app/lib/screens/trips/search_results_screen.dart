@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../services/trip_service.dart';
+import '../../services/map_booking_service.dart';
+import '../../models/booking_strategy.dart';
 import '../../models/trip.dart';
 import '../../models/map_station.dart';
 
@@ -28,11 +30,13 @@ class SearchResultsScreen extends StatefulWidget {
 
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
   late Future<List<Trip>> _futureTrips;
+  RouteBookingStrategy? _strategy;
 
   @override
   void initState() {
     super.initState();
     _loadTrips();
+    _checkMapStrategy();
   }
 
   void _loadTrips() {
@@ -41,6 +45,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           to: widget.to,
           date: widget.date,
         );
+  }
+
+  Future<void> _checkMapStrategy() async {
+    try {
+      final s = await MapBookingService().getRouteStrategy(from: widget.from, to: widget.to);
+      if (mounted) {
+        setState(() => _strategy = s);
+      }
+    } catch (_) {}
   }
 
   String _formatDate(String date) {
@@ -108,6 +121,38 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           ],
                         ),
                       ),
+                      if (_strategy?.hasMapConfig == true)
+                        InkWell(
+                          onTap: () {
+                            context.push(
+                              '/map_booking?route_id=${_strategy?.routeId ?? ""}&direction=${_strategy?.direction ?? "forward"}&from=${Uri.encodeComponent(widget.from)}&to=${Uri.encodeComponent(widget.to)}&date=${widget.date}&passengers=1',
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFFF6B00)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.map_outlined, size: 14, color: Color(0xFFFF6B00)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Bản đồ tuyến',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFFF6B00),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ],

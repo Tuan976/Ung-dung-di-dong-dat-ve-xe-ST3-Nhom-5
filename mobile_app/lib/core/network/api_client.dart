@@ -21,7 +21,6 @@ class ApiClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           final token = await _secureStorage.getToken();
-          print('DEBUG API_CLIENT: Sending token: $token');
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -56,17 +55,21 @@ class ApiClient {
     );
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters, Map<String, String>? headers}) async {
     try {
-      return await _dio.get(path, queryParameters: queryParameters);
+      return await _dio.get(path,
+          queryParameters: queryParameters,
+          options: headers == null ? null : Options(headers: headers));
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<Response> post(String path, {dynamic data}) async {
+  Future<Response> post(String path, {dynamic data, Map<String, String>? headers}) async {
     try {
-      return await _dio.post(path, data: data);
+      return await _dio.post(path,
+          data: data,
+          options: headers == null ? null : Options(headers: headers));
     } catch (e) {
       rethrow;
     }

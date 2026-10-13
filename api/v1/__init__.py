@@ -10,4 +10,5 @@ from . import payments
 from . import errors
 from . import notifications
 from . import map_routes
+from . import sos
 

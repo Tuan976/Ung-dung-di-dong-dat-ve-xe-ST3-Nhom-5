@@ -22,7 +22,7 @@ def init_database(app):
             "ALTER TABLE trip ADD COLUMN canceled_at DATETIME",
             "ALTER TABLE trip ADD COLUMN canceled_by_id INTEGER REFERENCES staff(id)",
             "ALTER TABLE trip ADD COLUMN price_multiplier REAL DEFAULT 1.0",
-            
+            "ALTER TABLE route ADD COLUMN routing_mode TEXT DEFAULT 'standard'",
             "ALTER TABLE booking ADD COLUMN payment_id VARCHAR(50)",
             "ALTER TABLE booking ADD COLUMN boarding_status TEXT DEFAULT 'NOT_BOARDED'",
             "ALTER TABLE booking ADD COLUMN check_in_time DATETIME",
@@ -55,3 +55,9 @@ def init_database(app):
                         pass
         except Exception:
             pass
+
+if __name__ == '__main__':
+    from app import app
+    import models  # Ensure all models are registered in metadata
+    init_database(app)
+    print("Database initialization and migration completed successfully.")

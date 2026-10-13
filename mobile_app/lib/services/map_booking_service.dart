@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import '../core/config/api_config.dart';
 import '../models/map_station.dart';
+import '../models/booking_strategy.dart';
 
 class MapBookingService {
   final http.Client _client;
@@ -1118,102 +1119,6 @@ class MapBookingService {
     const LatLng(12.59315, 107.89229),
   ];
 
-  /// Lấy danh sách điểm đón và trả khách theo chiều di chuyển
-  Future<Map<String, dynamic>> getRouteStops({
-    String routeId = 'sg_cj',
-    String direction = 'forward', // 'forward' (SG -> CJ) hoặc 'reverse' (CJ -> SG)
-    Position? userPosition,
-  }) async {
-    List<MapStation> pickups = [];
-    List<MapStation> dropoffs = [];
-    List<LatLng> polyline = fallbackPolyline;
-    String departureArea = direction == 'forward' ? 'Sài Gòn' : 'Cư Jút';
-    String destinationArea = direction == 'forward' ? 'Cư Jút' : 'Sài Gòn';
-
-    try {
-      final url = Uri.parse('${ApiConfig.baseUrl}/map-routes/stops?route_id=$routeId&direction=$direction');
-      final res = await _client.get(url).timeout(const Duration(seconds: 4));
-
-      if (res.statusCode == 200) {
-        final body = jsonDecode(utf8.decode(res.bodyBytes));
-        if (body['success'] == true && body['data'] != null) {
-          final data = body['data'];
-          departureArea = data['departure_area'] ?? departureArea;
-          destinationArea = data['destination_area'] ?? destinationArea;
-
-          if (data['pickup_stops'] is List) {
-            pickups = (data['pickup_stops'] as List)
-                .map((j) => MapStation.fromJson(j))
-                .toList();
-          }
-          if (data['dropoff_stops'] is List) {
-            dropoffs = (data['dropoff_stops'] as List)
-                .map((j) => MapStation.fromJson(j))
-                .toList();
-          }
-          if (data['polyline'] is List) {
-            final remotePoints = (data['polyline'] as List)
-                .where((item) => item is List && item.length >= 2)
-                .map((item) => LatLng((item[0] as num).toDouble(), (item[1] as num).toDouble()))
-                .toList();
-            // Chi dung polyline tu API neu co do chi tiet cao (it nhat 100 diem bám theo đường)
-            // Neu khong, luon uu tien fallbackPolyline (745 diem chuan QL13 & QL14)
-            if (remotePoints.length >= 100) {
-              polyline = remotePoints;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('MapBookingService: Dùng dữ liệu xác thực nội bộ do: $e');
-    }
-
-    // Nếu API backend chưa triển khai hoặc rỗng, dùng dữ liệu xác thực nội bộ
-    if (pickups.isEmpty || dropoffs.isEmpty) {
-      for (final s in fallbackStations) {
-        if (s.area == departureArea) {
-          pickups.add(s);
-        } else if (s.area == destinationArea) {
-          dropoffs.add(s);
-        }
-      }
-    }
-
-    // Tính khoảng cách từ GPS người dùng nếu có
-    if (userPosition != null) {
-      for (final s in pickups) {
-        s.distanceFromUser = calculateDistanceInKm(
-          userPosition.latitude,
-          userPosition.longitude,
-          s.latitude,
-          s.longitude,
-        );
-      }
-      for (final s in dropoffs) {
-        s.distanceFromUser = calculateDistanceInKm(
-          userPosition.latitude,
-          userPosition.longitude,
-          s.latitude,
-          s.longitude,
-        );
-      }
-    }
-
-    // Sắp xếp
-    pickups.sort((a, b) => a.sequence.compareTo(b.sequence));
-    dropoffs.sort((a, b) => a.sequence.compareTo(b.sequence));
-
-    return {
-      'departure_area': departureArea,
-      'destination_area': destinationArea,
-      'db_origin': direction == 'forward' ? 'TP. Hồ Chí Minh' : 'Cư Jut',
-      'db_destination': direction == 'forward' ? 'Cư Jut' : 'TP. Hồ Chí Minh',
-      'pickups': pickups,
-      'dropoffs': dropoffs,
-      'polyline': polyline,
-    };
-  }
-
   /// Tính khoảng cách km theo công thức Haversine
   static double calculateDistanceInKm(double lat1, double lon1, double lat2, double lon2) {
     final distanceInMeters = Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
@@ -1229,4 +1134,597 @@ class MapBookingService {
     }
     return '${distanceInKm.toStringAsFixed(1)} km';
   }
+
+  /// Truy vấn chiến lược đặt vé theo tuyến từ backend.
+  /// Phân loại: 'map_stops' (Sài Gòn ↔ Cư Jút) vs 'standard' (tất cả các tuyến khác).
+  Future<BookingStrategy> getRouteStrategy({
+    String? from,
+    String? to,
+    String? routeId,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (from != null && from.isNotEmpty) queryParams['from'] = from;
+      if (to != null && to.isNotEmpty) queryParams['to'] = to;
+      if (routeId != null && routeId.isNotEmpty) queryParams['route_id'] = routeId;
+
+      final uri = Uri.parse('${ApiConfig.baseUrl}/routes/strategy').replace(queryParameters: queryParams);
+      final response = await _client.get(uri).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data['data'] != null) {
+          return BookingStrategy.fromJson(data['data']);
+        }
+      }
+    } catch (e) {
+      debugPrint('MapBookingService: Lỗi kiểm tra route strategy: $e');
+    }
+
+    // Cơ chế fallback khi mất kết nối mạng
+    final f = (from ?? '').toLowerCase().trim();
+    final t = (to ?? '').toLowerCase().trim();
+
+    // 1. Sài Gòn ↔ Cư Jút
+    final isSg = f.contains('hồ chí minh') || f.contains('sài gòn') || f.contains('hcm');
+    final isCj = t.contains('cư jút') || t.contains('cư jut') || t.contains('đắk nông');
+    final isCjRev = f.contains('cư jút') || f.contains('cư jut') || f.contains('đắk nông');
+    final isSgRev = t.contains('hồ chí minh') || t.contains('sài gòn') || t.contains('hcm');
+
+    if (routeId == 'sg_cj' || (isSg && isCj)) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'sg_cj',
+        routeCode: 'SG-CJ',
+        direction: 'forward',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'TP. Hồ Chí Minh',
+        dbDestination: 'Cư Jut',
+        originDisplay: 'Sài Gòn',
+        destinationDisplay: 'Cư Jút',
+        highway: 'Quốc lộ 13 - Quốc lộ 14 (Đường Hồ Chí Minh)',
+        distanceKm: 310.0,
+        estimatedDuration: '7 giờ 30 phút',
+        message: 'Tuyến Sài Gòn ➔ Cư Jút: Kích hoạt bản đồ BusMap.',
+      );
+    } else if (isCjRev && isSgRev) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'sg_cj',
+        routeCode: 'SG-CJ',
+        direction: 'reverse',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'Cư Jut',
+        dbDestination: 'TP. Hồ Chí Minh',
+        originDisplay: 'Cư Jút',
+        destinationDisplay: 'Sài Gòn',
+        highway: 'Quốc lộ 13 - Quốc lộ 14 (Đường Hồ Chí Minh)',
+        distanceKm: 310.0,
+        estimatedDuration: '7 giờ 30 phút',
+        message: 'Tuyến Cư Jút ➔ Sài Gòn: Kích hoạt bản đồ BusMap (chiều ngược lại).',
+      );
+    }
+
+    // 2. TP. Hồ Chí Minh ↔ Đà Lạt
+    final isDl = t.contains('đà lạt') || t.contains('da lat');
+    final isDlRev = f.contains('đà lạt') || f.contains('da lat');
+    if (routeId == 'sg_dl' || (isSg && isDl)) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'sg_dl',
+        routeCode: 'SG-DL',
+        direction: 'forward',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'TP. Hồ Chí Minh',
+        dbDestination: 'Đà Lạt',
+        originDisplay: 'TP. Hồ Chí Minh',
+        destinationDisplay: 'Đà Lạt',
+        highway: 'Quốc lộ 20 & Cao tốc Dầu Giây - Liên Khương',
+        distanceKm: 296.6,
+        estimatedDuration: '6 giờ 00 phút',
+        message: 'Tuyến TP. Hồ Chí Minh ➔ Đà Lạt: Kích hoạt bản đồ BusMap.',
+      );
+    } else if (isDlRev && isSgRev) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'sg_dl',
+        routeCode: 'SG-DL',
+        direction: 'reverse',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'Đà Lạt',
+        dbDestination: 'TP. Hồ Chí Minh',
+        originDisplay: 'Đà Lạt',
+        destinationDisplay: 'TP. Hồ Chí Minh',
+        highway: 'Quốc lộ 20 & Cao tốc Dầu Giây - Liên Khương',
+        distanceKm: 296.6,
+        estimatedDuration: '6 giờ 00 phút',
+        message: 'Tuyến Đà Lạt ➔ TP. Hồ Chí Minh: Kích hoạt bản đồ BusMap (chiều ngược lại).',
+      );
+    }
+
+    // 3. TP. Hồ Chí Minh ↔ Cần Thơ
+    final isCt = t.contains('cần thơ') || t.contains('can tho');
+    final isCtRev = f.contains('cần thơ') || f.contains('can tho');
+    if (routeId == 'sg_ct' || (isSg && isCt)) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'sg_ct',
+        routeCode: 'SG-CT',
+        direction: 'forward',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'TP. Hồ Chí Minh',
+        dbDestination: 'Cần Thơ',
+        originDisplay: 'TP. Hồ Chí Minh',
+        destinationDisplay: 'Cần Thơ',
+        highway: 'Cao tốc TP.HCM - Trung Lương - Mỹ Thuận',
+        distanceKm: 177.4,
+        estimatedDuration: '3 giờ 15 phút',
+        message: 'Tuyến TP. Hồ Chí Minh ➔ Cần Thơ: Kích hoạt bản đồ BusMap.',
+      );
+    } else if (isCtRev && isSgRev) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'sg_ct',
+        routeCode: 'SG-CT',
+        direction: 'reverse',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'Cần Thơ',
+        dbDestination: 'TP. Hồ Chí Minh',
+        originDisplay: 'Cần Thơ',
+        destinationDisplay: 'TP. Hồ Chí Minh',
+        highway: 'Cao tốc TP.HCM - Trung Lương - Mỹ Thuận',
+        distanceKm: 177.4,
+        estimatedDuration: '3 giờ 15 phút',
+        message: 'Tuyến Cần Thơ ➔ TP. Hồ Chí Minh: Kích hoạt bản đồ BusMap (chiều ngược lại).',
+      );
+    }
+
+    // 4. Hà Nội ↔ Hải Phòng
+    final isHn = f.contains('hà nội') || f.contains('ha noi');
+    final isHp = t.contains('hải phòng') || t.contains('hai phong');
+    final isHpRev = f.contains('hải phòng') || f.contains('hai phong');
+    final isHnRev = t.contains('hà nội') || t.contains('ha noi');
+    if (routeId == 'hn_hp' || (isHn && isHp)) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'hn_hp',
+        routeCode: 'HN-HP',
+        direction: 'forward',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'Hà Nội',
+        dbDestination: 'Hải Phòng',
+        originDisplay: 'Hà Nội',
+        destinationDisplay: 'Hải Phòng',
+        highway: 'Cao tốc Hà Nội - Hải Phòng (QL5B)',
+        distanceKm: 126.5,
+        estimatedDuration: '1 giờ 45 phút',
+        message: 'Tuyến Hà Nội ➔ Hải Phòng: Kích hoạt bản đồ BusMap.',
+      );
+    } else if (isHpRev && isHnRev) {
+      return const BookingStrategy(
+        mode: BookingMode.mapStops,
+        routeId: 'hn_hp',
+        routeCode: 'HN-HP',
+        direction: 'reverse',
+        hasMapConfig: true,
+        fallbackToStandard: false,
+        dbOrigin: 'Hải Phòng',
+        dbDestination: 'Hà Nội',
+        originDisplay: 'Hải Phòng',
+        destinationDisplay: 'Hà Nội',
+        highway: 'Cao tốc Hà Nội - Hải Phòng (QL5B)',
+        distanceKm: 126.5,
+        estimatedDuration: '1 giờ 45 phút',
+        message: 'Tuyến Hải Phòng ➔ Hà Nội: Kích hoạt bản đồ BusMap (chiều ngược lại).',
+      );
+    }
+
+    // 5. Hà Nội ↔ Đà Nẵng (route_map)
+    final isDn = t.contains('đà nẵng') || t.contains('da nang');
+    final isDnRev = f.contains('đà nẵng') || f.contains('da nang');
+    if (routeId == 'hn_dn' || (isHn && isDn) || (isDnRev && isHnRev)) {
+      return BookingStrategy(
+        mode: BookingMode.custom,
+        routeId: 'hn_dn',
+        routeCode: 'HN-DN',
+        direction: isDn ? 'forward' : 'reverse',
+        hasMapConfig: true,
+        fallbackToStandard: true,
+        dbOrigin: isDn ? 'Hà Nội' : 'Đà Nẵng',
+        dbDestination: isDn ? 'Đà Nẵng' : 'Hà Nội',
+        originDisplay: isDn ? 'Hà Nội' : 'Đà Nẵng',
+        destinationDisplay: isDn ? 'Đà Nẵng' : 'Hà Nội',
+        highway: 'Quốc lộ 1A & Cao tốc Bắc Nam',
+        distanceKm: 765.0,
+        estimatedDuration: '14 giờ 00 phút',
+        message: 'Tuyến Hà Nội ↔ Đà Nẵng: Hỗ trợ xem lộ trình trên bản đồ.',
+      );
+    }
+
+    return BookingStrategy.standard(from: from, to: to);
+  }
+
+  /// Lấy dữ liệu điểm dừng, polyline và cột mốc cho một tuyến xe bất kỳ
+  Future<RouteMapData?> getRouteStops({
+    required String routeId,
+    String direction = 'forward',
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/map-routes/stops').replace(
+        queryParameters: {
+          'route_id': routeId,
+          'direction': direction,
+        },
+      );
+      final response = await _client.get(uri).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data['data'] != null) {
+          return RouteMapData.fromJson(data['data']);
+        }
+      }
+    } catch (e) {
+      debugPrint('MapBookingService: Lỗi tải stops tuyến $routeId: $e');
+    }
+
+    // Fallback thông minh cục bộ
+    return _buildLocalFallbackRouteData(routeId, direction);
+  }
+
+  /// Gọi API Routing Engine tính toán đường đi thực tế và tối ưu hành trình
+  Future<DirectionsResult?> getRouteDirections({
+    required LatLng origin,
+    required LatLng destination,
+    List<LatLng>? waypoints,
+    String optimization = 'transit_route',
+    String? routeId,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/routes/directions');
+      final body = jsonEncode({
+        'origin': {'lat': origin.latitude, 'lng': origin.longitude},
+        'destination': {'lat': destination.latitude, 'lng': destination.longitude},
+        'waypoints': (waypoints ?? []).map((w) => {'lat': w.latitude, 'lng': w.longitude}).toList(),
+        'optimization': optimization,
+        'route_id': routeId,
+      });
+
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data['data'] != null) {
+          return DirectionsResult.fromJson(data['data']);
+        }
+      }
+    } catch (e) {
+      debugPrint('MapBookingService: Lỗi tính directions: $e');
+    }
+    return null;
+  }
+
+  /// Xác thực tính hợp lệ của trạm đón & trạm trả (sequence và khu vực)
+  Future<MapValidationResult> validateSelection({
+    required String pickupId,
+    required String dropoffId,
+    String direction = 'forward',
+    String routeId = 'sg_cj',
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/map-routes/validate-selection');
+      final body = jsonEncode({
+        'pickup_id': pickupId,
+        'dropoff_id': dropoffId,
+        'direction': direction,
+        'route_id': routeId,
+      });
+
+      final response = await _client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      ).timeout(const Duration(seconds: 4));
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (response.statusCode == 200) {
+        return const MapValidationResult(isValid: true, message: 'Hành trình hợp lệ');
+      } else {
+        final errorMsg = data['message'] ?? 'Lựa chọn trạm chưa hợp lệ';
+        final errCode = data['error']?['code'] ?? 'INVALID_SELECTION';
+        return MapValidationResult(isValid: false, message: errorMsg, errorCode: errCode);
+      }
+    } catch (e) {
+      debugPrint('MapBookingService: Lỗi validate trạm: $e');
+      return const MapValidationResult(isValid: true, message: 'Xác thực ngoại tuyến');
+    }
+  }
+
+  /// Dữ liệu trạm dự phòng cho trường hợp không có mạng
+  RouteMapData _buildLocalFallbackRouteData(String routeId, String direction) {
+    final cleanRoute = routeId.toLowerCase().trim();
+    final all = fallbackStations;
+
+    if (cleanRoute == 'sg_dl') {
+      return RouteMapData(
+        routeId: 'sg_dl',
+        routeName: 'TP. Hồ Chí Minh ↔ Đà Lạt',
+        direction: direction,
+        departureArea: direction == 'forward' ? 'TP. Hồ Chí Minh' : 'Đà Lạt',
+        destinationArea: direction == 'forward' ? 'Đà Lạt' : 'TP. Hồ Chí Minh',
+        dbOrigin: direction == 'forward' ? 'TP. Hồ Chí Minh' : 'Đà Lạt',
+        dbDestination: direction == 'forward' ? 'Đà Lạt' : 'TP. Hồ Chí Minh',
+        pickupStops: direction == 'forward' ? _localDlPickups : _localDlDropoffs,
+        dropoffStops: direction == 'forward' ? _localDlDropoffs : _localDlPickups,
+        restStops: _localDlRests,
+        polyline: _localDlPolyline,
+        corridorMilestones: _localDlMilestones,
+        highway: 'Quốc lộ 20 & Cao tốc Dầu Giây - Liên Khương',
+        distanceKm: 296.6,
+        estimatedDuration: '6 giờ 00 phút',
+      );
+    }
+
+    // Mặc định Sài Gòn ↔ Cư Jút
+    final isRev = direction == 'reverse';
+    return RouteMapData(
+      routeId: 'sg_cj',
+      routeName: 'Sài Gòn ↔ Cư Jút',
+      direction: direction,
+      departureArea: isRev ? 'Cư Jút' : 'Sài Gòn',
+      destinationArea: isRev ? 'Sài Gòn' : 'Cư Jút',
+      dbOrigin: isRev ? 'Cư Jut' : 'TP. Hồ Chí Minh',
+      dbDestination: isRev ? 'TP. Hồ Chí Minh' : 'Cư Jut',
+      pickupStops: isRev ? all.where((s) => s.area == 'Cư Jút').toList() : all.where((s) => s.area == 'Sài Gòn').toList(),
+      dropoffStops: isRev ? all.where((s) => s.area == 'Sài Gòn').toList() : all.where((s) => s.area == 'Cư Jút').toList(),
+      restStops: [],
+      polyline: fallbackPolyline,
+      corridorMilestones: [
+        {'title': 'Bến xe Miền Đông (Cũ)', 'tag': 'QL13', 'lat': 10.8145, 'lng': 106.7123},
+        {'title': 'Ngã tư Bình Phước', 'tag': 'QL13', 'lat': 10.8652, 'lng': 106.7242},
+        {'title': 'TP. Gia Nghĩa', 'tag': 'QL14', 'lat': 12.0038, 'lng': 107.6902},
+        {'title': 'Bến xe Cư Jút', 'tag': 'Đích đến', 'lat': 12.5932, 'lng': 107.8924},
+      ],
+      highway: 'Quốc lộ 13 - Quốc lộ 14 (Đường Hồ Chí Minh)',
+      distanceKm: 310.0,
+      estimatedDuration: '7 giờ 30 phút',
+    );
+  }
+
+  static final List<MapStation> _localDlPickups = [
+    MapStation(
+      id: 'sg_bxmd_moi',
+      routeId: 'sg_dl',
+      area: 'TP. Hồ Chí Minh',
+      name: 'Bến xe Miền Đông Mới',
+      address: '501 Hoàng Hữu Nam, P. Long Bình, TP. Thủ Đức, TP.HCM',
+      latitude: 10.8753,
+      longitude: 106.8152,
+      stopType: 'both',
+      sequence: 1,
+      isActive: true,
+      description: 'Bến xe hiện đại nhất TP.HCM, xuất phát đi cao tốc Dầu Giây.',
+    ),
+    MapStation(
+      id: 'sg_bxmd_cu_dl',
+      routeId: 'sg_dl',
+      area: 'TP. Hồ Chí Minh',
+      name: 'Bến xe Miền Đông (Cũ)',
+      address: '292 Đinh Bộ Lĩnh, P. 26, Q. Bình Thạnh, TP.HCM',
+      latitude: 10.8145,
+      longitude: 106.7123,
+      stopType: 'both',
+      sequence: 2,
+      isActive: true,
+      description: 'Quầy vé Đà Lạt trung tâm Bình Thạnh, có xe trung chuyển.',
+    ),
+  ];
+
+  static final List<MapStation> _localDlDropoffs = [
+    MapStation(
+      id: 'dl_bx_lien_tinh',
+      routeId: 'sg_dl',
+      area: 'Đà Lạt',
+      name: 'Bến xe Liên Tỉnh Đà Lạt',
+      address: 'Số 01 Tô Hiến Thành, Phường 3, TP. Đà Lạt',
+      latitude: 11.9285,
+      longitude: 108.4447,
+      stopType: 'both',
+      sequence: 8,
+      isActive: true,
+      description: 'Bến xe liên tỉnh trung tâm Đà Lạt ngay đầu đèo Prenn.',
+    ),
+    MapStation(
+      id: 'dl_vp_bui_thi_xuan',
+      routeId: 'sg_dl',
+      area: 'Đà Lạt',
+      name: 'Văn phòng Bùi Thị Xuân Đà Lạt',
+      address: '12 Bùi Thị Xuân, Phường 2, TP. Đà Lạt',
+      latitude: 11.9442,
+      longitude: 108.4385,
+      stopType: 'both',
+      sequence: 9,
+      isActive: true,
+      description: 'Văn phòng trung tâm phố hoa, cách Hồ Xuân Hương 200m.',
+    ),
+  ];
+
+  static final List<MapStation> _localDlRests = [
+    MapStation(
+      id: 'dl_td_madagui',
+      routeId: 'sg_dl',
+      area: 'Lâm Đồng',
+      name: 'Trạm dừng Madagui (Km 152 QL20)',
+      address: 'Km 152 Quốc lộ 20, Huyện Đạ Huoai, Lâm Đồng',
+      latitude: 11.4121,
+      longitude: 107.5678,
+      stopType: 'both',
+      sequence: 5,
+      isActive: true,
+      description: 'Trạm nghỉ chân lớn chân đèo Bảo Lộc.',
+    ),
+  ];
+
+  static final List<LatLng> _localDlPolyline = [
+    const LatLng(10.81454, 106.71232),
+    const LatLng(10.87530, 106.81520),
+    const LatLng(10.95760, 107.13520),
+    const LatLng(11.41210, 107.56780),
+    const LatLng(11.54580, 107.80890),
+    const LatLng(11.75840, 108.41120),
+    const LatLng(11.92850, 108.44470),
+  ];
+
+  static final List<Map<String, dynamic>> _localDlMilestones = [
+    {'title': 'Bến xe Miền Đông mới', 'tag': 'TP.HCM', 'lat': 10.8753, 'lng': 106.8152},
+    {'title': 'Ngã 3 Dầu Giây', 'tag': 'Đồng Nai (QL20)', 'lat': 10.9576, 'lng': 107.1352},
+    {'title': 'Trạm dừng Madagui', 'tag': 'Đèo Chuối', 'lat': 11.4121, 'lng': 107.5678},
+    {'title': 'TP. Bảo Lộc', 'tag': 'Đèo Bảo Lộc', 'lat': 11.5458, 'lng': 107.8089},
+    {'title': 'Bến xe Liên tỉnh Đà Lạt', 'tag': 'Đích đến', 'lat': 11.9285, 'lng': 108.4447},
+  ];
 }
+
+class RouteMapData {
+  final String routeId;
+  final String routeName;
+  final String direction;
+  final String departureArea;
+  final String destinationArea;
+  final String dbOrigin;
+  final String dbDestination;
+  final List<MapStation> pickupStops;
+  final List<MapStation> dropoffStops;
+  final List<MapStation> restStops;
+  final List<LatLng> polyline;
+  final List<Map<String, dynamic>> corridorMilestones;
+  final String? highway;
+  final double distanceKm;
+  final String estimatedDuration;
+
+  const RouteMapData({
+    required this.routeId,
+    required this.routeName,
+    required this.direction,
+    required this.departureArea,
+    required this.destinationArea,
+    required this.dbOrigin,
+    required this.dbDestination,
+    required this.pickupStops,
+    required this.dropoffStops,
+    required this.restStops,
+    required this.polyline,
+    required this.corridorMilestones,
+    this.highway,
+    required this.distanceKm,
+    required this.estimatedDuration,
+  });
+
+  factory RouteMapData.fromJson(Map<String, dynamic> json) {
+    final pickups = (json['pickup_stops'] as List? ?? [])
+        .map((e) => MapStation.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final dropoffs = (json['dropoff_stops'] as List? ?? [])
+        .map((e) => MapStation.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final rests = (json['rest_stops'] as List? ?? [])
+        .map((e) => MapStation.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    final rawPoly = json['polyline'] as List? ?? [];
+    final polyline = rawPoly.map((p) {
+      if (p is List && p.length >= 2) {
+        return LatLng((p[0] as num).toDouble(), (p[1] as num).toDouble());
+      }
+      return const LatLng(0, 0);
+    }).where((p) => p.latitude != 0 && p.longitude != 0).toList();
+
+    final milestones = (json['corridor_milestones'] as List? ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+
+    return RouteMapData(
+      routeId: json['route_id']?.toString() ?? '',
+      routeName: json['route_name']?.toString() ?? '',
+      direction: json['direction']?.toString() ?? 'forward',
+      departureArea: json['departure_area']?.toString() ?? '',
+      destinationArea: json['destination_area']?.toString() ?? '',
+      dbOrigin: json['db_origin']?.toString() ?? '',
+      dbDestination: json['db_destination']?.toString() ?? '',
+      pickupStops: pickups,
+      dropoffStops: dropoffs,
+      restStops: rests,
+      polyline: polyline,
+      corridorMilestones: milestones,
+      highway: json['highway']?.toString(),
+      distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0.0,
+      estimatedDuration: json['estimated_duration']?.toString() ?? '',
+    );
+  }
+}
+
+class DirectionsResult {
+  final List<LatLng> polyline;
+  final double distanceKm;
+  final int durationMinutes;
+  final String durationText;
+  final String optimization;
+  final String optimizationName;
+  final String? highway;
+  final String source;
+
+  const DirectionsResult({
+    required this.polyline,
+    required this.distanceKm,
+    required this.durationMinutes,
+    required this.durationText,
+    required this.optimization,
+    required this.optimizationName,
+    this.highway,
+    required this.source,
+  });
+
+  factory DirectionsResult.fromJson(Map<String, dynamic> json) {
+    final rawPoly = json['polyline'] as List? ?? [];
+    final polyline = rawPoly.map((p) {
+      if (p is List && p.length >= 2) {
+        return LatLng((p[0] as num).toDouble(), (p[1] as num).toDouble());
+      }
+      return const LatLng(0, 0);
+    }).where((p) => p.latitude != 0 && p.longitude != 0).toList();
+
+    return DirectionsResult(
+      polyline: polyline,
+      distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0.0,
+      durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 0,
+      durationText: json['duration_text']?.toString() ?? '',
+      optimization: json['optimization']?.toString() ?? 'transit_route',
+      optimizationName: json['optimization_name']?.toString() ?? '',
+      highway: json['highway']?.toString(),
+      source: json['source']?.toString() ?? 'OpenStreetMap OSRM',
+    );
+  }
+}
+
+class MapValidationResult {
+  final bool isValid;
+  final String? message;
+  final String? errorCode;
+
+  const MapValidationResult({
+    required this.isValid,
+    this.message,
+    this.errorCode,
+  });
+}
+

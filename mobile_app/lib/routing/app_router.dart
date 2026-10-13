@@ -37,11 +37,31 @@ class AppRouter {
             builder: (context, state) => const SplashScreen(),
           ),
           GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-          GoRoute(path: '/sos', builder: (context, state) => const SosScreen()),
+          GoRoute(
+            path: '/sos',
+            builder: (context, state) => SosScreen(autoStart: state.uri.queryParameters['auto'] == '1'),
+          ),
           GoRoute(path: '/vision', builder: (context, state) => const VisionAssistantScreen()),
           GoRoute(
             path: '/map_booking',
-            builder: (context, state) => const MapBookingScreen(),
+            builder: (context, state) {
+              final routeId = state.uri.queryParameters['route_id'];
+              final direction = state.uri.queryParameters['direction'];
+              final from = state.uri.queryParameters['from'];
+              final to = state.uri.queryParameters['to'];
+              final date = state.uri.queryParameters['date'];
+              final passengers = int.tryParse(state.uri.queryParameters['passengers'] ?? '1');
+              final caller = state.uri.queryParameters['caller'];
+              return MapBookingScreen(
+                routeId: routeId,
+                initialDirection: direction,
+                initialFrom: from,
+                initialTo: to,
+                initialDate: date,
+                initialPassengerCount: passengers,
+                caller: caller,
+              );
+            },
           ),
           GoRoute(
             path: '/register',
@@ -82,10 +102,15 @@ class AppRouter {
           GoRoute(
             path: '/search_results',
             builder: (context, state) {
-              final from = state.uri.queryParameters['from'] ?? '';
-              final to = state.uri.queryParameters['to'] ?? '';
-              final date = state.uri.queryParameters['date'] ?? '';
               final extra = state.extra as Map<String, dynamic>?;
+              final qFrom = state.uri.queryParameters['from'];
+              final qTo = state.uri.queryParameters['to'];
+              final qDate = state.uri.queryParameters['date'];
+
+              final from = (qFrom != null && qFrom.isNotEmpty) ? qFrom : (extra?['from'] as String? ?? '');
+              final to = (qTo != null && qTo.isNotEmpty) ? qTo : (extra?['to'] as String? ?? '');
+              final date = (qDate != null && qDate.isNotEmpty) ? qDate : (extra?['date'] as String? ?? '');
+
               return SearchResultsScreen(
                 from: from,
                 to: to,

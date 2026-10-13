@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shake/shake.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
-import '../services/sos_service.dart';
-import '../core/network/api_client.dart';
+import 'sos_alert_host.dart';
 
+/// Lắc điện thoại mở màn hình SOS với bước xác nhận có đếm ngược 5 giây (tránh gửi nhầm khi vô tình lắc).
+/// Đồng thời bao toàn bộ app bằng [SosAlertHost] để hiện cảnh báo SOS ở gần trên mọi màn hình.
 class GlobalShakeListener extends StatefulWidget {
   final Widget child;
 
@@ -15,18 +16,14 @@ class GlobalShakeListener extends StatefulWidget {
 
 class _GlobalShakeListenerState extends State<GlobalShakeListener> {
   ShakeDetector? _shakeDetector;
-  bool _isSending = false;
+  DateTime _lastShake = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
     super.initState();
     try {
       _shakeDetector = ShakeDetector.autoStart(
-        onPhoneShake: (_) {
-          if (!_isSending) {
-            _sendSos();
-          }
-        },
+        onPhoneShake: (_) => _onShake(),
         shakeThresholdGravity: 2.7,
       );
     } catch (e) {
@@ -34,53 +31,15 @@ class _GlobalShakeListenerState extends State<GlobalShakeListener> {
     }
   }
 
-  Future<void> _sendSos() async {
-    setState(() => _isSending = true);
-    
-    try {
-      final sosService = SosService(ApiClient());
-      await sosService.sendSosSignal();
-      
-      if (!mounted) return;
-      FlutterRingtonePlayer().playAlarm(looping: true);
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
-          content: const Text(
-            'Tín hiệu SOS và định vị GPS của bạn đã được gửi thành công!\n\nHãy cố gắng giữ bình tĩnh và ở yên vị trí an toàn. Cơ quan chức năng và nhà xe đang trên đường đến hỗ trợ bạn.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, height: 1.5),
-          ),
-          actions: [
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  FlutterRingtonePlayer().stop();
-                  Navigator.pop(ctx);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B192C),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text('Đã hiểu', style: TextStyle(color: Colors.white, fontSize: 16)),
-              ),
-            )
-          ],
-        )
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _isSending = false);
-    }
+  void _onShake() {
+    final now = DateTime.now();
+    if (now.difference(_lastShake) < const Duration(seconds: 10)) return;
+    _lastShake = now;
+    if (!mounted) return;
+    final router = GoRouter.of(context);
+    final path = router.routeInformationProvider.value.uri.path;
+    if (path == '/sos' || path == '/splash' || path == '/login' || path == '/register') return;
+    router.push('/sos?auto=1');
   }
 
   @override
@@ -92,7 +51,5 @@ class _GlobalShakeListenerState extends State<GlobalShakeListener> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return widget.child;
-  }
+  Widget build(BuildContext context) => SosAlertHost(child: widget.child);
 }

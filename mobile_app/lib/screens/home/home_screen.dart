@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../services/auth_service.dart';
+import '../../services/map_booking_service.dart';
+import '../../models/booking_strategy.dart';
 import '../../core/config/api_config.dart';
 import '../../widgets/app_nav_bar.dart';
 
@@ -17,16 +19,55 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final MapBookingService _mapBookingService = MapBookingService();
+  bool _isSearching = false;
   String _from = 'Hà Nội';
   String _to = 'Hải Phòng';
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   int _selectedTab = 0;
 
   final List<Map<String, String>> _popularRoutes = [
-    {'from': 'Hà Nội', 'to': 'Hải Phòng', 'price': '180.000đ', 'image': 'assets/images/route_hanoi_haiphong.jpg'},
-    {'from': 'TP. Hồ Chí Minh', 'to': 'Đà Lạt', 'price': '250.000đ', 'image': 'assets/images/route_hcm_dalat.jpg'},
-    {'from': 'Hà Nội', 'to': 'Đà Nẵng', 'price': '350.000đ', 'image': 'assets/images/route_hanoi_danang.jpg'},
-    {'from': 'TP. Hồ Chí Minh', 'to': 'Nha Trang', 'price': '200.000đ', 'image': 'assets/images/route_hcm_nhatrang.jpg'},
+    {
+      'from': 'TP. Hồ Chí Minh',
+      'to': 'Cư Jut',
+      'price': '280.000đ',
+      'image': 'assets/images/route_hcm_cujut.jpg',
+      'badge': 'BUSMAP',
+    },
+    {
+      'from': 'TP. Hồ Chí Minh',
+      'to': 'Đà Lạt',
+      'price': '250.000đ',
+      'image': 'assets/images/route_hcm_dalat.jpg',
+      'badge': 'BUSMAP',
+    },
+    {
+      'from': 'Hà Nội',
+      'to': 'Hải Phòng',
+      'price': '180.000đ',
+      'image': 'assets/images/route_hanoi_haiphong.jpg',
+      'badge': 'BUSMAP',
+    },
+    {
+      'from': 'TP. Hồ Chí Minh',
+      'to': 'Cần Thơ',
+      'price': '165.000đ',
+      'image': 'assets/images/route_hcm_cujut.jpg',
+      'badge': 'BUSMAP',
+    },
+    {
+      'from': 'Hà Nội',
+      'to': 'Đà Nẵng',
+      'price': '350.000đ',
+      'image': 'assets/images/route_hanoi_danang.jpg',
+      'badge': 'LỘ TRÌNH',
+    },
+    {
+      'from': 'TP. Hồ Chí Minh',
+      'to': 'Nha Trang',
+      'price': '200.000đ',
+      'image': 'assets/images/route_hcm_nhatrang.jpg',
+    },
   ];
 
   @override
@@ -70,9 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
           if (city != null) {
             city = city.replaceAll('Thành phố ', '').replaceAll('Tỉnh ', '').trim();
             final availableCities = await _fetchLocations();
-            // Find closest match in available cities
+            final targetCity = city.toLowerCase();
             final match = availableCities.cast<String?>().firstWhere(
-              (c) => c!.toLowerCase().contains(city!.toLowerCase()) || city!.toLowerCase().contains(c.toLowerCase()),
+              (c) => c != null && (c.toLowerCase().contains(targetCity) || targetCity.contains(c.toLowerCase())),
               orElse: () => null,
             );
             if (match != null && mounted) {
@@ -154,9 +195,33 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _searchTrips() {
-    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    context.push('/search_results?from=$_from&to=$_to&date=$dateStr');
+  Future<void> _searchTrips() async {
+    if (_isSearching) return;
+    setState(() => _isSearching = true);
+
+    try {
+      final strategy = await _mapBookingService.getRouteStrategy(from: _from, to: _to);
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+      if (!mounted) return;
+
+      if (strategy.mode == BookingMode.mapStops && strategy.hasMapConfig) {
+        // Tuyến đặc biệt Sài Gòn ↔ Cư Jút: Mở luồng chọn điểm đón/trả trên bản đồ BusMap
+        context.push(
+          '/map_booking?route_id=${strategy.routeId ?? "sg_cj"}&direction=${strategy.direction}&from=$_from&to=$_to&date=$dateStr&passengers=1',
+        );
+      } else {
+        // Luồng tìm chuyến phổ thông cho tất cả các tuyến khác
+        context.push('/search_results?from=$_from&to=$_to&date=$dateStr');
+      }
+    } catch (e) {
+      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      if (mounted) {
+        context.push('/search_results?from=$_from&to=$_to&date=$dateStr');
+      }
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -228,32 +293,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Row(
                             children: [
-                              GestureDetector(
-                                onTap: () => context.push('/map_booking'),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF7ED),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFFD8A8)),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Icon(Icons.map_rounded, color: Color(0xFFFF6B00), size: 18),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Bản đồ trạm',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFEA580C),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                               GestureDetector(
                                 onTap: () => context.push('/vision'),
                                 child: Container(
@@ -473,115 +512,29 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: double.infinity,
                               height: 48,
                               child: ElevatedButton(
-                                onPressed: _searchTrips,
+                                onPressed: _isSearching ? null : _searchTrips,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF0B192C),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                                   elevation: 0,
                                 ),
-                                child: const Text(
-                                  'Tìm chuyến',
-                                  style: TextStyle(fontSize: 15, fontFamily: 'Inter', fontWeight: FontWeight.w600),
-                                ),
+                                child: _isSearching
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      )
+                                    : const Text(
+                                        'Tìm chuyến',
+                                        style: TextStyle(fontSize: 15, fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                                      ),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-
-                    // Map booking feature card: Sài Gòn ↔ Cư Jút
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: InkWell(
-                        onTap: () => context.push('/map_booking'),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF6B00), Color(0xFFEA580C)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x33FF6B00),
-                                blurRadius: 14,
-                                offset: Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 46,
-                                height: 46,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.explore_rounded, color: Colors.white, size: 26),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: const Text(
-                                            'BUSMAP',
-                                            style: TextStyle(
-                                              color: Color(0xFFFF6B00),
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        const Expanded(
-                                          child: Text(
-                                            'Sài Gòn ↔ Cư Jút',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'Chọn trạm đón & trả trên bản đồ tương tác',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
 
                     // Popular routes
                     Padding(
@@ -643,19 +596,63 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: double.infinity,
                                           clipBehavior: Clip.antiAlias,
                                           decoration: const BoxDecoration(),
-                                          child: route['image'] != null
-                                            ? Image.asset(
-                                                route['image']!,
-                                                fit: BoxFit.cover,
-                                                width: double.infinity,
-                                                height: 90,
-                                              )
-                                            : Container(
-                                                color: const Color(0xFFE0F2FE),
-                                                child: Center(
-                                                  child: Icon(Icons.directions_bus, size: 40, color: const Color(0xFF0B192C).withValues(alpha: 0.4)),
-                                                ),
+                                          child: Stack(
+                                            children: [
+                                              Positioned.fill(
+                                                child: route['image'] != null
+                                                    ? Image.asset(
+                                                        route['image']!,
+                                                        fit: BoxFit.cover,
+                                                        width: double.infinity,
+                                                        height: 90,
+                                                        errorBuilder: (_, __, ___) => Container(
+                                                          color: const Color(0xFFE0F2FE),
+                                                          child: Center(
+                                                            child: Icon(Icons.directions_bus,
+                                                                size: 40,
+                                                                color: const Color(0xFF0B192C).withValues(alpha: 0.4)),
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : Container(
+                                                        color: const Color(0xFFE0F2FE),
+                                                        child: Center(
+                                                          child: Icon(Icons.directions_bus,
+                                                              size: 40,
+                                                              color: const Color(0xFF0B192C).withValues(alpha: 0.4)),
+                                                        ),
+                                                      ),
                                               ),
+                                              if (route['badge'] != null)
+                                                Positioned(
+                                                  top: 6,
+                                                  left: 6,
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFFF6B00),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                      boxShadow: const [
+                                                        BoxShadow(
+                                                          color: Colors.black26,
+                                                          blurRadius: 4,
+                                                          offset: Offset(0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Text(
+                                                      route['badge']!,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 9,
+                                                        fontWeight: FontWeight.w900,
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
                                         Padding(
                                           padding: const EdgeInsets.all(10),
@@ -765,6 +762,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String?> _showCityPicker(BuildContext context, String title, String current) async {
     final cities = await _fetchLocations();
+    if (!mounted) return null;
     final searchController = TextEditingController();
     List<String> filtered = List.from(cities);
 

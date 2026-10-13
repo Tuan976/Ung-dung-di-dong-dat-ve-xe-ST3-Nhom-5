@@ -1,0 +1,21 @@
+{
+  "rings": [
+    {"ring": 1, "radius_m": 500, "delay_s": 0},
+    {"ring": 2, "radius_m": 1000, "delay_s": 30},
+    {"ring": 3, "radius_m": 3000, "delay_s": 90}
+  ],
+  "heartbeat_seconds": 10,
+  "presence_ttl_seconds": 35,
+  "location_max_age_seconds": 120,
+  "max_recipient_accuracy_m": 150,
+  "incident_expire_hours": 6,
+  "max_incidents_per_hour_user": 5,
+  "max_incidents_per_hour_device": 8,
+  "min_location_interval_seconds": 2,
+  "location_retention_hours": 24,
+  "inbox_resolved_window_minutes": 10,
+  "max_notified_per_incident": 500,
+  "reverse_geocode_enabled": true,
+  "push_enabled": false,
+  "push_location_max_age_seconds": 600
+}

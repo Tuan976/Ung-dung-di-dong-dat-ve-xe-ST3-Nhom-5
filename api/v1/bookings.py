@@ -210,85 +210,7 @@ def cancel_booking(booking_id):
     return api_success(message="Hủy vé thành công", data={"status": booking.status})
 
 
-@api_v1_bp.route('/sos', methods=['POST'])
-def send_sos():
-    # Lấy user từ token nếu có (không bắt buộc - đây là tính năng khẩn cấp)
-    user = None
-    auth_header = request.headers.get('Authorization', '')
-    if auth_header.startswith('Bearer '):
-        try:
-            import jwt as _jwt, os as _os
-            token = auth_header.split(' ')[1]
-            secret = _os.getenv('JWT_SECRET_KEY', 'local-dev-jwt-secret-key-12345')
-            payload = _jwt.decode(token, secret, algorithms=['HS256'])
-            from models import User
-            user = User.query.get(payload.get('sub'))
-        except Exception:
-            pass
-
-    data = request.json or {}
-    lat = data.get('lat')
-    lng = data.get('lng')
-    msg = data.get('message', 'SOS! Hành khách gặp nguy hiểm.')
-
-    try:
-        new_sos = PassengerSOS(
-            user_id=user.id if user else None,
-            passenger_name=user.name if user else data.get('name', 'Ẩn danh'),
-            passenger_phone=user.phone if user else data.get('phone', 'Không rõ'),
-            latitude=float(lat) if lat is not None else 0.0,
-            longitude=float(lng) if lng is not None else 0.0,
-            message=msg
-        )
-        db.session.add(new_sos)
-        db.session.commit()
-        
-        # --- Gửi cảnh báo FCM cho người ở gần ---
-        try:
-            import math
-            def haversine(lat1, lon1, lat2, lon2):
-                lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
-                dlon = lon2 - lon1 
-                dlat = lat2 - lat1 
-                a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-                return 2 * math.asin(math.sqrt(a)) * 6371
-            
-            from models import User
-            # Tìm những người dùng có fcm_token và có last_lat, last_lng
-            active_users = User.query.filter(User.fcm_token.isnot(None), User.last_lat.isnot(None)).all()
-            nearby_tokens = []
-            
-            sos_lat, sos_lng = new_sos.latitude, new_sos.longitude
-            for u in active_users:
-                if u.id == (user.id if user else None): continue # Không gửi cho chính mình
-                distance = haversine(sos_lat, sos_lng, u.last_lat, u.last_lng)
-                if distance <= 5.0: # Trong vòng 5km
-                    nearby_tokens.append(u.fcm_token)
-            
-            # Nếu có thiết bị ở gần, đẩy FCM
-            if nearby_tokens:
-                try:
-                    from firebase_admin import messaging
-                    message = messaging.MulticastMessage(
-                        notification=messaging.Notification(
-                            title='CẢNH BÁO SOS! 🚨',
-                            body=f'Có hành khách cách bạn {distance:.1f}km đang gặp nguy hiểm.'
-                        ),
-                        tokens=nearby_tokens,
-                    )
-                    messaging.send_multicast(message)
-                except Exception as fcm_err:
-                    print("Lỗi khi gửi FCM:", fcm_err)
-        except Exception as notify_err:
-            print("Lỗi logic gửi thông báo gần đó:", notify_err)
-            
-        return api_success({
-            "message": "Tín hiệu SOS đã được gửi đến nhà xe và cơ quan chức năng! Hãy giữ an toàn, chúng tôi đang tới.", 
-            "received": True
-        })
-    except Exception as e:
-        db.session.rollback()
-        return api_error(message=f"Lỗi lưu SOS: {str(e)}", error_code="SOS_ERROR", status=500)
+# NOTE: POST /sos da duoc chuyen sang api/v1/sos.py (canh bao SOS theo vi tri, bat buoc dang nhap).
 
 @api_v1_bp.route('/update_device_info', methods=['POST'])
 def update_device_info():
@@ -350,6 +272,16 @@ def resolve_sos_alert(sos_id):
         
     alert.status = 'RESOLVED'
     alert.resolved_at = datetime.utcnow()
+    # Dong bo: nhan vien ket thuc -> dong su kien SOS thoi gian thuc lien ket
+    try:
+        from models import SOSIncident
+        inc = SOSIncident.query.filter_by(legacy_sos_id=alert.id, status='active').first()
+        if inc:
+            inc.status = 'resolved'
+            inc.resolved_at = alert.resolved_at
+            inc.resolved_by = 'staff'
+    except Exception:
+        pass
     # In a real app, we'd record the staff ID from token
     db.session.commit()
     

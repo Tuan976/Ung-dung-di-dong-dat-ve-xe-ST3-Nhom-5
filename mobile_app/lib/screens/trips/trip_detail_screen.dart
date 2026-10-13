@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'dart:math' as math;
 import '../../services/trip_service.dart';
+import '../../services/map_booking_service.dart';
+import '../../models/booking_strategy.dart';
 import '../../models/trip.dart';
 import '../../models/map_station.dart';
 
@@ -26,11 +29,64 @@ class TripDetailScreen extends StatefulWidget {
 
 class _TripDetailScreenState extends State<TripDetailScreen> {
   late Future<Trip> _futureTrip;
+  MapStation? _pickupStop;
+  MapStation? _dropoffStop;
+  RouteMapData? _routeMapData;
 
   @override
   void initState() {
     super.initState();
+    _pickupStop = widget.pickupStop;
+    _dropoffStop = widget.dropoffStop;
     _futureTrip = context.read<TripService>().getTripDetails(widget.tripId);
+    _loadRouteMap();
+  }
+
+  Future<void> _loadRouteMap() async {
+    try {
+      final trip = await _futureTrip;
+      final strategy = await MapBookingService().getRouteStrategy(
+        from: trip.departureStation,
+        to: trip.arrivalStation,
+      );
+      if (strategy.hasMapConfig && strategy.routeId != null) {
+        final data = await MapBookingService().getRouteStops(
+          routeId: strategy.routeId!,
+          direction: strategy.direction,
+        );
+        if (mounted && data != null) {
+          setState(() {
+            _routeMapData = data;
+            _pickupStop ??= (data.pickupStops.isNotEmpty ? data.pickupStops.first : null);
+            _dropoffStop ??= (data.dropoffStops.isNotEmpty ? data.dropoffStops.first : null);
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _openFullMapBooking(Trip trip) async {
+    final strategy = await MapBookingService().getRouteStrategy(
+      from: trip.departureStation,
+      to: trip.arrivalStation,
+    );
+    final routeId = strategy.routeId ?? 'sg_cj';
+    final direction = strategy.direction;
+
+    final result = await context.push<Map<String, dynamic>>(
+      '/map_booking?route_id=$routeId&direction=$direction&from=${Uri.encodeComponent(trip.departureStation)}&to=${Uri.encodeComponent(trip.arrivalStation)}&date=${trip.departureDate}&passengers=1&caller=trip_detail',
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        if (result['pickup_stop'] is MapStation) {
+          _pickupStop = result['pickup_stop'] as MapStation;
+        }
+        if (result['dropoff_stop'] is MapStation) {
+          _dropoffStop = result['dropoff_stop'] as MapStation;
+        }
+      });
+    }
   }
 
   @override
@@ -172,14 +228,18 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Real Map (OpenStreetMap via flutter_map)
+                      // Real Map (OpenStreetMap with real road polyline)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: SizedBox(
-                          height: 180,
+                          height: 190,
                           child: _buildMap(trip),
                         ),
                       ),
+                      const SizedBox(height: 16),
+
+                      // Card Chọn điểm đón & trả khách trên bản đồ
+                      _buildMapStopsPickerCard(trip),
                       const SizedBox(height: 16),
 
                       // Itinerary Card
@@ -205,16 +265,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             const SizedBox(height: 16),
                             _buildTimelineStep(
                               time: trip.departureTime,
-                              station: trip.departureStation,
-                              address: 'Bến xe trung tâm, ${trip.departureStation}', // Mock address
+                              station: _pickupStop?.name ?? trip.departureStation,
+                              address: _pickupStop?.address ?? 'Bến xe ${trip.departureStation}',
                               isFirst: true,
                               isLast: false,
                               color: const Color(0xFF0F172A),
                             ),
                             _buildTimelineStep(
-                              time: trip.arrivalTime.isNotEmpty ? trip.arrivalTime : 'Dự kiến 2h',
-                              station: trip.arrivalStation,
-                              address: 'Bến xe trung tâm, ${trip.arrivalStation}', // Mock address
+                              time: trip.arrivalTime.isNotEmpty ? trip.arrivalTime : 'Dự kiến',
+                              station: _dropoffStop?.name ?? trip.arrivalStation,
+                              address: _dropoffStop?.address ?? 'Bến xe ${trip.arrivalStation}',
                               isFirst: false,
                               isLast: true,
                               color: const Color(0xFF10B981),
@@ -332,10 +392,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     ElevatedButton(
                       onPressed: () => context.push('/seat_selection', extra: {
                         'trip': trip,
-                        'pickup': widget.pickupStop != null ? '${widget.pickupStop!.name} (${widget.pickupStop!.address})' : null,
-                        'dropoff': widget.dropoffStop != null ? '${widget.dropoffStop!.name} (${widget.dropoffStop!.address})' : null,
-                        'pickup_station_id': widget.pickupStop?.id,
-                        'dropoff_station_id': widget.dropoffStop?.id,
+                        'pickup': _pickupStop != null ? '${_pickupStop!.name} (${_pickupStop!.address})' : null,
+                        'dropoff': _dropoffStop != null ? '${_dropoffStop!.name} (${_dropoffStop!.address})' : null,
+                        'pickup_station_id': _pickupStop?.id,
+                        'dropoff_station_id': _dropoffStop?.id,
                       }),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0B192C),
@@ -388,58 +448,271 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildMap(Trip trip) {
-    final depCoords = _getCoords(trip.departureStation);
-    final arrCoords = _getCoords(trip.arrivalStation);
+    final depCoords = _pickupStop?.coordinates ?? _getCoords(trip.departureStation);
+    final arrCoords = _dropoffStop?.coordinates ?? _getCoords(trip.arrivalStation);
 
-    final centerLat = (depCoords.latitude + arrCoords.latitude) / 2;
-    final centerLng = (depCoords.longitude + arrCoords.longitude) / 2;
-    final center = LatLng(centerLat, centerLng);
+    // Dùng polyline thực tế từ _routeMapData nếu có, ngược lại dùng tọa độ trạm
+    final polylinePoints = _routeMapData != null && _routeMapData!.polyline.isNotEmpty
+        ? _routeMapData!.polyline
+        : <LatLng>[depCoords, arrCoords];
 
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: center,
-        initialZoom: 6.5,
-        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-      ),
+    double minLat = 90.0, maxLat = -90.0, minLng = 180.0, maxLng = -180.0;
+    for (final p in polylinePoints) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
+    final latDiff = (maxLat - minLat).abs();
+    final lngDiff = (maxLng - minLng).abs();
+    final maxDiff = math.max(latDiff, lngDiff);
+    double zoom = 7.0;
+    if (maxDiff > 8.0) {
+      zoom = 5.5;
+    } else if (maxDiff > 4.0) {
+      zoom = 6.4;
+    } else if (maxDiff > 2.0) {
+      zoom = 7.5;
+    } else if (maxDiff > 1.0) {
+      zoom = 8.5;
+    } else {
+      zoom = 10.0;
+    }
+
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-          userAgentPackageName: 'com.webdatvexe.app',
-          maxZoom: 19,
-        ),
-        PolylineLayer(
-          polylines: [
-            Polyline(
-              points: [depCoords, arrCoords],
-              strokeWidth: 3.0,
-              color: const Color(0xFF00639B),
+        FlutterMap(
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: zoom,
+            minZoom: 4.5,
+            maxZoom: 18.0,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.nhom5.vexemobile',
+              maxZoom: 19,
+            ),
+            if (polylinePoints.length > 2)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: polylinePoints,
+                    strokeWidth: 5.0,
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.35),
+                  ),
+                  Polyline(
+                    points: polylinePoints,
+                    strokeWidth: 3.5,
+                    color: const Color(0xFFFF6B00),
+                  ),
+                ],
+              )
+            else
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: polylinePoints,
+                    strokeWidth: 3.0,
+                    color: const Color(0xFFFF6B00),
+                  ),
+                ],
+              ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: depCoords,
+                  width: 38,
+                  height: 38,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4),
+                      ],
+                    ),
+                    child: const Icon(Icons.directions_bus_rounded, color: Colors.white, size: 18),
+                  ),
+                ),
+                Marker(
+                  point: arrCoords,
+                  width: 38,
+                  height: 38,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B00),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4),
+                      ],
+                    ),
+                    child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: depCoords,
-              width: 36,
-              height: 36,
-              child: Container(
-                decoration: const BoxDecoration(color: Color(0xFF0F172A), shape: BoxShape.circle),
-                child: const Icon(Icons.circle, color: Colors.white, size: 12),
+        Positioned(
+          top: 10,
+          right: 10,
+          child: InkWell(
+            onTap: () => _openFullMapBooking(trip),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.fullscreen_rounded, size: 16, color: Color(0xFFFF6B00)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Xem bản đồ lớn',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                  ),
+                ],
               ),
             ),
-            Marker(
-              point: arrCoords,
-              width: 36,
-              height: 36,
-              child: Container(
-                decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-                child: const Icon(Icons.location_on, color: Colors.white, size: 20),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMapStopsPickerCard(Trip trip) {
+    final hasStops = _pickupStop != null || _dropoffStop != null;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFEDD5)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6B00).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.map_rounded, size: 20, color: Color(0xFFFF6B00)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Điểm đón / trả trên bản đồ',
+                    style: TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _openFullMapBooking(trip),
+                icon: const Icon(Icons.edit_location_alt_rounded, size: 14),
+                label: Text(hasStops ? 'Đổi trạm' : 'Chọn trạm', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6B00),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Điểm đón
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 3),
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2563EB),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Điểm đón khách:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 1),
+                    Text(
+                      _pickupStop != null ? _pickupStop!.name : 'Bến xe ${trip.departureStation} (Mặc định)',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                    ),
+                    if (_pickupStop != null && _pickupStop!.address.isNotEmpty)
+                      Text(_pickupStop!.address, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: SizedBox(
+              height: 12,
+              child: VerticalDivider(width: 1, thickness: 1, color: Color(0xFFCBD5E1)),
+            ),
+          ),
+          // Điểm trả
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 3),
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF6B00),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Điểm trả khách:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 1),
+                    Text(
+                      _dropoffStop != null ? _dropoffStop!.name : 'Bến xe ${trip.arrivalStation} (Mặc định)',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                    ),
+                    if (_dropoffStop != null && _dropoffStop!.address.isNotEmpty)
+                      Text(_dropoffStop!.address, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
