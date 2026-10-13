@@ -917,8 +917,8 @@ class _MapBookingScreenState extends State<MapBookingScreen> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-              subdomains: const ['a', 'b', 'c', 'd'],
+              urlTemplate: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c'],
               userAgentPackageName: 'com.webdatvexe.app',
               maxZoom: 19,
             ),
