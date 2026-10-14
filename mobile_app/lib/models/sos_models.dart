@@ -44,6 +44,8 @@ class SosIncident {
   final SosDelivery delivery;
   final bool duplicate;
 
+  final bool isLegacyBackend;
+
   const SosIncident({
     required this.eventId,
     required this.status,
@@ -60,28 +62,33 @@ class SosIncident {
     this.currentRadiusM = 0,
     this.delivery = const SosDelivery(),
     this.duplicate = false,
+    this.isLegacyBackend = false,
   });
 
   bool get isActive => status == 'active';
   bool get hasLocation => locationStatus == 'known' && latitude != null && longitude != null;
 
-  factory SosIncident.fromJson(Map<String, dynamic> j) => SosIncident(
-        eventId: (j['event_id'] ?? 'sos-${DateTime.now().millisecondsSinceEpoch}') as String,
-        status: (j['status'] ?? 'active') as String,
-        incidentType: (j['incident_type'] ?? 'general') as String,
-        locationStatus: (j['location_status'] ?? (j['latitude'] != null || j['lat'] != null ? 'known' : 'unknown')) as String,
-        latitude: _toDouble(j['latitude'] ?? j['lat']),
-        longitude: _toDouble(j['longitude'] ?? j['lng']),
-        accuracyMeters: _toDouble(j['accuracy_meters'] ?? j['accuracy']),
-        address: j['address'] as String?,
-        createdAt: _parseUtc(j['created_at']) ?? DateTime.now(),
-        lastLocationUpdateAt: _parseUtc(j['last_location_update_at']),
-        resolvedAt: _parseUtc(j['resolved_at']),
-        distributionSuppressed: (j['distribution_suppressed'] ?? false) as bool,
-        currentRadiusM: (_toDouble(j['current_radius_m']) ?? 0),
-        delivery: SosDelivery.fromJson(j['delivery'] as Map<String, dynamic>?),
-        duplicate: (j['duplicate'] ?? false) as bool,
-      );
+  factory SosIncident.fromJson(Map<String, dynamic> j) {
+    final bool isLegacy = j['event_id'] == null;
+    return SosIncident(
+      eventId: (j['event_id'] ?? 'sos-${DateTime.now().millisecondsSinceEpoch}') as String,
+      status: (j['status'] ?? 'active') as String,
+      incidentType: (j['incident_type'] ?? 'general') as String,
+      locationStatus: (j['location_status'] ?? (j['latitude'] != null || j['lat'] != null ? 'known' : 'unknown')) as String,
+      latitude: _toDouble(j['latitude'] ?? j['lat']),
+      longitude: _toDouble(j['longitude'] ?? j['lng']),
+      accuracyMeters: _toDouble(j['accuracy_meters'] ?? j['accuracy']),
+      address: j['address'] as String?,
+      createdAt: _parseUtc(j['created_at']) ?? DateTime.now(),
+      lastLocationUpdateAt: _parseUtc(j['last_location_update_at']),
+      resolvedAt: _parseUtc(j['resolved_at']),
+      distributionSuppressed: (j['distribution_suppressed'] ?? false) as bool,
+      currentRadiusM: (_toDouble(j['current_radius_m']) ?? 0),
+      delivery: SosDelivery.fromJson(j['delivery'] as Map<String, dynamic>?),
+      duplicate: (j['duplicate'] ?? false) as bool,
+      isLegacyBackend: isLegacy,
+    );
+  }
 }
 
 /// Cảnh báo SOS nhìn từ phía người ở gần. Không chứa thông tin cá nhân của người gửi.

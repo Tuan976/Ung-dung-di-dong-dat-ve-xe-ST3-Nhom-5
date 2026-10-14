@@ -12,3 +12,5 @@ firebase-adminsdk.json
 *.exe
 cloudflared*
 ai_vision_service/uploads/
+build_ios_artifacts/
+*.ipa

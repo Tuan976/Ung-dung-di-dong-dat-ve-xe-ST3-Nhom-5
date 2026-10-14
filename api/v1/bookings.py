@@ -12,6 +12,10 @@ from .errors import api_success, api_error
 from .decorators import jwt_required
 
 def generate_ticket_code():
+    for _ in range(10):
+        code = 'HT' + ''.join(random.choices(string.digits, k=8))
+        if not Booking.query.filter_by(ticket_code=code).first():
+            return code
     return 'HT' + ''.join(random.choices(string.digits, k=8))
 
 @api_v1_bp.route('/bookings', methods=['POST'])
@@ -55,12 +59,41 @@ def create_booking():
     if trip.status != 'Scheduled':
         return api_error(message="Chuyến xe không còn khả dụng", error_code="TRIP_UNAVAILABLE", status=400)
 
-    # Check if seat is already booked
-    existing_booking = Booking.query.filter_by(trip_id=trip_id, seat_number=seat_number).filter(
-        Booking.status.in_(['CONFIRMED', 'HOLD'])
+    now = datetime.now()
+
+    # Dọn dẹp các vé HOLD đã hết hạn của chuyến đi này
+    stale_holds = Booking.query.filter(
+        Booking.trip_id == trip_id,
+        Booking.status == 'HOLD',
+        Booking.expires_at.isnot(None),
+        Booking.expires_at <= now
+    ).all()
+    for b in stale_holds:
+        b.seat_number = f"~{b.seat_number}_{b.id}"
+        b.status = 'CANCELLED'
+        b.payment_status = 'Expired'
+        b.expires_at = None
+
+    # Giải phóng các bản ghi CANCELLED để không xung đột UniqueConstraint('trip_id', 'seat_number')
+    cancelled_seats = Booking.query.filter(
+        Booking.trip_id == trip_id,
+        Booking.seat_number == seat_number,
+        Booking.status == 'CANCELLED'
+    ).all()
+    for b in cancelled_seats:
+        b.seat_number = f"~{b.seat_number}_{b.id}"
+
+    # Kiểm tra xem ghế có đang được đặt hoặc giữ chỗ hợp lệ hay không
+    active_booking = Booking.query.filter(
+        Booking.trip_id == trip_id,
+        Booking.seat_number == seat_number,
+        (
+            (Booking.status == 'CONFIRMED') |
+            ((Booking.status == 'HOLD') & ((Booking.expires_at.is_(None)) | (Booking.expires_at > now)))
+        )
     ).first()
 
-    if existing_booking:
+    if active_booking:
         return api_error(message=f"Ghế {seat_number} đã được đặt", error_code="SEAT_TAKEN", status=409)
 
     ticket_price = trip.route.base_price * trip.price_multiplier
@@ -75,7 +108,7 @@ def create_booking():
         pickup_point=pickup_point,
         dropoff_point=dropoff_point,
         status='HOLD',
-        expires_at=datetime.now() + timedelta(minutes=15),
+        expires_at=now + timedelta(minutes=15),
         ticket_price=ticket_price,
         payment_status='Unpaid'
     )
@@ -83,8 +116,10 @@ def create_booking():
     try:
         db.session.add(new_booking)
         db.session.commit()
-    except IntegrityError:
+    except IntegrityError as ie:
         db.session.rollback()
+        import logging
+        logging.exception("Booking IntegrityError: %s", ie)
         return api_error(message="Lỗi khi tạo booking. Vui lòng thử lại.", error_code="DATABASE_ERROR", status=500)
 
     return api_success(

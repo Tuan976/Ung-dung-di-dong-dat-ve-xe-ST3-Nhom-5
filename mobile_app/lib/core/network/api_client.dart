@@ -55,23 +55,37 @@ class ApiClient {
     );
   }
 
+  bool _isTransient(Object e) {
+    if (e is! DioException) return false;
+    return e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout;
+  }
+
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters, Map<String, String>? headers}) async {
+    Future<Response> run() => _dio.get(path,
+        queryParameters: queryParameters,
+        options: headers == null ? null : Options(headers: headers));
     try {
-      return await _dio.get(path,
-          queryParameters: queryParameters,
-          options: headers == null ? null : Options(headers: headers));
+      return await run();
     } catch (e) {
-      rethrow;
+      if (!_isTransient(e)) rethrow;
+      await Future.delayed(const Duration(milliseconds: 800));
+      return await run();
     }
   }
 
   Future<Response> post(String path, {dynamic data, Map<String, String>? headers}) async {
+    Future<Response> run() => _dio.post(path,
+        data: data,
+        options: headers == null ? null : Options(headers: headers));
     try {
-      return await _dio.post(path,
-          data: data,
-          options: headers == null ? null : Options(headers: headers));
+      return await run();
     } catch (e) {
-      rethrow;
+      if (!_isTransient(e)) rethrow;
+      await Future.delayed(const Duration(milliseconds: 800));
+      return await run();
     }
   }
 }

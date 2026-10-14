@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -54,8 +55,10 @@ class SosService {
   // ---------------------------------------------------------------- location
   static Future<LocationFix> locateOnce({bool requestPermission = true, Duration timeout = const Duration(seconds: 8)}) async {
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
-        return const LocationFix(permission: 'serviceDisabled', error: 'Dịch vụ vị trí (GPS) đang tắt');
+      if (!kIsWeb) {
+        if (!await Geolocator.isLocationServiceEnabled()) {
+          return const LocationFix(permission: 'serviceDisabled', error: 'Dịch vụ vị trí (GPS) đang tắt trên thiết bị');
+        }
       }
       var perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied && requestPermission) {
@@ -63,11 +66,54 @@ class SosService {
       }
       final name = _permName(perm);
       if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
-        return LocationFix(permission: name, error: 'Chưa được cấp quyền vị trí');
+        final msg = kIsWeb
+            ? 'Quyền vị trí đang bị chặn trên Chrome. Hãy bấm biểu tượng định vị trên thanh địa chỉ và chọn "Cho phép" (Allow).'
+            : 'Chưa được cấp quyền vị trí. Vui lòng cấp quyền vị trí trong Cài đặt.';
+        return LocationFix(permission: name, error: msg);
       }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: LocationSettings(accuracy: LocationAccuracy.high, timeLimit: timeout),
-      );
+      Position? pos;
+      if (kIsWeb) {
+        // Trên trình duyệt (PC/Laptop): thường không có chip GPS thực tế.
+        // Dùng accuracy low/medium trước để tránh bị trình duyệt treo chờ GPS phần cứng.
+        try {
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings: LocationSettings(accuracy: LocationAccuracy.medium, timeLimit: timeout),
+          );
+        } catch (_) {}
+      } else {
+        // 1) Độ chính xác cao (GPS) trên điện thoại
+        try {
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings: LocationSettings(accuracy: LocationAccuracy.high, timeLimit: timeout),
+          );
+        } catch (_) {}
+      }
+
+      // 2) Độ chính xác thấp (Wi-Fi / mạng di động) - nhanh và hoạt động trong nhà.
+      if (pos == null) {
+        try {
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings: LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: const Duration(seconds: 5),
+            ),
+          );
+        } catch (_) {}
+      }
+      // 3) Vị trí gần nhất đã biết (không hỗ trợ trên web).
+      if (pos == null && !kIsWeb) {
+        try {
+          pos = await Geolocator.getLastKnownPosition();
+        } catch (_) {}
+      }
+      if (pos == null) {
+        return LocationFix(
+          permission: name,
+          error: kIsWeb
+              ? 'Trình duyệt không định vị được (PC không có GPS hoặc bị Windows chặn vị trí). Hãy bấm "Dùng vị trí mẫu" để thử nghiệm.'
+              : 'Không lấy được vị trí GPS. Vui lòng ra nơi thoáng hoặc bật Wi-Fi.',
+        );
+      }
       return LocationFix(
         latitude: pos.latitude,
         longitude: pos.longitude,
@@ -79,7 +125,12 @@ class SosService {
       try {
         perm = await Geolocator.checkPermission();
       } catch (_) {}
-      return LocationFix(permission: perm == null ? 'unknown' : _permName(perm), error: 'Không lấy được vị trí GPS');
+      return LocationFix(
+        permission: perm == null ? 'unknown' : _permName(perm),
+        error: kIsWeb
+            ? 'Trình duyệt chưa cung cấp vị trí. Hãy kiểm tra biểu tượng vị trí trên thanh địa chỉ Chrome.'
+            : 'Không lấy được vị trí GPS: $e',
+      );
     }
   }
 
@@ -102,10 +153,15 @@ class SosService {
   SosException _toException(Object e) {
     if (e is DioException) {
       final data = e.response?.data;
+      final code = e.response?.statusCode;
       if (data is Map && data['message'] is String) {
-        return SosException(data['message'] as String, statusCode: e.response?.statusCode);
+        return SosException(data['message'] as String, statusCode: code);
       }
-      return SosException('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng.', statusCode: e.response?.statusCode);
+      if (code != null && code != 503) {
+        // Máy chủ có phản hồi => mạng vẫn tốt, lỗi nằm ở phía máy chủ / đường dẫn API.
+        return SosException('Máy chủ phản hồi lỗi ($code). Vui lòng thử lại sau.', statusCode: code);
+      }
+      return SosException('Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng.', statusCode: code);
     }
     return SosException(e.toString());
   }

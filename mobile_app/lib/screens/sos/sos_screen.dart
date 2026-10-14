@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -84,13 +85,14 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
   void _startTimers() {
     _pollTimer?.cancel();
     _locTimer?.cancel();
+    if (_incident?.isLegacyBackend == true) return;
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _refresh());
     _locTimer = Timer.periodic(const Duration(seconds: 20), (_) => _updateLocation(silent: true));
   }
 
   Future<void> _refresh() async {
     final inc = _incident;
-    if (inc == null) return;
+    if (inc == null || inc.isLegacyBackend) return;
     try {
       final fresh = await _sos.getIncident(inc.eventId);
       if (!mounted) return;
@@ -128,7 +130,9 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
       if (!mounted) return;
       setState(() {
         _incident = inc;
-        if (!fix.hasFix) {
+        if (inc.isLegacyBackend) {
+          _notice = 'Backend trên host đang chạy bản cũ chưa cập nhật api/v1/sos.py. Tín hiệu SOS cơ bản đã được gửi đến nhà xe, nhưng để xem/cập nhật vị trí GPS cần tải api/v1/sos.py lên host.';
+        } else if (!fix.hasFix) {
           _notice = '${fix.error ?? 'Không lấy được vị trí'}. SOS đã được ghi nhận nhưng CHƯA có vị trí. Hãy nhấn "Cập nhật vị trí" khi có GPS.';
         }
       });
@@ -140,12 +144,18 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
     }
   }
 
-  Future<void> _updateLocation({bool silent = false}) async {
+  Future<void> _updateLocation({bool silent = false, LocationFix? manualFix}) async {
     final inc = _incident;
     if (inc == null || !inc.isActive || _updatingLocation) return;
+    if (inc.isLegacyBackend) {
+      if (!silent && mounted) {
+        setState(() => _notice = 'Backend trên host đang chạy bản cũ (chưa hỗ trợ cập nhật vị trí thời gian thực). Hãy tải api/v1/sos.py lên host.');
+      }
+      return;
+    }
     if (!silent) setState(() => _updatingLocation = true);
     try {
-      final fix = await SosService.locateOnce(requestPermission: !silent);
+      final fix = manualFix ?? await SosService.locateOnce(requestPermission: !silent);
       if (!fix.hasFix) {
         if (!silent && mounted) setState(() => _notice = '${fix.error ?? 'Không lấy được vị trí'}. Vui lòng bật GPS / cấp quyền vị trí.');
         return;
@@ -391,10 +401,32 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
           ],
           const SizedBox(height: 14),
           _card('Vị trí đã ghi nhận', [
-            if (!inc.hasLocation)
+            if (!inc.hasLocation) ...[
               const Text('Chưa xác định được vị trí. Người ở gần CHƯA nhận được cảnh báo cho tới khi có vị trí.',
-                  style: TextStyle(color: _danger, fontWeight: FontWeight.w600))
-            else ...[
+                  style: TextStyle(color: _danger, fontWeight: FontWeight.w600)),
+              if (kIsWeb || kDebugMode) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _updatingLocation ? null : () {
+                    _updateLocation(
+                      manualFix: const LocationFix(
+                        latitude: 10.8142,
+                        longitude: 106.7118,
+                        accuracy: 10.0,
+                        permission: 'granted',
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.pin_drop, size: 18, color: _brand),
+                  label: const Text('Dùng vị trí mẫu để kiểm thử trên Web (TP.HCM)', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF0F172A),
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                ),
+              ],
+            ] else ...[
               Text('${inc.latitude!.toStringAsFixed(5)}, ${inc.longitude!.toStringAsFixed(5)}',
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
               if (inc.accuracyMeters != null) Text('Sai số GPS khoảng ${inc.accuracyMeters!.round()} m', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
