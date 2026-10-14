@@ -9,6 +9,7 @@ import '../../services/auth_service.dart';
 import '../../services/map_booking_service.dart';
 import '../../models/booking_strategy.dart';
 import '../../core/config/api_config.dart';
+import '../../services/nearby_alert_service.dart';
 import '../../widgets/app_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -89,6 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
       try {
         Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
         _guessCityFromLocation(position.latitude, position.longitude);
+        NearbyAlertService.instance.updateCurrentPosition(
+          position.latitude,
+          position.longitude,
+          accuracy: position.accuracy,
+        );
       } catch (e) {
         debugPrint('Lỗi lấy vị trí: $e');
       }

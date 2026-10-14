@@ -180,7 +180,6 @@ def _loc_usable(loc, now, cfg, max_age):
         return False
     if (now - loc.updated_at).total_seconds() > max_age:
         return False
-    # Thiet bi khong bao do chinh xac, hoac sai so qua lon -> KHONG ket luan la o gan
     if loc.accuracy_meters is None or loc.accuracy_meters > cfg["max_recipient_accuracy_m"]:
         return False
     return True

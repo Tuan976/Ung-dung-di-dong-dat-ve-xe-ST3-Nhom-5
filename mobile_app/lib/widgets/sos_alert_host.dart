@@ -55,10 +55,12 @@ class _SosAlertHostState extends State<SosAlertHost> with WidgetsBindingObserver
   void didChangeDependencies() {
     super.didChangeDependencies();
     final auth = Provider.of<AuthService>(context);
-    if (auth.isAuthenticated && !_wasAuthenticated) {
-      _wasAuthenticated = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onLogin());
-    } else if (!auth.isAuthenticated) {
+    if (auth.isAuthenticated) {
+      if (!_wasAuthenticated || !_svc.isRunning) {
+        _wasAuthenticated = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _onLogin());
+      }
+    } else {
       _wasAuthenticated = false;
     }
   }
@@ -66,19 +68,8 @@ class _SosAlertHostState extends State<SosAlertHost> with WidgetsBindingObserver
   Future<void> _onLogin() async {
     if (!mounted) return;
     final api = context.read<ApiClient>();
-    final consent = await NearbyAlertService.readConsent();
-    if (!mounted) return;
-    if (consent == null) {
-      final accepted = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const _ConsentDialog(),
-      );
-      if (!mounted) return;
-      await _svc.setConsent(accepted == true, api);
-    } else if (consent) {
-      await _svc.start(api);
-    }
+    // Luôn khởi động kênh cảnh báo khẩn cấp tức thời bất kể người dùng ở màn hình nào
+    await _svc.start(api);
   }
 
   void _onNewAlert(SosAlert a) {

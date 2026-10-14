@@ -45,6 +45,8 @@ class SosNearbyTests(unittest.TestCase):
         db.create_all()
         cls.client = app.test_client()
         cls.users = {}
+        User.query.filter(User.email.like('%@sos.test')).delete()
+        db.session.commit()
         for name in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
             u = User(name='User ' + name, email=name.lower() + '@sos.test', password='x', phone='09000000' + str(ord(name)))
             db.session.add(u)

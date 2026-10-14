@@ -42,12 +42,27 @@ class NearbyAlertService {
   final Set<String> _seen = {};
 
   bool get hasConsent => _consent;
+  bool get isRunning => _running;
 
-  /// null nếu người dùng chưa quyết định.
-  static Future<bool?> readConsent() async {
+  double? _cachedLat;
+  double? _cachedLng;
+  double? _cachedAccuracy;
+
+  /// Cập nhật vị trí tức thời từ bất kỳ màn hình nào (Home, Map, v.v.) để giữ vị trí luôn tươi mới
+  void updateCurrentPosition(double lat, double lng, {double? accuracy}) {
+    _cachedLat = lat;
+    _cachedLng = lng;
+    _cachedAccuracy = accuracy;
+    if (_running && !_paused) {
+      _schedule(Duration.zero);
+    }
+  }
+
+  /// Mặc định là 'on' (bảo vệ an toàn cộng đồng) trừ khi người dùng chủ động tắt trong cài đặt.
+  static Future<bool> readConsent() async {
     final p = await SharedPreferences.getInstance();
     final v = p.getString(_prefConsent);
-    if (v == null) return null;
+    if (v == null) return true;
     return v == 'on';
   }
 
@@ -66,7 +81,7 @@ class NearbyAlertService {
   Future<void> start(ApiClient api) async {
     _api = api;
     final c = await readConsent();
-    _consent = c == true;
+    _consent = c != false;
     if (!_consent) {
       status.value = NearbyStatus.disabled;
       return;
@@ -75,8 +90,15 @@ class NearbyAlertService {
     _running = true;
     _paused = false;
     _failures = 0;
-    // Xin quyền vị trí đúng một lần, sau khi người dùng đã đồng ý chia sẻ
-    await SosService.locateOnce(requestPermission: true, timeout: const Duration(seconds: 3));
+    // Yêu cầu quyền vị trí khi khởi động service
+    try {
+      final fix = await SosService.locateOnce(requestPermission: true, timeout: const Duration(seconds: 4));
+      if (fix.hasFix) {
+        _cachedLat = fix.latitude;
+        _cachedLng = fix.longitude;
+        _cachedAccuracy = fix.accuracy;
+      }
+    } catch (_) {}
     _schedule(Duration.zero);
   }
 
@@ -113,14 +135,25 @@ class NearbyAlertService {
     if (!_running || _paused || _inFlight || _api == null) return;
     _inFlight = true;
     try {
-      final fix = await SosService.locateOnce(requestPermission: false, timeout: const Duration(seconds: 6));
+      final fix = await SosService.locateOnce(requestPermission: false, timeout: const Duration(seconds: 4));
+      if (fix.hasFix) {
+        _cachedLat = fix.latitude;
+        _cachedLng = fix.longitude;
+        _cachedAccuracy = fix.accuracy;
+      }
+
+      final lat = fix.hasFix ? fix.latitude : _cachedLat;
+      final lng = fix.hasFix ? fix.longitude : _cachedLng;
+      final acc = fix.hasFix ? fix.accuracy : _cachedAccuracy;
+      final perm = fix.hasFix ? fix.permission : (lat != null ? 'whileInUse' : fix.permission);
+
       final body = <String, dynamic>{
-        'permission_status': fix.permission,
+        'permission_status': perm,
         'sharing': true,
         'device_id': await DeviceIdentity.id(),
-        if (fix.hasFix) 'lat': fix.latitude,
-        if (fix.hasFix) 'lng': fix.longitude,
-        if (fix.hasFix && fix.accuracy != null) 'accuracy': fix.accuracy,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+        if (lat != null) 'accuracy': acc ?? 20.0,
       };
       final token = NotificationService().fcmToken;
       if (token != null) body['fcm_token'] = token;
@@ -131,7 +164,7 @@ class NearbyAlertService {
 
       _heartbeatSeconds = ((data['heartbeat_seconds'] as num?)?.toInt() ?? 10).clamp(3, 120);
       _failures = 0;
-      status.value = fix.hasFix ? NearbyStatus.active : NearbyStatus.noLocation;
+      status.value = lat != null ? NearbyStatus.active : NearbyStatus.noLocation;
       _applyAlerts((data['alerts'] as List? ?? const []).map((e) => SosAlert.fromJson(Map<String, dynamic>.from(e as Map))).toList());
     } catch (_) {
       _failures++;
