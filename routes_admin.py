@@ -248,6 +248,10 @@ def register_admin_routes(app):
             'seat': b.seat_number,
             'boarding_status': b.boarding_status,
             'pickup': b.pickup_point,
+            'pickup_lat': getattr(b, 'pickup_lat', None),
+            'pickup_lng': getattr(b, 'pickup_lng', None),
+            'pickup_landmark': getattr(b, 'pickup_landmark', None),
+            'pickup_note': getattr(b, 'pickup_note', None),
             'dropoff': b.dropoff_point,
             'price': b.ticket_price or 0,
             'status': b.status,
@@ -630,19 +634,73 @@ def register_admin_routes(app):
         return jsonify({'message': 'Route created successfully'})
 
     def admin_create_trip():
-        company_id = session.get('company_id')
-        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
-        data = request.json
-        new_trip = Trip(
-            route_id=data['route_id'],
-            bus_id=data['bus_id'],
-            driver_id=data['driver_id'],
-            departure_time=datetime.fromisoformat(data['departure_time']),
-            status='Scheduled'
-        )
-        db.session.add(new_trip)
-        db.session.commit()
-        return jsonify({'message': 'Trip created successfully'})
+        try:
+            company_id = session.get('company_id')
+            if not company_id:
+                return jsonify({'error': 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!'}), 401
+            data = request.json or {}
+            
+            route_id = data.get('route_id')
+            bus_id = data.get('bus_id')
+            driver_id = data.get('driver_id')
+            dep_time_raw = data.get('departure_time')
+
+            if not route_id or not bus_id or not dep_time_raw:
+                return jsonify({'error': 'Vui lòng chọn đầy đủ Tuyến đường, Xe và Thời gian xuất bến!'}), 400
+
+            # Safe integer conversion
+            route_id = int(route_id)
+            bus_id = int(bus_id)
+            driver_id = int(driver_id) if driver_id and str(driver_id).strip() else None
+
+            # Verify route belongs to company
+            route = Route.query.filter_by(id=route_id, company_id=company_id).first()
+            if not route:
+                return jsonify({'error': 'Tuyến đường không hợp lệ hoặc không thuộc nhà xe!'}), 400
+
+            # Safe flexible datetime parsing
+            dep_dt = None
+            if isinstance(dep_time_raw, str):
+                cleaned_time = dep_time_raw.replace('T', ' ').strip()
+                for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d'):
+                    try:
+                        dep_dt = datetime.strptime(cleaned_time, fmt)
+                        break
+                    except ValueError:
+                        pass
+                if not dep_dt:
+                    try:
+                        dep_dt = datetime.fromisoformat(dep_time_raw)
+                    except Exception:
+                        pass
+
+            if not dep_dt:
+                return jsonify({'error': f'Định dạng thời gian không hợp lệ: {dep_time_raw}'}), 400
+
+            # Get driver name if assigned
+            driver_obj = Driver.query.get(driver_id) if driver_id else None
+            driver_name = driver_obj.name if driver_obj else None
+
+            # Calculate arrival_time
+            duration_h = route.duration_hours or 6.0
+            arrival_dt = dep_dt + timedelta(hours=duration_h)
+
+            new_trip = Trip(
+                route_id=route_id,
+                bus_id=bus_id,
+                driver_id=driver_id,
+                driver_name=driver_name,
+                departure_time=dep_dt,
+                arrival_time=arrival_dt,
+                status='Scheduled',
+                price_multiplier=1.0
+            )
+            db.session.add(new_trip)
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Tạo chuyến xe thành công!', 'id': new_trip.id}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': f'Lỗi khi lưu chuyến xe: {str(e)}'}), 500
 
     def admin_create_cargo():
         try:

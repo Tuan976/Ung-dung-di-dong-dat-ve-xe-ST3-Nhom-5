@@ -42,6 +42,8 @@ class VisionService {
     String? routeName,
     String? startPoint,
     String? endPoint,
+    double? latitude,
+    double? longitude,
   }) async {
     return _sendMultipartRequest(
       endpoint: '/v1/vision/analyze',
@@ -53,6 +55,8 @@ class VisionService {
         if (routeName != null && routeName.isNotEmpty) 'route_name': routeName,
         if (startPoint != null && startPoint.isNotEmpty) 'start_point': startPoint,
         if (endPoint != null && endPoint.isNotEmpty) 'end_point': endPoint,
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
       },
     );
   }

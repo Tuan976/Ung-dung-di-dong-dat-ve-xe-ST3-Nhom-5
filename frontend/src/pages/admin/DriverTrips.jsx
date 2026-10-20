@@ -2,33 +2,60 @@ import React, { useState, useEffect } from 'react';
 import { Bus, MapPin, Users, CheckCircle, Navigation, Phone, MessageSquare, AlertTriangle, ChevronRight, LogOut, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PassengerCard = ({ passenger, onCheckIn }) => (
-  <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between group">
-    <div className="flex items-center gap-4">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all ${
-        passenger.boarding_status === 'BOARDED' ? 'bg-green-500 text-white shadow-lg shadow-green-100' : 'bg-slate-100 text-slate-400'
-      }`}>
-        {passenger.seat}
-      </div>
-      <div>
-        <div className="font-bold text-slate-800 text-lg leading-tight">{passenger.name}</div>
-        <div className="flex items-center gap-4 mt-1">
-           <div className="text-sm font-bold text-slate-400 flex items-center gap-1"><Phone size={14} /> {passenger.phone}</div>
-           <div className="text-sm font-bold text-slate-400 flex items-center gap-1 italic"><MapPin size={14} /> {passenger.pickup}</div>
+const PassengerCard = ({ passenger, onCheckIn }) => {
+  const hasGps = passenger.pickup_lat && passenger.pickup_lng;
+  return (
+    <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 group">
+      <div className="flex items-start gap-4">
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shrink-0 transition-all ${
+          passenger.boarding_status === 'BOARDED' ? 'bg-green-500 text-white shadow-lg shadow-green-100' : 'bg-slate-100 text-slate-400'
+        }`}>
+          {passenger.seat}
+        </div>
+        <div>
+          <div className="font-bold text-slate-800 text-lg leading-tight flex items-center gap-2">
+            <span>{passenger.name}</span>
+            {passenger.boarding_status === 'BOARDED' && <CheckCircle size={16} className="text-green-500" />}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
+             <div className="text-sm font-bold text-slate-500 flex items-center gap-1"><Phone size={14} /> {passenger.phone}</div>
+             <div className="text-sm font-bold text-slate-700 flex items-center gap-1"><MapPin size={14} className="text-orange-500" /> {passenger.pickup_landmark || passenger.pickup || 'Điểm đón mặc định'}</div>
+          </div>
+          {passenger.pickup_note && (
+            <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200/60 rounded-lg px-2.5 py-1 mt-1.5 inline-block">
+              <b>Ghi chú:</b> {passenger.pickup_note}
+            </div>
+          )}
+          {hasGps && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                GPS: {passenger.pickup_lat.toFixed(4)}, {passenger.pickup_lng.toFixed(4)}
+              </span>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${passenger.pickup_lat},${passenger.pickup_lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all"
+              >
+                <Navigation size={12} /> Dẫn đường tới khách
+              </a>
+            </div>
+          )}
         </div>
       </div>
+      
+      <button 
+        onClick={() => onCheckIn(passenger.id)}
+        className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all self-end md:self-center ${
+          passenger.boarding_status === 'BOARDED' ? 'bg-green-50 text-green-600' : 'bg-[#EF5222] text-white shadow-lg shadow-orange-100'
+        }`}
+      >
+        {passenger.boarding_status === 'BOARDED' ? 'Đã lên xe' : 'Check-in'}
+      </button>
     </div>
-    
-    <button 
-      onClick={() => onCheckIn(passenger.id)}
-      className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
-        passenger.boarding_status === 'BOARDED' ? 'bg-green-50 text-green-600' : 'bg-[#EF5222] text-white shadow-lg shadow-orange-100'
-      }`}
-    >
-      {passenger.boarding_status === 'BOARDED' ? 'Đã lên xe' : 'Check-in'}
-    </button>
-  </div>
-);
+  );
+};
 
 const DriverTrips = () => {
   const [assignedTrips, setAssignedTrips] = useState([]);

@@ -1,7 +1,10 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import '../../core/config/vision_config.dart';
 import '../../services/vision_service.dart';
 import '../../services/booking_service.dart';
@@ -21,6 +24,7 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
 
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
+  DateTime? _capturedAt;
 
   bool _isLoading = false;
   String _currentMode = 'ticket'; // 'ticket', 'pickup', 'ocr', 'describe'
@@ -33,6 +37,11 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
   String _selectedRouteName = 'TP. Hồ Chí Minh - Đà Lạt';
   String _selectedStartPoint = 'TP. Hồ Chí Minh';
   String _selectedEndPoint = 'Đà Lạt';
+
+  // GPS Device Location State
+  Position? _currentPosition;
+  bool _isLocating = false;
+  String? _gpsStatusText;
 
   final List<Map<String, String>> _presetRoutes = const [
     {
@@ -66,9 +75,83 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
   void initState() {
     super.initState();
     _checkServerHealth();
+    _fetchCurrentLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadActiveBookings();
     });
+  }
+
+  Future<void> _fetchCurrentLocation({bool showFeedback = false}) async {
+    try {
+      setState(() => _isLocating = true);
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (showFeedback && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vui lòng bật dịch vụ định vị GPS trên thiết bị')),
+          );
+        }
+        if (mounted) {
+          setState(() {
+            _isLocating = false;
+            _gpsStatusText = 'Chưa bật GPS';
+          });
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() {
+              _isLocating = false;
+              _gpsStatusText = 'Quyền vị trí bị từ chối';
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() {
+            _isLocating = false;
+            _gpsStatusText = 'Quyền vị trí bị chặn';
+          });
+        }
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentPosition = pos;
+          _isLocating = false;
+          _gpsStatusText = '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+        });
+        if (showFeedback) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Đã cập nhật vị trí thiết bị: $_gpsStatusText')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi GPS: $e');
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+          _gpsStatusText = 'Không định vị được ($e)';
+        });
+      }
+    }
   }
 
   Future<void> _loadActiveBookings() async {
@@ -114,6 +197,80 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
     });
   }
 
+  Future<Uint8List> _stampWatermarkOnBytes(Uint8List rawBytes) async {
+    try {
+      final codec = await ui.instantiateImageCodec(rawBytes);
+      final frame = await codec.getNextFrame();
+      final img = frame.image;
+      final w = img.width.toDouble();
+      final h = img.height.toDouble();
+
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, w, h));
+      canvas.drawImage(img, Offset.zero, Paint());
+
+      // Watermark bar proportional to image height
+      final barHeight = (h * 0.12).clamp(70.0, 180.0);
+      final barRect = Rect.fromLTWH(0, h - barHeight, w, barHeight);
+
+      final bgPaint = Paint()
+        ..shader = ui.Gradient.linear(
+          Offset(0, h - barHeight),
+          Offset(0, h),
+          [
+            const Color(0x00000000),
+            const Color(0xD0000000),
+            const Color(0xF5000000),
+          ],
+        );
+      canvas.drawRect(barRect, bgPaint);
+
+      final timeStr = DateFormat('dd/MM/yyyy HH:mm:ss').format(_capturedAt ?? DateTime.now());
+      final gpsStr = _currentPosition != null
+          ? 'GPS: ${_currentPosition!.latitude.toStringAsFixed(6)}° N, ${_currentPosition!.longitude.toStringAsFixed(6)}° E'
+          : (_isLocating ? 'GPS: Đang khóa tọa độ thiết bị...' : 'GPS: Tọa độ thiết bị hành khách');
+      final routeStr = _selectedRouteName.isNotEmpty
+          ? 'Tuyến xe: $_selectedRouteName'
+          : 'HUTECH BUS • XÁC THỰC VỊ TRÍ ĐÓN';
+
+      final titleFontSize = (barHeight * 0.22).clamp(13.0, 26.0);
+      final subFontSize = (barHeight * 0.18).clamp(11.0, 20.0);
+
+      void drawParagraph(String text, double y, double fontSize, Color color, bool isBold) {
+        final pb = ui.ParagraphBuilder(
+          ui.ParagraphStyle(
+            textAlign: TextAlign.left,
+            fontSize: fontSize,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+          ),
+        )
+          ..pushStyle(ui.TextStyle(
+            color: color,
+            shadows: [
+              const ui.Shadow(color: Colors.black, blurRadius: 4, offset: Offset(1, 1))
+            ],
+          ))
+          ..addText(text);
+        final p = pb.build()..layout(ui.ParagraphConstraints(width: w - 40));
+        canvas.drawParagraph(p, Offset(20, y));
+      }
+
+      drawParagraph('📷 GPS MAP CAMERA • $timeStr', h - barHeight + barHeight * 0.16, titleFontSize, Colors.white, true);
+      drawParagraph('📍 $gpsStr', h - barHeight + barHeight * 0.46, subFontSize, const Color(0xFF38BDF8), false);
+      drawParagraph('🚌 $routeStr', h - barHeight + barHeight * 0.72, subFontSize, const Color(0xFF4ADE80), false);
+
+      final picture = recorder.endRecording();
+      final watermarkedImage = await picture.toImage(img.width, img.height);
+      final byteData = await watermarkedImage.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData != null) {
+        return byteData.buffer.asUint8List();
+      }
+    } catch (e) {
+      debugPrint('Lỗi tạo watermark trên ảnh: $e');
+    }
+    return rawBytes;
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? file = await _picker.pickImage(
@@ -125,12 +282,23 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
       if (file == null) return;
 
       final bytes = await file.readAsBytes();
+      final capturedTime = DateTime.now();
       setState(() {
         _selectedImageBytes = bytes;
         _selectedImageName = file.name;
+        _capturedAt = capturedTime;
         _result = null;
         _errorMessage = null;
       });
+
+      // Fetch location and stamp watermark onto image bytes
+      await _fetchCurrentLocation();
+      final stamped = await _stampWatermarkOnBytes(bytes);
+      if (mounted) {
+        setState(() {
+          _selectedImageBytes = stamped;
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -174,6 +342,8 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
           routeName: _selectedRouteName,
           startPoint: _selectedStartPoint,
           endPoint: _selectedEndPoint,
+          latitude: _currentPosition?.latitude,
+          longitude: _currentPosition?.longitude,
         );
       } else if (_currentMode == 'ocr') {
         res = await _visionService.extractText(
@@ -315,6 +485,129 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
                           _selectedImageBytes!,
                           fit: BoxFit.contain,
                         ),
+                        // GPS & Time Watermark Bar (Timestamp Camera Style)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.65),
+                                  Colors.black.withValues(alpha: 0.92),
+                                ],
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEF5222),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.camera_alt, color: Colors.white, size: 9),
+                                                SizedBox(width: 3),
+                                                Text(
+                                                  'GPS MAP CAMERA',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 8.5,
+                                                    fontWeight: FontWeight.w900,
+                                                    letterSpacing: 0.4,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            DateFormat('dd/MM/yyyy HH:mm:ss').format(_capturedAt ?? DateTime.now()),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on, color: Color(0xFF38BDF8), size: 12),
+                                          const SizedBox(width: 3),
+                                          Expanded(
+                                            child: Text(
+                                              _currentPosition != null
+                                                  ? 'Vĩ độ: ${_currentPosition!.latitude.toStringAsFixed(6)}° N, Kinh độ: ${_currentPosition!.longitude.toStringAsFixed(6)}° E'
+                                                  : (_isLocating ? 'Đang khóa tọa độ thiết bị GPS...' : 'Chờ xác thực GPS...'),
+                                              style: const TextStyle(
+                                                color: Color(0xFFE2E8F0),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (_selectedRouteName.isNotEmpty) ...[
+                                        const SizedBox(height: 1.5),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.directions_bus, color: Color(0xFF4ADE80), size: 12),
+                                            const SizedBox(width: 3),
+                                            Expanded(
+                                              child: Text(
+                                                'Tuyến: $_selectedRouteName',
+                                                style: const TextStyle(
+                                                  color: Color(0xFFF1F5F9),
+                                                  fontSize: 9.5,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24),
+                                  ),
+                                  child: Icon(
+                                    _currentPosition != null ? Icons.my_location : Icons.location_searching,
+                                    color: _currentPosition != null ? const Color(0xFF4ADE80) : const Color(0xFFFBBF24),
+                                    size: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Close button
                         Positioned(
                           top: 8,
                           right: 8,
@@ -937,6 +1230,62 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
               );
             }).toList(),
           ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: _currentPosition != null ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _currentPosition != null ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _currentPosition != null ? Icons.my_location : Icons.location_searching,
+                  size: 18,
+                  color: _currentPosition != null ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _currentPosition != null ? 'Vị trí GPS thực tế thiết bị:' : 'Định vị GPS thiết bị:',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                      ),
+                      Text(
+                        _isLocating
+                            ? 'Đang lấy tọa độ GPS chính xác...'
+                            : (_gpsStatusText ?? 'Chưa xác định tọa độ'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _currentPosition != null ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => _fetchCurrentLocation(showFeedback: true),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: _isLocating
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.refresh, size: 14, color: Color(0xFF334155)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1238,6 +1587,8 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
                                   pickupLocation: pickupVal,
                                   landmarkName: r.matchedLandmark,
                                   note: noteCtrl.text.trim(),
+                                  latitude: _currentPosition?.latitude,
+                                  longitude: _currentPosition?.longitude,
                                 );
                               } else {
                                 final res = await bookingService.notifyPickupPublic(
@@ -1248,6 +1599,8 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
                                   routeName: r.routeName ?? _selectedRouteName,
                                   landmarkName: r.matchedLandmark,
                                   note: noteCtrl.text.trim(),
+                                  latitude: _currentPosition?.latitude,
+                                  longitude: _currentPosition?.longitude,
                                 );
                                 ok = res['success'] == true;
                               }

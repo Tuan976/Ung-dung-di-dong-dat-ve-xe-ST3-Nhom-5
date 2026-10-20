@@ -301,6 +301,20 @@ def notify_pickup_location(booking_id):
     # Cập nhật điểm đón mới vào cơ sở dữ liệu
     formatted_point = f"{pickup_location} [Xác thực AI Vision]"
     booking.pickup_point = formatted_point
+    if latitude is not None:
+        try:
+            booking.pickup_lat = float(latitude)
+        except (ValueError, TypeError):
+            pass
+    if longitude is not None:
+        try:
+            booking.pickup_lng = float(longitude)
+        except (ValueError, TypeError):
+            pass
+    if landmark_name:
+        booking.pickup_landmark = landmark_name
+    if note:
+        booking.pickup_note = note
 
     try:
         db.session.commit()
@@ -377,6 +391,20 @@ def notify_pickup_public():
     if booking:
         formatted_point = f"{pickup_location} [Xác thực AI Vision]"
         booking.pickup_point = formatted_point
+        if latitude is not None:
+            try:
+                booking.pickup_lat = float(latitude)
+            except (ValueError, TypeError):
+                pass
+        if longitude is not None:
+            try:
+                booking.pickup_lng = float(longitude)
+            except (ValueError, TypeError):
+                pass
+        if landmark_name:
+            booking.pickup_landmark = landmark_name
+        if note:
+            booking.pickup_note = note
         try:
             db.session.commit()
         except Exception as e:

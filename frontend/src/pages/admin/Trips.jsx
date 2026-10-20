@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, MapPin, Calendar, Users, Filter, Search, Plus, MoreVertical, Download, Printer, XCircle, FileText, CheckCircle, UserX, Package, RefreshCw, ChevronRight, Clock, AlertTriangle, TrendingUp, ChevronDown, Hash, UserSearch, X } from 'lucide-react';
+import { Bus, MapPin, Calendar, Users, Filter, Search, Plus, MoreVertical, Download, Printer, XCircle, FileText, CheckCircle, UserX, Package, RefreshCw, ChevronRight, Clock, AlertTriangle, TrendingUp, ChevronDown, Hash, UserSearch, X, ExternalLink, Navigation, Compass } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TripDetailsModal = ({ trip, onClose }) => {
   const [passengers, setPassengers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeMapPassenger, setActiveMapPassenger] = useState(null);
 
   useEffect(() => {
     fetch(`/api/admin/trip/${trip.id}/passengers`)
@@ -16,22 +17,34 @@ const TripDetailsModal = ({ trip, onClose }) => {
       });
   }, [trip.id]);
 
+  const gpsPassengers = passengers.filter(p => p.pickup_lat && p.pickup_lng);
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-full max-w-4xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 md:p-6">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        {/* Header */}
         <div className="bg-[#f8f9fa] border-b border-slate-200 px-6 py-4 flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{trip.route}</h2>
-            <div className="flex items-center gap-2 mt-1">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white border px-2 py-0.5 rounded">Mã chuyến #HB-{trip.id}</span>
-               <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">{trip.bus}</span>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">{trip.route}</h2>
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white border px-2 py-0.5 rounded">Mã chuyến #HB-{trip.id}</span>
+              <span className="text-[11px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">{trip.bus}</span>
+            </div>
+            <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500 font-medium">
+              <span>Tổng số: <b>{passengers.length}</b> hành khách</span>
+              <span>•</span>
+              <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                {gpsPassengers.length} hành khách đã gửi định vị GPS
+              </span>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
-            <XCircle size={24} />
+            <XCircle size={26} />
           </button>
         </div>
 
+        {/* Passenger List Body */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
              {isLoading ? (
@@ -44,30 +57,158 @@ const TripDetailsModal = ({ trip, onClose }) => {
                    <Users className="mx-auto text-slate-200 mb-4 opacity-30" size={64} />
                    <div className="text-slate-400 font-bold italic text-lg">Chưa có khách đặt vé cho chuyến này.</div>
                 </div>
-             ) : passengers.map(p => (
-                <div key={p.id} className="p-4 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center gap-4 group">
-                   <div className={`w-10 h-10 rounded border flex items-center justify-center font-black text-sm ${p.boarding_status === 'BOARDED' ? 'bg-green-600 border-green-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                     {p.seat}
-                   </div>
-                   <div className="flex-1 overflow-hidden">
-                     <div className="font-bold text-slate-800 text-sm truncate uppercase">{p.name}</div>
-                     <div className="text-[10px] text-slate-400 font-black mt-0.5 tracking-tight">{p.phone}</div>
-                   </div>
-                   {p.boarding_status === 'BOARDED' && <CheckCircle size={16} className="text-green-600" />}
-                </div>
-             ))}
+             ) : passengers.map(p => {
+                const hasGps = p.pickup_lat && p.pickup_lng;
+                return (
+                  <div key={p.id} className="p-4 rounded-xl bg-white shadow-sm border border-slate-200 flex flex-col justify-between group hover:shadow-md transition-all">
+                    <div>
+                      {/* Passenger Header */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-11 h-11 rounded-xl border flex items-center justify-center font-black text-sm shrink-0 ${p.boarding_status === 'BOARDED' ? 'bg-green-600 border-green-600 text-white shadow-sm' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
+                          {p.seat}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-slate-800 text-sm truncate uppercase flex items-center gap-1.5">
+                            <span className="truncate">{p.name}</span>
+                            {p.boarding_status === 'BOARDED' && <CheckCircle size={15} className="text-green-600 shrink-0" />}
+                          </div>
+                          <div className="text-xs text-slate-400 font-semibold tracking-tight mt-0.5">{p.phone}</div>
+                        </div>
+                      </div>
+
+                      {/* Pickup location information */}
+                      <div className="mt-3 text-xs space-y-1">
+                        <div className="flex items-start gap-1.5 text-slate-700">
+                          <MapPin size={14} className="text-orange-500 shrink-0 mt-0.5" />
+                          <div className="font-medium">
+                            <span className="text-[10px] text-slate-400 uppercase font-black block">Điểm đón khách:</span>
+                            <span className="text-slate-800 font-bold">{p.pickup_landmark || p.pickup || 'Bến xe xuất phát'}</span>
+                          </div>
+                        </div>
+
+                        {p.pickup_note && (
+                          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200/60 rounded px-2 py-1 mt-1">
+                            <b>Ghi chú:</b> {p.pickup_note}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* GPS Location & Live Actions */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100">
+                      {hasGps ? (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                              GPS: {p.pickup_lat.toFixed(4)}, {p.pickup_lng.toFixed(4)}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400">Thiết bị hành khách</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1.5 pt-1">
+                            <button
+                              onClick={() => setActiveMapPassenger(p)}
+                              className="px-2 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all"
+                            >
+                              <Compass size={12} /> Xem bản đồ
+                            </button>
+                            <a
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${p.pickup_lat},${p.pickup_lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 shadow-sm transition-all"
+                            >
+                              <Navigation size={12} /> Chỉ đường
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-slate-400 italic flex items-center gap-1">
+                          <span>Chưa có tọa độ GPS (Đón theo điểm mặc định)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+             })}
           </div>
         </div>
 
-        <div className="bg-[#f8f9fa] border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
-           <button className="px-5 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2">
+        {/* Footer */}
+        <div className="bg-[#f8f9fa] border-t border-slate-200 px-6 py-4 flex gap-3 justify-end items-center">
+           <button className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2">
              <Printer size={14} /> In phơi khách
            </button>
-           <button className="px-5 py-2 bg-orange-500 text-white rounded text-xs font-bold hover:bg-orange-600 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
+           <button className="px-5 py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-all flex items-center gap-2 shadow-sm uppercase tracking-widest">
              <FileText size={14} /> Lệnh vận chuyển
            </button>
         </div>
       </motion.div>
+
+      {/* Embedded Live Map Modal */}
+      {activeMapPassenger && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[250] flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="bg-slate-900 text-white px-5 py-3.5 flex justify-between items-center">
+              <div>
+                <div className="text-xs text-orange-400 font-bold uppercase tracking-wider">Vị trí thực tế hành khách đang đứng</div>
+                <div className="text-base font-bold flex items-center gap-2 mt-0.5">
+                  <span>Ghế {activeMapPassenger.seat} • {activeMapPassenger.name} ({activeMapPassenger.phone})</span>
+                </div>
+              </div>
+              <button onClick={() => setActiveMapPassenger(null)} className="text-slate-400 hover:text-white transition-colors">
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-100 flex-1 flex flex-col">
+              <div className="bg-white p-3 rounded-xl border border-slate-200 mb-3 flex items-center justify-between text-xs">
+                <div>
+                  <span className="font-bold text-slate-800">Điểm đón: </span>
+                  <span className="text-slate-600">{activeMapPassenger.pickup_landmark || activeMapPassenger.pickup}</span>
+                  <div className="text-[11px] text-slate-400 mt-0.5">Tọa độ: {activeMapPassenger.pickup_lat}, {activeMapPassenger.pickup_lng}</div>
+                </div>
+                <a
+                  href={`https://www.google.com/maps?q=${activeMapPassenger.pickup_lat},${activeMapPassenger.pickup_lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold flex items-center gap-1.5 hover:bg-blue-700 transition-all shadow-sm"
+                >
+                  <ExternalLink size={13} /> Mở Google Maps
+                </a>
+              </div>
+
+              {/* OpenStreetMap interactive live iframe */}
+              <div className="flex-1 w-full rounded-xl overflow-hidden border border-slate-300 min-h-[380px] bg-white shadow-inner relative">
+                <iframe
+                  title="Passenger Live Location"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  scrolling="no"
+                  marginHeight="0"
+                  marginWidth="0"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${activeMapPassenger.pickup_lng - 0.008}%2C${activeMapPassenger.pickup_lat - 0.008}%2C${activeMapPassenger.pickup_lng + 0.008}%2C${activeMapPassenger.pickup_lat + 0.008}&layer=mapnik&marker=${activeMapPassenger.pickup_lat}%2C${activeMapPassenger.pickup_lng}`}
+                  className="w-full h-full min-h-[380px]"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white border-t border-slate-200 px-5 py-3 flex justify-between items-center">
+              <div className="text-xs text-slate-500 font-medium">
+                Vị trí được cập nhật trực tiếp từ cảm biến GPS thiết bị của hành khách khi chụp ảnh xác nhận điểm đón.
+              </div>
+              <button
+                onClick={() => setActiveMapPassenger(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
+              >
+                Đóng bản đồ
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
@@ -396,8 +537,15 @@ const CreateTripModal = ({ onClose, onCreated }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      if (response.ok) { onCreated(); } else { alert('Lỗi khi lưu chuyến xe!'); }
-    } catch (err) { alert('Lỗi kết nối!'); }
+      const resData = await response.json().catch(() => ({}));
+      if (response.ok) {
+        onCreated();
+      } else {
+        alert(resData.error || resData.message || 'Lỗi khi lưu chuyến xe!');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối máy chủ: ' + err.message);
+    }
     setIsSubmitting(false);
   };
 

@@ -618,15 +618,65 @@ def lookup_landmark_info(text: str) -> Optional[Dict[str, str]]:
     return None
 
 
+def is_gps_in_route_corridor(clean_route: str, lat: float, lng: float) -> Tuple[bool, str]:
+    """
+    Evaluates whether real device GPS coordinates fall within the realistic travel corridor
+    of the selected route.
+    """
+    # 1. TP.HCM - Cư Jút / Đắk Nông / Đắk Lắk (QL13 / QL14 corridor)
+    if any(k in clean_route for k in ["cu jut", "dak nong", "gia nghia", "buon ma thuot", "dak lak"]):
+        # Corridor runs from HCM (lat ~10.7) through Binh Duong, Binh Phuoc (lat 11-12) to Dak Nong/Cu Jut (lat ~12.6, lng ~107.8)
+        if 10.5 <= lat <= 13.2 and 106.3 <= lng <= 108.5:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang di chuyển tuyến Sài Gòn - Tây Nguyên (QL13 / QL14)."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang tuyến TP.HCM - Đắk Nông / Cư Jút."
+
+    # 2. TP.HCM - Đà Lạt / Lâm Đồng (QL1A / QL20 corridor)
+    if any(k in clean_route for k in ["da lat", "lam dong", "bao loc", "madagui", "di linh"]):
+        if 10.5 <= lat <= 12.2 and 106.5 <= lng <= 108.8:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang QL20 tuyến Sài Gòn - Đà Lạt."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển tuyến TP.HCM - Đà Lạt."
+
+    # 3. TP.HCM - Vũng Tàu / Bà Rịa (QL51 / Cao tốc Long Thành)
+    if any(k in clean_route for k in ["vung tau", "ba ria"]):
+        if 10.2 <= lat <= 11.0 and 106.5 <= lng <= 107.5:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang di chuyển tuyến TP.HCM - Vũng Tàu."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang tuyến Vũng Tàu."
+
+    # 4. TP.HCM - Phan Thiết / Nha Trang / Miền Trung (QL1A ven biển)
+    if any(k in clean_route for k in ["nha trang", "khanh hoa", "phan thiet", "binh thuan", "phan rang", "quy nhon", "da nang"]):
+        if 10.5 <= lat <= 16.5 and 106.5 <= lng <= 109.5:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang trục Bắc - Nam / Duyên hải miền Trung."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển tuyến miền Trung."
+
+    # 5. TP.HCM - Miền Tây (Cần Thơ, Tiền Giang, Cà Mau, An Giang, Bến Tre)
+    if any(k in clean_route for k in ["can tho", "ca mau", "ben tre", "tien giang", "my tho", "kien giang", "an giang", "soc trang", "bac lieu"]):
+        if 8.5 <= lat <= 11.0 and 104.5 <= lng <= 106.9:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang cao tốc Trung Lương / Miền Tây."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển về Miền Tây."
+
+    # 6. TP.HCM - Tây Ninh (QL22 / Xuyên Á)
+    if any(k in clean_route for k in ["tay ninh", "moc bai", "trang bang", "cu chi"]):
+        if 10.7 <= lat <= 11.6 and 105.9 <= lng <= 106.8:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang QL22 tuyến TP.HCM - Tây Ninh."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang tuyến Tây Ninh."
+
+    # Default fallback: check if within Vietnam territory (8.0 to 23.5 lat, 102.0 to 110.0 lng)
+    if 8.0 <= lat <= 23.5 and 102.0 <= lng <= 110.0:
+        return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) thuộc vùng hoạt động trên lãnh thổ Việt Nam."
+    return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) không hợp lệ."
+
+
 def check_landmark_on_route(
     landmark_item: Optional[Dict[str, Any]],
     raw_facts: str,
     route_name: Optional[str],
     start_point: Optional[str] = "",
-    end_point: Optional[str] = ""
+    end_point: Optional[str] = "",
+    user_lat: Optional[float] = None,
+    user_lng: Optional[float] = None
 ) -> Dict[str, Any]:
     """
-    Checks if a detected landmark matches the travel corridor of a given bus route.
+    Checks if a detected landmark and device GPS coordinates match the travel corridor of a given bus route.
     Returns structured analysis with recommendation.
     """
     if not route_name:
@@ -637,33 +687,49 @@ def check_landmark_on_route(
             "status_message": "Chưa chọn chuyến xe để đối soát lộ trình.",
             "recommendation": "Vui lòng chọn chuyến xe của bạn để AI kiểm tra xe có đi ngang qua vị trí này không.",
             "landmark_name": landmark_item["name"] if landmark_item else None,
-            "pickup_point": landmark_item.get("pickup_point") if landmark_item else None
+            "pickup_point": landmark_item.get("pickup_point") if landmark_item else None,
+            "latitude": user_lat,
+            "longitude": user_lng
         }
 
     clean_route = remove_accents(f"{route_name} {start_point} {end_point}").lower()
 
+    # Step A: Evaluate device GPS coordinates if provided
+    gps_matched = None
+    gps_reason = ""
+    if user_lat is not None and user_lng is not None:
+        gps_matched, gps_reason = is_gps_in_route_corridor(clean_route, user_lat, user_lng)
+
+    # Step B: Evaluate visual facts if landmark database has no exact match
     if not landmark_item:
         clean_facts = remove_accents(raw_facts).lower()
         cities = ["ho chi minh", "sai gon", "da lat", "dak nong", "cu jut", "vung tau", "nha trang", "can tho", "tay ninh", "ha noi", "da nang"]
         matched_cities = [c for c in cities if c in clean_facts and c in clean_route]
-        if matched_cities:
+
+        is_on_route = (gps_matched is True) or (bool(matched_cities) and gps_matched is not False)
+        if is_on_route:
+            status_desc = gps_reason or f"Điểm đón này nằm trong khu vực hành lang tuyến {route_name}."
             return {
                 "has_route": True,
                 "is_on_route": True,
                 "route_name": route_name,
-                "status_message": f"Điểm đón này nằm trong khu vực hành lang tuyến {route_name}.",
-                "recommendation": "Vị trí có thể đón được xe. Hãy bấm nút gửi thông báo để bác tài chủ động đón bạn.",
-                "landmark_name": "Khu vực nhận diện qua ảnh",
-                "pickup_point": "Trục đường tại vị trí bạn đang đứng"
+                "status_message": status_desc,
+                "recommendation": "Vị trí GPS và hình ảnh xác nhận xe có thể đón được bạn. Hãy gửi thông báo để bác tài chủ động đón bạn.",
+                "landmark_name": "Vị trí GPS thiết bị",
+                "pickup_point": f"Tọa độ GPS: {user_lat:.5f}, {user_lng:.5f}" if user_lat and user_lng else "Trục đường tại vị trí bạn đang đứng",
+                "latitude": user_lat,
+                "longitude": user_lng
             }
         return {
             "has_route": True,
             "is_on_route": False,
             "route_name": route_name,
-            "status_message": f"Vị trí này có vẻ nằm ngoài hành lang di chuyển của tuyến {route_name}.",
+            "status_message": gps_reason or f"Vị trí này có vẻ nằm ngoài hành lang di chuyển của tuyến {route_name}.",
             "recommendation": f"Vui lòng kiểm tra lại lộ trình hoặc di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
             "landmark_name": None,
-            "pickup_point": None
+            "pickup_point": None,
+            "latitude": user_lat,
+            "longitude": user_lng
         }
 
     clean_lm_name = remove_accents(landmark_item.get("name", "")).lower()
@@ -687,7 +753,7 @@ def check_landmark_on_route(
         "bao loc", "tan van", "bx mien dong", "ben xe mien dong"
     ]
 
-    # 2. Western / Mekong Delta routes (HCM -> Can Tho, Ca Mau, Ben Tre, Tien Giang, Kien Giang, An Giang)
+    # 2. Western / Mekong Delta routes
     west_routes = ["can tho", "ca mau", "ben tre", "tien giang", "my tho", "kien giang", "rach gia", "an giang", "chau doc", "long an", "soc trang", "bac lieu", "dong thap"]
     is_west_route = any(r in clean_route for r in west_routes)
     west_hcm_corridors = ["bx mien tay", "ben xe mien tay", "kinh duong vuong", "an lac", "binh tan", "binh chanh", "ben luc", "tan an", "trung luong"]
@@ -696,36 +762,45 @@ def check_landmark_on_route(
     is_tayninh_route = "tay ninh" in clean_route or "moc bai" in clean_route
     tayninh_corridors = ["an suong", "quoc lo 22", "hoc mon", "cu chi", "trang bang", "tay ninh"]
 
-    # Matching logic
-    is_matched = False
+    # Landmark name matching logic
+    landmark_matched = False
     if is_east_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in east_hcm_corridors):
-        is_matched = True
+        landmark_matched = True
     elif is_west_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in west_hcm_corridors):
-        is_matched = True
+        landmark_matched = True
     elif is_tayninh_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in tayninh_corridors):
-        is_matched = True
+        landmark_matched = True
     elif any(loc in clean_route for loc in [clean_lm_city, clean_lm_district]) and len(clean_lm_city) > 3:
-        is_matched = True
+        landmark_matched = True
 
-    if is_matched:
+    # Combine GPS & Landmark: GPS takes high authority
+    final_is_on_route = (gps_matched is True) if gps_matched is not None else landmark_matched
+
+    if final_is_on_route:
+        gps_addon = f" (GPS xác thực: {user_lat:.5f}, {user_lng:.5f})" if user_lat and user_lng else ""
         return {
             "has_route": True,
             "is_on_route": True,
             "route_name": route_name,
-            "status_message": f"Điểm đón '{landmark_item['name']}' NẰM TRÊN LỘ TRÌNH tuyến xe {route_name}!",
+            "status_message": f"Điểm đón '{landmark_item['name']}' NẰM TRÊN LỘ TRÌNH tuyến xe {route_name}!{gps_addon}",
             "recommendation": f"Xe sẽ đi ngang qua trục đường {landmark_item.get('street', '')}. Điểm đón thuận tiện nhất: {landmark_item.get('pickup_point', 'Cổng sảnh chính')}.",
             "landmark_name": landmark_item["name"],
-            "pickup_point": landmark_item.get("pickup_point")
+            "pickup_point": landmark_item.get("pickup_point"),
+            "latitude": user_lat,
+            "longitude": user_lng
         }
     else:
+        reason_text = gps_reason if gps_matched is False else f"Điểm đón '{landmark_item['name']}' KHÔNG NẰM TRONG LỘ TRÌNH tuyến xe {route_name}."
         return {
             "has_route": True,
             "is_on_route": False,
             "route_name": route_name,
-            "status_message": f"Điểm đón '{landmark_item['name']}' KHÔNG NẰM TRONG LỘ TRÌNH tuyến xe {route_name}.",
+            "status_message": reason_text,
             "recommendation": f"Vị trí này ngược hướng với đường xe chạy. Vui lòng di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
             "landmark_name": landmark_item["name"],
-            "pickup_point": None
+            "pickup_point": None,
+            "latitude": user_lat,
+            "longitude": user_lng
         }
 
 
@@ -735,7 +810,9 @@ def run_hybrid_vision_pipeline(
     user_question: Optional[str] = None,
     route_name: Optional[str] = None,
     start_point: Optional[str] = None,
-    end_point: Optional[str] = None
+    end_point: Optional[str] = None,
+    user_lat: Optional[float] = None,
+    user_lng: Optional[float] = None
 ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """
     Two-Stage Hybrid Vision Pipeline:
@@ -772,6 +849,8 @@ def run_hybrid_vision_pipeline(
     optimized_bytes = image_bytes
     try:
         pil_img = Image.open(io.BytesIO(image_bytes))
+        if pil_img.mode in ("RGBA", "P"):
+            pil_img = pil_img.convert("RGB")
         if max(pil_img.size) > 800:
             pil_img.thumbnail((800, 800), Image.Resampling.LANCZOS)
             out_buf = io.BytesIO()
@@ -802,7 +881,15 @@ def run_hybrid_vision_pipeline(
     geo_match = lookup_landmark_info(visual_facts + " " + (user_question or ""))
     route_analysis = None
     if task_type == "pickup_location":
-        route_analysis = check_landmark_on_route(geo_match, visual_facts, route_name, start_point, end_point)
+        route_analysis = check_landmark_on_route(
+            geo_match,
+            visual_facts,
+            route_name,
+            start_point,
+            end_point,
+            user_lat=user_lat,
+            user_lng=user_lng
+        )
     if geo_match:
         geo_context = f"""
 THÔNG TIN TRA CỨU ĐỊA DANH CHÍNH XÁC:
@@ -1237,6 +1324,20 @@ def analyze_image():
     start_point = request.form.get("start_point") or json_data.get("start_point")
     end_point = request.form.get("end_point") or json_data.get("end_point")
 
+    # Extract device GPS coordinates if provided
+    user_lat = None
+    user_lng = None
+    try:
+        raw_lat = request.form.get("latitude") or json_data.get("latitude")
+        raw_lng = request.form.get("longitude") or json_data.get("longitude")
+        if raw_lat is not None and str(raw_lat).strip():
+            user_lat = float(raw_lat)
+        if raw_lng is not None and str(raw_lng).strip():
+            user_lng = float(raw_lng)
+    except (ValueError, TypeError):
+        user_lat = None
+        user_lng = None
+
     # Detect QR code first
     qr_content = detect_qr_code(img_bytes)
     ticket_verification = None
@@ -1255,7 +1356,9 @@ def analyze_image():
             user_question=custom_prompt,
             route_name=route_name,
             start_point=start_point,
-            end_point=end_point
+            end_point=end_point,
+            user_lat=user_lat,
+            user_lng=user_lng
         )
         elapsed = round(time.time() - start_time, 2)
         if not ok:

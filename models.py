@@ -173,6 +173,12 @@ class Booking(db.Model):
     check_in_time = db.Column(db.DateTime, nullable=True)
     checked_in_by_id = db.Column(db.Integer, db.ForeignKey('staff.id'), nullable=True)
     
+    # GPS and AI Vision pickup verification
+    pickup_lat = db.Column(db.Float, nullable=True)
+    pickup_lng = db.Column(db.Float, nullable=True)
+    pickup_landmark = db.Column(db.String(200), nullable=True)
+    pickup_note = db.Column(db.String(255), nullable=True)
+    
     __table_args__ = (db.UniqueConstraint('trip_id', 'seat_number', name='unique_seat_per_trip'),)
 
 
