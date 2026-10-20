@@ -12,6 +12,7 @@ import 'services/trip_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/config/vision_config.dart';
+import 'services/smart_boarding_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -29,6 +30,7 @@ void main() async {
 
   try {
     await NotificationService().initialize();
+    await SmartBoardingService.instance.initialize();
   } catch (e) {
     debugPrint("Init notification service error: $e");
   }

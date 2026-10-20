@@ -286,11 +286,12 @@ def remove_accents(input_str: str) -> str:
 VIETNAMESE_LANDMARKS_DB = [
     {
         "keywords": [
-            "landmark 81", "landmark81", "landmark", "vinpearl landmark", "vinhomes central park",
-            "tallest building", "tallest skyscraper", "tallest", "81-story", "81 story",
-            "toa nha cao nhat", "toa nha landmark", "khu do thi vinhomes", "toa nha tallest"
+            "landmark 81", "landmark81", "vinpearl landmark 81", "vinhomes central park",
+            "toa nha landmark 81", "toa nha landmark"
         ],
         "name": "Tòa nhà The Landmark 81 (Vinhomes Central Park)",
+        "lat": 10.7950,
+        "lng": 106.7218,
         "ward": "Phường 22",
         "district": "Quận Bình Thạnh",
         "city": "TP. Hồ Chí Minh",
@@ -299,9 +300,11 @@ VIETNAMESE_LANDMARKS_DB = [
     },
     {
         "keywords": [
-            "bitexco", "bitexco financial", "toa nha bitexco", "helipad building", "lotus building", "toa nha hinh bup sen"
+            "bitexco", "bitexco financial", "toa nha bitexco", "bitexco tower"
         ],
         "name": "Tòa nhà Bitexco Financial Tower",
+        "lat": 10.7718,
+        "lng": 106.7044,
         "ward": "Phường Bến Nghé",
         "district": "Quận 1",
         "city": "TP. Hồ Chí Minh",
@@ -311,6 +314,8 @@ VIETNAMESE_LANDMARKS_DB = [
     {
         "keywords": ["phan chu trinh", "thpt phan chu trinh", "truong thpt phan chu trinh", "truong phan chu trinh"],
         "name": "Trường THPT Phan Chu Trinh",
+        "lat": 12.6000,
+        "lng": 107.8200,
         "ward": "Khu vực trường học",
         "district": "Cơ sở giáo dục",
         "city": "Việt Nam",
@@ -318,44 +323,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Trước cổng trường THPT Phan Chu Trinh hoặc trạm dừng xe buýt gần cổng trường nhất.",
     },
     {
-        "keywords": ["tan son nhat", "san bay tan son nhat", "tsn airport", "san bay tsn", "ga quoc noi", "ga quoc te"],
-        "name": "Sân bay Quốc tế Tân Sơn Nhất",
-        "ward": "Phường 2",
-        "district": "Quận Tân Bình",
-        "city": "TP. Hồ Chí Minh",
-        "street": "Đường Trường Sơn",
-        "pickup_point": "Làn đón xe công nghệ / Taxi Ga Quốc nội hoặc Ga Quốc tế.",
-    },
-    {
-        "keywords": ["ben thanh", "cho ben thanh", "ben thanh market"],
-        "name": "Chợ Bến Thành",
-        "ward": "Phường Bến Thành",
-        "district": "Quận 1",
-        "city": "TP. Hồ Chí Minh",
-        "street": "Quảng trường Quách Thị Trang / Đường Lê Lợi",
-        "pickup_point": "Ga Metro Bến Thành hoặc trạm trung chuyển xe buýt Hàm Nghi.",
-    },
-    {
-        "keywords": ["dinh doc lap", "dinh thong nhat", "reunification palace", "independence palace"],
-        "name": "Dinh Độc Lập (Dinh Thống Nhất)",
-        "ward": "Phường Bến Thành",
-        "district": "Quận 1",
-        "city": "TP. Hồ Chí Minh",
-        "street": "Số 135 Nam Kỳ Khởi Nghĩa",
-        "pickup_point": "Cổng chính Dinh Độc Lập trên đường Nam Kỳ Khởi Nghĩa.",
-    },
-    {
-        "keywords": ["nha tho duc ba", "notre dame", "buu dien thanh pho", "saigon post office"],
-        "name": "Nhà thờ Đức Bà & Bưu điện Trung tâm Sài Gòn",
-        "ward": "Phường Bến Nghé",
-        "district": "Quận 1",
-        "city": "TP. Hồ Chí Minh",
-        "street": "Công xã Paris",
-        "pickup_point": "Trước Bưu điện Thành phố hoặc đường Nguyễn Du.",
-    },
-    {
-        "keywords": ["keangnam", "keangnam 72", "landmark 72", "lotte center", "lotte hanoi"],
+        "keywords": ["keangnam", "keangnam 72", "landmark 72", "lotte center hanoi"],
         "name": "Tòa nhà Keangnam Landmark 72 Hà Nội",
+        "lat": 21.0173,
+        "lng": 105.7838,
         "ward": "Phường Mễ Trì",
         "district": "Quận Nam Từ Liêm",
         "city": "TP. Hà Nội",
@@ -363,8 +334,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Sảnh đón xe Keangnam hoặc trạm dừng buýt đường Phạm Hùng hướng đi Bến xe Mỹ Đình.",
     },
     {
-        "keywords": ["hutech", "dai hoc cong nghe", "truong dai hoc hutech", "hutech university"],
+        "keywords": ["hutech", "truong dai hoc hutech", "dai hoc cong nghe hutech"],
         "name": "Trường Đại học Công nghệ TP.HCM (HUTECH)",
+        "lat": 10.8018,
+        "lng": 106.7135,
         "ward": "Phường 25",
         "district": "Quận Bình Thạnh",
         "city": "TP. Hồ Chí Minh",
@@ -372,19 +345,23 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Cổng chính HUTECH Điện Biên Phủ hoặc trạm dừng buýt dưới chân cầu vượt Hàng Xanh.",
     },
     {
-        "keywords": ["khu cong nghe cao", "cong nghe cao", "shtp", "high tech park", "hightech park"],
+        "keywords": ["khu cong nghe cao", "cong nghe cao tphcm", "shtp"],
         "name": "Khu Công Nghệ Cao TP.HCM (SHTP)",
+        "lat": 10.8550,
+        "lng": 106.7858,
         "ward": "Phường Tân Phú / Tăng Nhơn Phú B",
-        "district": "Thành phố Thủ Đức (Quận 9 cũ)",
+        "district": "Thành phố Thủ Đức",
         "city": "TP. Hồ Chí Minh",
-        "street": "Xa lộ Hà Nội (Đường Võ Nguyên Giáp) - Đường D1/D2",
-        "pickup_point": "Trạm xe buýt Khu Công Nghệ Cao trên Xa lộ Hà Nội hoặc Cổng chính Khu Công Nghệ Cao (điểm đón xe liên tỉnh đi Đồng Nai, Bình Thuận, Vũng Tàu, Miền Trung, Miền Bắc).",
+        "street": "Xa lộ Hà Nội (Đường Võ Nguyên Giáp) - Đường Lê Văn Việt",
+        "pickup_point": "Trạm xe buýt Khu Công Nghệ Cao trên Xa lộ Hà Nội hoặc Cổng chính Khu Công Nghệ Cao (đón xe đi Đồng Nai, Bình Thuận, Vũng Tàu, Tây Nguyên, Miền Trung).",
     },
     {
         "keywords": ["suoi tien", "kdl suoi tien"],
         "name": "Khu Du Lịch Văn Hóa Suối Tiên",
+        "lat": 10.8659,
+        "lng": 106.8028,
         "ward": "Phường Tân Phú",
-        "district": "Thành phố Thủ Đức (Quận 9 cũ)",
+        "district": "Thành phố Thủ Đức",
         "city": "TP. Hồ Chí Minh",
         "street": "Xa lộ Hà Nội (Quốc lộ 52)",
         "pickup_point": "Trạm dừng Suối Tiên / Cầu vượt bộ hành Suối Tiên (điểm đón xe khách liên tỉnh tấp nập nhất cửa ngõ phía Đông TP.HCM).",
@@ -392,15 +369,19 @@ VIETNAMESE_LANDMARKS_DB = [
     {
         "keywords": ["mien dong moi", "ben xe mien dong moi"],
         "name": "Bến xe Miền Đông Mới",
+        "lat": 10.8808,
+        "lng": 106.8174,
         "ward": "Phường Long Bình",
-        "district": "Thành phố Thủ Đức (Quận 9 cũ)",
+        "district": "Thành phố Thủ Đức",
         "city": "TP. Hồ Chí Minh",
         "street": "Số 501 Hoàng Hữu Nam / Xa lộ Hà Nội",
         "pickup_point": "Khu vực sảnh đón trả khách Bến xe Miền Đông Mới hoặc trạm dừng xe buýt trước cổng bến xe.",
     },
     {
-        "keywords": ["ben xe mien dong", "bx mien dong", "mien dong"],
+        "keywords": ["ben xe mien dong cu", "bx mien dong cu"],
         "name": "Bến xe Miền Đông (cũ)",
+        "lat": 10.8143,
+        "lng": 106.7118,
         "ward": "Phường 26",
         "district": "Quận Bình Thạnh",
         "city": "TP. Hồ Chí Minh",
@@ -408,8 +389,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Cổng số 1, 2, 3 Bến xe Miền Đông hoặc dọc đường Đinh Bộ Lĩnh / Quốc lộ 13.",
     },
     {
-        "keywords": ["ben xe mien tay", "bx mien tay", "mien tay"],
+        "keywords": ["ben xe mien tay", "bx mien tay"],
         "name": "Bến xe Miền Tây",
+        "lat": 10.7482,
+        "lng": 106.6163,
         "ward": "Phường An Lạc",
         "district": "Quận Bình Tân",
         "city": "TP. Hồ Chí Minh",
@@ -417,8 +400,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Cổng ga đi Bến xe Miền Tây hoặc cây xăng đối diện bến xe.",
     },
     {
-        "keywords": ["an suong", "nga tu an suong", "bx an suong", "ben xe an suong"],
+        "keywords": ["nga tu an suong", "bx an suong", "ben xe an suong"],
         "name": "Ngã tư An Sương / Bến xe An Sương",
+        "lat": 10.8492,
+        "lng": 106.6214,
         "ward": "Xã Bà Điểm, Huyện Hóc Môn & Phường Trung Mỹ Tây",
         "district": "Quận 12 & Huyện Hóc Môn",
         "city": "TP. Hồ Chí Minh",
@@ -426,8 +411,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Nhà chờ Bến xe An Sương hoặc chân cầu vượt ngã tư An Sương hướng đi Tây Ninh / Miền Tây.",
     },
     {
-        "keywords": ["hang xanh", "nga tu hang xanh"],
+        "keywords": ["nga tu hang xanh", "vong xoay hang xanh"],
         "name": "Ngã tư Hàng Xanh",
+        "lat": 10.8016,
+        "lng": 106.7114,
         "ward": "Phường 21 / Phường 25",
         "district": "Quận Bình Thạnh",
         "city": "TP. Hồ Chí Minh",
@@ -435,8 +422,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Cây xăng Comeco Hàng Xanh hoặc trạm dừng buýt dưới chân cầu vượt Hàng Xanh.",
     },
     {
-        "keywords": ["nga tu thu duc", "tram thu duc", "metro thu duc"],
+        "keywords": ["nga tu thu duc", "metro thu duc"],
         "name": "Ngã tư Thủ Đức / Trạm Metro Thủ Đức",
+        "lat": 10.8538,
+        "lng": 106.7716,
         "ward": "Phường Hiệp Phú & Phường Linh Trung",
         "district": "Thành phố Thủ Đức",
         "city": "TP. Hồ Chí Minh",
@@ -444,8 +433,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Chân cầu vượt Ngã tư Thủ Đức (hướng đi Đồng Nai) hoặc trước trường ĐH Sư Phạm Kỹ Thuật.",
     },
     {
-        "keywords": ["linh xuan", "cau vuot linh xuan"],
+        "keywords": ["cau vuot linh xuan", "nga tu linh xuan"],
         "name": "Cầu vượt Linh Xuân",
+        "lat": 10.8711,
+        "lng": 106.7644,
         "ward": "Phường Linh Xuân",
         "district": "Thành phố Thủ Đức",
         "city": "TP. Hồ Chí Minh",
@@ -453,8 +444,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Dưới dạ cầu vượt Linh Xuân hoặc trạm dừng xe buýt hướng đi Suối Tiên / Dĩ An.",
     },
     {
-        "keywords": ["binh phuoc", "nga tu binh phuoc"],
+        "keywords": ["nga tu binh phuoc", "cau vuot binh phuoc"],
         "name": "Ngã tư Bình Phước",
+        "lat": 10.8504,
+        "lng": 106.7213,
         "ward": "Phường Hiệp Bình Phước",
         "district": "Thành phố Thủ Đức",
         "city": "TP. Hồ Chí Minh",
@@ -462,8 +455,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Chân cầu vượt Bình Phước (cây xăng hoặc trạm buýt) hướng đi Bình Dương hoặc Miền Tây.",
     },
     {
-        "keywords": ["nga tu ga", "cau vuot nga tu ga"],
+        "keywords": ["cau vuot nga tu ga", "nga tu ga"],
         "name": "Cầu vượt Ngã tư Ga",
+        "lat": 10.8508,
+        "lng": 106.6806,
         "ward": "Phường Thạnh Lộc",
         "district": "Quận 12",
         "city": "TP. Hồ Chí Minh",
@@ -471,8 +466,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Dọc Quốc lộ 1A dưới chân cầu vượt Ngã tư Ga.",
     },
     {
-        "keywords": ["tan son nhat", "san bay tan son nhat"],
+        "keywords": ["san bay tan son nhat", "cang hang khong tan son nhat"],
         "name": "Sân bay Quốc tế Tân Sơn Nhất",
+        "lat": 10.8185,
+        "lng": 106.6588,
         "ward": "Phường 2",
         "district": "Quận Tân Bình",
         "city": "TP. Hồ Chí Minh",
@@ -480,8 +477,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Khu vực làn đón xe ô tô ga Quốc nội/Quốc tế hoặc bãi đỗ xe ga ngầm.",
     },
     {
-        "keywords": ["ben thanh", "cho ben thanh"],
+        "keywords": ["cho ben thanh", "quang truong quach thi trang"],
         "name": "Chợ Bến Thành / Quảng trường Quách Thị Trang",
+        "lat": 10.7725,
+        "lng": 106.6980,
         "ward": "Phường Bến Thành",
         "district": "Quận 1",
         "city": "TP. Hồ Chí Minh",
@@ -489,98 +488,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Trạm trung chuyển xe buýt Bến Thành (đường Hàm Nghi) hoặc trước chợ Bến Thành.",
     },
     {
-        "keywords": ["lang dai hoc", "dai hoc quoc gia tphcm", "dhqg"],
-        "name": "Khu Đô Thị Đại Học Quốc Gia TP.HCM",
-        "ward": "Phường Linh Trung (TP. Thủ Đức) & Phường Đông Hòa (TP. Dĩ An)",
-        "district": "TP. Thủ Đức / TP. Dĩ An",
-        "city": "TP. Hồ Chí Minh / Tỉnh Bình Dương",
-        "street": "Đường Quảng Trường Sáng Tạo / Song Hành Xa lộ Hà Nội",
-        "pickup_point": "Trạm xe buýt Nhà Văn Hóa Sinh Viên hoặc cổng KTX Khu A / Khu B.",
-    },
-    {
-        "keywords": ["my dinh", "ben xe my dinh", "bx my dinh"],
-        "name": "Bến xe Mỹ Đình",
-        "ward": "Phường Mỹ Đình 2",
-        "district": "Quận Nam Từ Liêm",
-        "city": "TP. Hà Nội",
-        "street": "Số 20 Phạm Hùng",
-        "pickup_point": "Khu vực sân chờ xe khách Bến xe Mỹ Đình hoặc vỉa hè đường Phạm Hùng.",
-    },
-    {
-        "keywords": ["giap bat", "ben xe giap bat", "bx giap bat"],
-        "name": "Bến xe Giáp Bát",
-        "ward": "Phường Giáp Bát",
-        "district": "Quận Hoàng Mai",
-        "city": "TP. Hà Nội",
-        "street": "Đường Giải Phóng",
-        "pickup_point": "Sảnh chờ xe khách Bến xe Giáp Bát hoặc dải đón khách đường Giải Phóng.",
-    },
-    {
-        "keywords": ["nuoc ngam", "ben xe nuoc ngam", "bx nuoc ngam"],
-        "name": "Bến xe Nước Ngầm",
-        "ward": "Phường Hoàng Liệt",
-        "district": "Quận Hoàng Mai",
-        "city": "TP. Hà Nội",
-        "street": "Số 1 Ngọc Hồi / Ngã ba Giải Phóng - Pháp Vân",
-        "pickup_point": "Sảnh đón Bến xe Nước Ngầm hoặc đường gom Pháp Vân.",
-    },
-    {
-        "keywords": ["yen nghia", "ben xe yen nghia", "bx yen nghia"],
-        "name": "Bến xe Yên Nghĩa",
-        "ward": "Phường Yên Nghĩa",
-        "district": "Quận Hà Đông",
-        "city": "TP. Hà Nội",
-        "street": "Quốc lộ 6",
-        "pickup_point": "Khu vực sảnh đón Bến xe Yên Nghĩa hoặc trạm ga tàu điện Cát Linh - Hà Đông.",
-    },
-    {
-        "keywords": ["gia lam", "ben xe gia lam", "bx gia lam"],
-        "name": "Bến xe Gia Lâm",
-        "ward": "Phường Gia Thụy",
-        "district": "Quận Long Biên",
-        "city": "TP. Hà Nội",
-        "street": "Đường Ngô Gia Khảm",
-        "pickup_point": "Sảnh đón xe khách Bến xe Gia Lâm.",
-    },
-    {
-        "keywords": ["noi bai", "san bay noi bai"],
-        "name": "Sân bay Quốc tế Nội Bài",
-        "ward": "Xã Phú Minh",
-        "district": "Huyện Sóc Sơn",
-        "city": "TP. Hà Nội",
-        "street": "Võ Nguyên Giáp / Võ Văn Kiệt",
-        "pickup_point": "Khu vực sảnh tầng 1 đón khách ga T1 (Nội địa) hoặc T2 (Quốc tế).",
-    },
-    {
-        "keywords": ["da nang", "bx trung tam da nang", "ben xe da nang"],
-        "name": "Bến xe Trung tâm Đà Nẵng",
-        "ward": "Phường Hòa An",
-        "district": "Quận Cẩm Lệ",
-        "city": "TP. Đà Nẵng",
-        "street": "Đường Tôn Đức Thắng",
-        "pickup_point": "Sảnh đón khách Bến xe Trung tâm Đà Nẵng.",
-    },
-    {
-        "keywords": ["cau rong", "dragon bridge"],
-        "name": "Cầu Rồng Đà Nẵng",
-        "ward": "Phường Phước Ninh (Hải Châu) & Phường An Hải Tây (Sơn Trà)",
-        "district": "Quận Hải Châu & Quận Sơn Trà",
-        "city": "TP. Đà Nẵng",
-        "street": "Đường Nguyễn Văn Linh giao Bạch Đằng",
-        "pickup_point": "Dọc đường Bạch Đằng hoặc đường Trần Hưng Đạo gần đuôi/đầu Cầu Rồng.",
-    },
-    {
-        "keywords": ["can tho", "ben xe can tho", "bx trung tam can tho", "bx 91b"],
-        "name": "Bến xe Trung tâm Cần Thơ",
-        "ward": "Phường Hưng Thạnh",
-        "district": "Quận Cái Răng",
-        "city": "TP. Cần Thơ",
-        "street": "Khu đô thị Nam Cần Thơ / Quốc lộ 1A",
-        "pickup_point": "Sảnh đón khách Bến xe Trung tâm Cần Thơ.",
-    },
-    {
-        "keywords": ["vung tau", "ben xe vung tau", "bx vung tau"],
+        "keywords": ["ben xe vung tau", "bx vung tau"],
         "name": "Bến xe Vũng Tàu",
+        "lat": 10.3541,
+        "lng": 107.0864,
         "ward": "Phường Thắng Tam",
         "district": "Thành phố Vũng Tàu",
         "city": "Tỉnh Bà Rịa - Vũng Tàu",
@@ -588,8 +499,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Khu vực đón xe khách Bến xe Vũng Tàu.",
     },
     {
-        "keywords": ["da lat", "ben xe da lat", "bx lien tinh da lat"],
+        "keywords": ["ben xe da lat", "bx lien tinh da lat"],
         "name": "Bến xe Liên tỉnh Đà Lạt",
+        "lat": 11.9275,
+        "lng": 108.4447,
         "ward": "Phường 3",
         "district": "Thành phố Đà Lạt",
         "city": "Tỉnh Lâm Đồng",
@@ -597,8 +510,10 @@ VIETNAMESE_LANDMARKS_DB = [
         "pickup_point": "Sảnh đón khách đầu đèo Prenn Bến xe Liên tỉnh Đà Lạt.",
     },
     {
-        "keywords": ["nha trang", "ben xe phia nam nha trang"],
+        "keywords": ["ben xe phia nam nha trang", "bx nha trang"],
         "name": "Bến xe Phía Nam Nha Trang",
+        "lat": 12.2478,
+        "lng": 109.1633,
         "ward": "Xã Vĩnh Trung",
         "district": "Thành phố Nha Trang",
         "city": "Tỉnh Khánh Hòa",
@@ -608,12 +523,233 @@ VIETNAMESE_LANDMARKS_DB = [
 ]
 
 
-def lookup_landmark_info(text: str) -> Optional[Dict[str, str]]:
-    """Finds geographic and pickup info for known Vietnamese transit landmarks."""
-    clean = remove_accents(text)
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculates great-circle distance between two GPS coordinates in kilometers."""
+    try:
+        import math
+        r = 6371.0
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
+        a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * (math.sin(delta_lambda / 2.0) ** 2)
+        c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+        return r * c
+    except Exception:
+        return 9999.0
+
+
+def resolve_location_from_gps(lat: float, lng: float) -> Dict[str, str]:
+    """
+    Deterministically resolves administrative geography (ward, district, city)
+    and major transit corridors from device GPS coordinates.
+    """
+    # 1. TP. Hồ Chí Minh - TP. Thủ Đức (Corridor Xa lộ Hà Nội / Khu Công nghệ cao / Lê Văn Việt)
+    if 10.835 <= lat <= 10.870 and 106.765 <= lng <= 106.820:
+        return {
+            "area_name": "Khu vực TP. Thủ Đức (Trục Xa lộ Hà Nội / Khu Công nghệ cao - Lê Văn Việt)",
+            "district": "Thành phố Thủ Đức",
+            "ward": "Phường Tăng Nhơn Phú B / Hiệp Phú",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Trục Xa lộ Hà Nội (Đường Võ Nguyên Giáp) - Đường Lê Văn Việt",
+            "pickup_point": "Trạm xe buýt Khu Công nghệ cao trên Xa lộ Hà Nội hoặc cây xăng gần ngã tư Thủ Đức (điểm đón xe liên tỉnh Tây Nguyên, Miền Trung, Vũng Tàu)."
+        }
+
+    # 2. TP. Hồ Chí Minh - TP. Thủ Đức (Khu vực Suối Tiên / Bến xe Miền Đông Mới)
+    if 10.865 <= lat <= 10.900 and 106.800 <= lng <= 106.845:
+        return {
+            "area_name": "Khu vực Bến xe Miền Đông Mới / Suối Tiên (TP. Thủ Đức)",
+            "district": "Thành phố Thủ Đức",
+            "ward": "Phường Tân Phú / Long Bình",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Xa lộ Hà Nội (Quốc lộ 1A) - Đường Hoàng Hữu Nam",
+            "pickup_point": "Cầu vượt bộ hành Suối Tiên hoặc sảnh đón trả Bến xe Miền Đông Mới."
+        }
+
+    # 3. TP. Hồ Chí Minh - TP. Thủ Đức (Cầu vượt Linh Xuân / ĐHQG)
+    if 10.850 <= lat <= 10.885 and 106.745 <= lng <= 106.780:
+        return {
+            "area_name": "Khu vực Cầu vượt Linh Xuân / ĐH Quốc Gia (TP. Thủ Đức)",
+            "district": "Thành phố Thủ Đức",
+            "ward": "Phường Linh Trung / Linh Xuân",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Quốc lộ 1A giao Quốc lộ 1K",
+            "pickup_point": "Chân cầu vượt Linh Xuân hoặc trạm xe buýt Đại học Quốc Gia."
+        }
+
+    # 4. TP. Hồ Chí Minh - TP. Thủ Đức (Ngã tư Bình Phước - QL13)
+    if 10.835 <= lat <= 10.865 and 106.705 <= lng <= 106.740:
+        return {
+            "area_name": "Khu vực Ngã tư Bình Phước (TP. Thủ Đức)",
+            "district": "Thành phố Thủ Đức",
+            "ward": "Phường Hiệp Bình Phước",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Quốc lộ 13 giao Quốc lộ 1A",
+            "pickup_point": "Chân cầu vượt Bình Phước (cây xăng hoặc trạm buýt) hướng đi Bình Dương hoặc Miền Tây."
+        }
+
+    # 5. TP. Hồ Chí Minh - Quận Bình Thạnh (Hàng Xanh / Cầu Sài Gòn)
+    if 10.790 <= lat <= 10.810 and 106.705 <= lng <= 106.735:
+        return {
+            "area_name": "Khu vực Hàng Xanh / Cầu Sài Gòn (Quận Bình Thạnh)",
+            "district": "Quận Bình Thạnh",
+            "ward": "Phường 22 / Phường 25",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Trục Điện Biên Phủ / Xô Viết Nghệ Tĩnh",
+            "pickup_point": "Cây xăng Comeco Hàng Xanh hoặc chân cầu vượt Hàng Xanh."
+        }
+
+    # 6. TP. Hồ Chí Minh - Quận Bình Thạnh (Bến xe Miền Đông cũ)
+    if 10.810 <= lat <= 10.830 and 106.700 <= lng <= 106.725:
+        return {
+            "area_name": "Khu vực Bến xe Miền Đông cũ (Quận Bình Thạnh)",
+            "district": "Quận Bình Thạnh",
+            "ward": "Phường 26",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Đường Đinh Bộ Lĩnh / Quốc lộ 13",
+            "pickup_point": "Cổng Bến xe Miền Đông cũ hoặc cây xăng Quốc lộ 13."
+        }
+
+    # 7. TP. Hồ Chí Minh - Quận 1 (Trung tâm Bến Thành / Bitexco / Hàm Nghi)
+    if 10.760 <= lat <= 10.785 and 106.690 <= lng <= 106.715:
+        return {
+            "area_name": "Khu vực Trung tâm Quận 1",
+            "district": "Quận 1",
+            "ward": "Phường Bến Thành / Bến Nghé",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Đường Hàm Nghi / Lê Lợi / Nguyễn Thái Học",
+            "pickup_point": "Trạm trung chuyển xe buýt Hàm Nghi hoặc văn phòng nhà xe trung tâm."
+        }
+
+    # 8. TP. Hồ Chí Minh - Quận 12 & Hóc Môn (Ngã tư An Sương / QL22)
+    if 10.830 <= lat <= 10.865 and 106.600 <= lng <= 106.640:
+        return {
+            "area_name": "Khu vực Ngã tư An Sương / Bến xe An Sương",
+            "district": "Quận 12 & Huyện Hóc Môn",
+            "ward": "Phường Trung Mỹ Tây",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Quốc lộ 22 / Quốc lộ 1A / Trường Chinh",
+            "pickup_point": "Nhà chờ Bến xe An Sương hoặc chân cầu vượt ngã tư An Sương."
+        }
+
+    # 9. TP. Hồ Chí Minh - Quận Bình Tân (Bến xe Miền Tây / An Lạc)
+    if 10.730 <= lat <= 10.765 and 106.595 <= lng <= 106.630:
+        return {
+            "area_name": "Khu vực Bến xe Miền Tây (Quận Bình Tân)",
+            "district": "Quận Bình Tân",
+            "ward": "Phường An Lạc",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Đường Kinh Dương Vương / Quốc lộ 1A",
+            "pickup_point": "Cổng ga Bến xe Miền Tây hoặc cây xăng đối diện bến xe."
+        }
+
+    # 10. Tỉnh Bình Dương - TP. Dĩ An (QL1K / ĐT743)
+    if 10.880 <= lat <= 10.940 and 106.740 <= lng <= 106.800:
+        return {
+            "area_name": "Khu vực TP. Dĩ An (Bình Dương)",
+            "district": "Thành phố Dĩ An",
+            "ward": "Phường Đông Hòa / Dĩ An",
+            "city": "Tỉnh Bình Dương",
+            "street": "Quốc lộ 1K / Đường ĐT743",
+            "pickup_point": "Cầu vượt Sóng Thần hoặc ngã tư 550."
+        }
+
+    # 11. Tỉnh Bình Dương - TP. Thuận An / Thủ Dầu Một (Trục QL13 Đại lộ Bình Dương)
+    if 10.880 <= lat <= 11.150 and 106.620 <= lng <= 106.730:
+        return {
+            "area_name": "Khu vực Đại lộ Bình Dương - Quốc lộ 13",
+            "district": "Thành phố Thuận An / Thủ Dầu Một",
+            "ward": "Khu vực trung tâm Bình Dương",
+            "city": "Tỉnh Bình Dương",
+            "street": "Đại lộ Bình Dương (Quốc lộ 13)",
+            "pickup_point": "Trạm thu phí Lái Thiêu / Aeon Mall Bình Dương hoặc ngã tư Gò Đậu."
+        }
+
+    # 12. Tỉnh Bình Phước - Chơn Thành / Đồng Xoài (Trục QL14 đi Tây Nguyên)
+    if 11.350 <= lat <= 11.700 and 106.650 <= lng <= 107.000:
+        return {
+            "area_name": "Khu vực TP. Đồng Xoài / Chơn Thành (Trục QL14)",
+            "district": "TP. Đồng Xoài / Thị xã Chơn Thành",
+            "ward": "Khu vực QL14",
+            "city": "Tỉnh Bình Phước",
+            "street": "Quốc lộ 14 (Đường Hồ Chí Minh)",
+            "pickup_point": "Ngã tư Đồng Xoài hoặc dọc trục Quốc lộ 14 hướng đi Đắk Nông."
+        }
+
+    # 13. Tỉnh Đắk Nông - Huyện Cư Jút / Ea T'ling (Điểm cuối tuyến xe)
+    if 12.550 <= lat <= 12.750 and 107.800 <= lng <= 107.980:
+        return {
+            "area_name": "Khu vực Huyện Cư Jút (Đắk Nông)",
+            "district": "Huyện Cư Jút",
+            "ward": "Thị trấn Ea T'ling",
+            "city": "Tỉnh Đắk Nông",
+            "street": "Quốc lộ 14 (Đường Hồ Chí Minh) - Trục Cư Jút",
+            "pickup_point": "Bến xe Huyện Cư Jút hoặc dọc Quốc lộ 14 đoạn qua thị trấn Ea T'ling."
+        }
+
+    # 14. Tỉnh Đắk Nông - TP. Gia Nghĩa / Đắk Mil (Trục QL14)
+    if 11.900 <= lat <= 12.550 and 107.450 <= lng <= 107.800:
+        return {
+            "area_name": "Khu vực Tỉnh Đắk Nông (Trục QL14)",
+            "district": "TP. Gia Nghĩa / Huyện Đắk Mil",
+            "ward": "Khu vực QL14",
+            "city": "Tỉnh Đắk Nông",
+            "street": "Quốc lộ 14",
+            "pickup_point": "Bến xe Gia Nghĩa hoặc ngã ba Đắk Mil dọc Quốc lộ 14."
+        }
+
+    # 15. Tỉnh Lâm Đồng - TP. Đà Lạt (QL20 / Đèo Prenn)
+    if 11.900 <= lat <= 12.020 and 108.400 <= lng <= 108.520:
+        return {
+            "area_name": "Khu vực TP. Đà Lạt",
+            "district": "Thành phố Đà Lạt",
+            "ward": "Phường 3 / Phường 1",
+            "city": "Tỉnh Lâm Đồng",
+            "street": "Đường 3 Tháng 4 / Tô Hiến Thành",
+            "pickup_point": "Bến xe Liên tỉnh Đà Lạt (đầu đèo Prenn) hoặc vòng xoay Kim Cúc."
+        }
+
+    # Fallback theo phạm vi Tỉnh/Thành tổng quát
+    if 10.65 <= lat <= 10.95 and 106.50 <= lng <= 106.90:
+        return {
+            "area_name": f"Vị trí hành khách tại TP. Hồ Chí Minh ({lat:.5f}, {lng:.5f})",
+            "district": "TP. Thủ Đức / Quận nội thành",
+            "ward": "Khu vực trung tâm",
+            "city": "TP. Hồ Chí Minh",
+            "street": "Tuyến đường tại tọa độ GPS của bạn",
+            "pickup_point": f"Vị trí GPS ({lat:.5f}, {lng:.5f}) trên trục đường xe khách đi qua."
+        }
+
+    return {
+        "area_name": f"Vị trí GPS ({lat:.5f}, {lng:.5f})",
+        "district": "Khu vực hành khách",
+        "ward": "Vị trí thiết bị",
+        "city": "Việt Nam",
+        "street": "Trục đường tại tọa độ hiện tại",
+        "pickup_point": f"Tọa độ GPS: {lat:.5f}, {lng:.5f}"
+    }
+
+
+def lookup_landmark_info(
+    text: str,
+    user_lat: Optional[float] = None,
+    user_lng: Optional[float] = None
+) -> Optional[Dict[str, Any]]:
+    """
+    Finds geographic and pickup info for known Vietnamese transit landmarks.
+    Enforces GPS consistency: if user GPS is available, landmark is only accepted
+    if distance is within 2.5km.
+    """
+    clean = remove_accents(text).lower()
     for item in VIETNAMESE_LANDMARKS_DB:
         for kw in item["keywords"]:
-            if remove_accents(kw) in clean:
+            if remove_accents(kw).lower() in clean:
+                # If GPS is provided, verify landmark is actually near the user
+                if user_lat is not None and user_lng is not None and "lat" in item and "lng" in item:
+                    dist = haversine_km(user_lat, user_lng, item["lat"], item["lng"])
+                    if dist > 2.5:
+                        logger.info(f"Bỏ qua landmark '{item['name']}' do cách GPS ({user_lat}, {user_lng}) tới {dist:.2f}km > 2.5km.")
+                        continue
                 return item
     return None
 
@@ -623,41 +759,61 @@ def is_gps_in_route_corridor(clean_route: str, lat: float, lng: float) -> Tuple[
     Evaluates whether real device GPS coordinates fall within the realistic travel corridor
     of the selected route.
     """
-    # 1. TP.HCM - Cư Jút / Đắk Nông / Đắk Lắk (QL13 / QL14 corridor)
+    # 1. TP.HCM - Cư Jút / Đắk Nông / Đắk Lắk (Chạy theo trục QL13 -> QL14 Tây Nguyên)
     if any(k in clean_route for k in ["cu jut", "dak nong", "gia nghia", "buon ma thuot", "dak lak"]):
-        # Corridor runs from HCM (lat ~10.7) through Binh Duong, Binh Phuoc (lat 11-12) to Dak Nong/Cu Jut (lat ~12.6, lng ~107.8)
-        if 10.5 <= lat <= 13.2 and 106.3 <= lng <= 108.5:
-            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang di chuyển tuyến Sài Gòn - Tây Nguyên (QL13 / QL14)."
-        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang tuyến TP.HCM - Đắk Nông / Cư Jút."
+        # Phân đoạn 1: Trục QL13 (BX Miền Đông cũ -> Cầu Bình Triệu -> Ngã tư Bình Phước -> Lái Thiêu -> Thủ Dầu Một -> Bến Cát -> Bàu Bàng)
+        in_ql13 = (10.80 <= lat <= 11.40) and (106.60 <= lng <= 106.735)
+        # Phân đoạn 2: Trục QL14 qua Bình Phước (Chơn Thành -> Đồng Xoài -> Bù Đăng)
+        in_ql14_bp = (11.40 <= lat <= 11.95) and (106.65 <= lng <= 107.35)
+        # Phân đoạn 3: Trục QL14 qua Đắk Nông (Kiến Đức -> Gia Nghĩa -> Đắk Song -> Đắk Mil -> Cư Jút)
+        in_ql14_dn = (11.85 <= lat <= 12.80) and (107.35 <= lng <= 108.00)
+        # Phân đoạn 4: Buôn Ma Thuột (Đắk Lắk)
+        in_bmt = (12.55 <= lat <= 12.85) and (108.00 <= lng <= 108.20)
 
-    # 2. TP.HCM - Đà Lạt / Lâm Đồng (QL1A / QL20 corridor)
+        if in_ql13 or in_ql14_bp or in_ql14_dn or in_bmt:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm đúng trên hành lang di chuyển Quốc lộ 13 / Quốc lộ 14."
+        else:
+            if 10.83 <= lat <= 10.90 and 106.76 <= lng <= 106.84:
+                return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) đang ở trục Xa lộ Hà Nội / Khu Công nghệ cao (TP. Thủ Đức). Tuyến xe {clean_route} chạy theo trục Quốc lộ 13 -> Quốc lộ 14 (qua Bình Triệu / Bình Dương / Đồng Xoài / Đắk Nông), hoàn toàn không đi qua Xa lộ Hà Nội."
+            return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển Quốc lộ 13 - Quốc lộ 14 của tuyến xe."
+
+    # 2. TP.HCM - Đà Lạt / Lâm Đồng (Trục Xa lộ Hà Nội -> QL1A -> Ngã ba Dầu Giây -> QL20)
     if any(k in clean_route for k in ["da lat", "lam dong", "bao loc", "madagui", "di linh"]):
-        if 10.5 <= lat <= 12.2 and 106.5 <= lng <= 108.8:
-            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang QL20 tuyến Sài Gòn - Đà Lạt."
+        in_xlhn = (10.78 <= lat <= 10.90) and (106.70 <= lng <= 106.85)
+        in_dn = (10.88 <= lat <= 11.15) and (106.85 <= lng <= 107.25)
+        in_ql20 = (11.05 <= lat <= 12.10) and (107.15 <= lng <= 108.55)
+        if in_xlhn or in_dn or in_ql20:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trên trục di chuyển Xa lộ Hà Nội - QL1A - QL20 tuyến đi Đà Lạt."
         return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển tuyến TP.HCM - Đà Lạt."
 
-    # 3. TP.HCM - Vũng Tàu / Bà Rịa (QL51 / Cao tốc Long Thành)
+    # 3. TP.HCM - Vũng Tàu / Bà Rịa (Xa lộ Hà Nội / Cao tốc Long Thành -> QL51)
     if any(k in clean_route for k in ["vung tau", "ba ria"]):
-        if 10.2 <= lat <= 11.0 and 106.5 <= lng <= 107.5:
-            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang di chuyển tuyến TP.HCM - Vũng Tàu."
-        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang tuyến Vũng Tàu."
+        in_hcm_east = (10.75 <= lat <= 10.88) and (106.70 <= lng <= 106.88)
+        in_ql51 = (10.30 <= lat <= 10.80) and (106.88 <= lng <= 107.25)
+        if in_hcm_east or in_ql51:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trên hành lang di chuyển tuyến TP.HCM - Vũng Tàu (QL51 / Cao tốc)."
+        return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển tuyến Vũng Tàu."
 
-    # 4. TP.HCM - Phan Thiết / Nha Trang / Miền Trung (QL1A ven biển)
+    # 4. TP.HCM - Phan Thiết / Nha Trang / Miền Trung (Xa lộ Hà Nội -> QL1A ven biển / Cao tốc Dầu Giây - Phan Thiết)
     if any(k in clean_route for k in ["nha trang", "khanh hoa", "phan thiet", "binh thuan", "phan rang", "quy nhon", "da nang"]):
-        if 10.5 <= lat <= 16.5 and 106.5 <= lng <= 109.5:
+        in_hcm_east = (10.78 <= lat <= 10.90) and (106.70 <= lng <= 106.85)
+        in_central_coast = (10.85 <= lat <= 16.50) and (106.85 <= lng <= 109.50)
+        if in_hcm_east or in_central_coast:
             return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang trục Bắc - Nam / Duyên hải miền Trung."
         return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển tuyến miền Trung."
 
-    # 5. TP.HCM - Miền Tây (Cần Thơ, Tiền Giang, Cà Mau, An Giang, Bến Tre)
+    # 5. TP.HCM - Miền Tây (Kinh Dương Vương / BX Miền Tây -> Cao tốc Trung Lương / QL1A Miền Tây)
     if any(k in clean_route for k in ["can tho", "ca mau", "ben tre", "tien giang", "my tho", "kien giang", "an giang", "soc trang", "bac lieu"]):
-        if 8.5 <= lat <= 11.0 and 104.5 <= lng <= 106.9:
-            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang cao tốc Trung Lương / Miền Tây."
+        in_west = (8.5 <= lat <= 10.78) and (104.5 <= lng <= 106.65)
+        if in_west:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang cao tốc Trung Lương / Quốc lộ 1A về Miền Tây."
         return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang di chuyển về Miền Tây."
 
-    # 6. TP.HCM - Tây Ninh (QL22 / Xuyên Á)
+    # 6. TP.HCM - Tây Ninh (Quốc lộ 22 / Xuyên Á qua An Sương - Củ Chi)
     if any(k in clean_route for k in ["tay ninh", "moc bai", "trang bang", "cu chi"]):
-        if 10.7 <= lat <= 11.6 and 105.9 <= lng <= 106.8:
-            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang QL22 tuyến TP.HCM - Tây Ninh."
+        in_ql22 = (10.80 <= lat <= 11.60) and (105.90 <= lng <= 106.65)
+        if in_ql22:
+            return True, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm trong hành lang Quốc lộ 22 tuyến TP.HCM - Tây Ninh."
         return False, f"Tọa độ GPS ({lat:.5f}, {lng:.5f}) nằm ngoài hành lang tuyến Tây Ninh."
 
     # Default fallback: check if within Vietnam territory (8.0 to 23.5 lat, 102.0 to 110.0 lng)
@@ -673,12 +829,17 @@ def check_landmark_on_route(
     start_point: Optional[str] = "",
     end_point: Optional[str] = "",
     user_lat: Optional[float] = None,
-    user_lng: Optional[float] = None
+    user_lng: Optional[float] = None,
+    resolved_geo: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Checks if a detected landmark and device GPS coordinates match the travel corridor of a given bus route.
     Returns structured analysis with recommendation.
     """
+    effective_name = landmark_item["name"] if landmark_item else (resolved_geo["area_name"] if resolved_geo else "Vị trí GPS thiết bị")
+    effective_pickup = landmark_item.get("pickup_point") if landmark_item else (resolved_geo.get("pickup_point") if resolved_geo else f"Tọa độ GPS: {user_lat:.5f}, {user_lng:.5f}" if user_lat and user_lng else "Trục đường đón xe")
+    effective_street = landmark_item.get("street", "") if landmark_item else (resolved_geo.get("street", "") if resolved_geo else "")
+
     if not route_name:
         return {
             "has_route": False,
@@ -686,37 +847,37 @@ def check_landmark_on_route(
             "route_name": None,
             "status_message": "Chưa chọn chuyến xe để đối soát lộ trình.",
             "recommendation": "Vui lòng chọn chuyến xe của bạn để AI kiểm tra xe có đi ngang qua vị trí này không.",
-            "landmark_name": landmark_item["name"] if landmark_item else None,
-            "pickup_point": landmark_item.get("pickup_point") if landmark_item else None,
+            "landmark_name": effective_name,
+            "pickup_point": effective_pickup,
             "latitude": user_lat,
             "longitude": user_lng
         }
 
     clean_route = remove_accents(f"{route_name} {start_point} {end_point}").lower()
 
-    # Step A: Evaluate device GPS coordinates if provided
+    # Step A: Evaluate device GPS coordinates if provided (PRIMARY GROUND TRUTH)
     gps_matched = None
     gps_reason = ""
     if user_lat is not None and user_lng is not None:
         gps_matched, gps_reason = is_gps_in_route_corridor(clean_route, user_lat, user_lng)
 
-    # Step B: Evaluate visual facts if landmark database has no exact match
+    # Step B: If no landmark matched, rely directly on GPS resolved geography
     if not landmark_item:
         clean_facts = remove_accents(raw_facts).lower()
         cities = ["ho chi minh", "sai gon", "da lat", "dak nong", "cu jut", "vung tau", "nha trang", "can tho", "tay ninh", "ha noi", "da nang"]
         matched_cities = [c for c in cities if c in clean_facts and c in clean_route]
 
-        is_on_route = (gps_matched is True) or (bool(matched_cities) and gps_matched is not False)
+        is_on_route = (gps_matched is True) if gps_matched is not None else bool(matched_cities)
         if is_on_route:
             status_desc = gps_reason or f"Điểm đón này nằm trong khu vực hành lang tuyến {route_name}."
             return {
                 "has_route": True,
                 "is_on_route": True,
                 "route_name": route_name,
-                "status_message": status_desc,
-                "recommendation": "Vị trí GPS và hình ảnh xác nhận xe có thể đón được bạn. Hãy gửi thông báo để bác tài chủ động đón bạn.",
-                "landmark_name": "Vị trí GPS thiết bị",
-                "pickup_point": f"Tọa độ GPS: {user_lat:.5f}, {user_lng:.5f}" if user_lat and user_lng else "Trục đường tại vị trí bạn đang đứng",
+                "status_message": f"Điểm đón tại '{effective_name}' NẰM TRÊN LỘ TRÌNH tuyến xe {route_name}! (GPS xác thực: {user_lat:.5f}, {user_lng:.5f})" if user_lat and user_lng else status_desc,
+                "recommendation": f"Xe khách tuyến {route_name} sẽ đi ngang qua trục đường {effective_street}. Điểm đón thuận tiện nhất: {effective_pickup}. Bác tài có thể đón bạn theo tọa độ GPS này.",
+                "landmark_name": effective_name,
+                "pickup_point": effective_pickup,
                 "latitude": user_lat,
                 "longitude": user_lng
             }
@@ -724,9 +885,9 @@ def check_landmark_on_route(
             "has_route": True,
             "is_on_route": False,
             "route_name": route_name,
-            "status_message": gps_reason or f"Vị trí này có vẻ nằm ngoài hành lang di chuyển của tuyến {route_name}.",
-            "recommendation": f"Vui lòng kiểm tra lại lộ trình hoặc di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
-            "landmark_name": None,
+            "status_message": gps_reason or f"Vị trí điểm đón tại '{effective_name}' KHÔNG NẰM TRÊN LỘ TRÌNH tuyến xe {route_name}.",
+            "recommendation": f"Vị trí này không nằm trên hành lang xe chạy. Vui lòng di chuyển đến điểm đón chính hoặc bến xe xuất bến: {start_point or 'Bến xe xuất bến'}.",
+            "landmark_name": effective_name,
             "pickup_point": None,
             "latitude": user_lat,
             "longitude": user_lng
@@ -736,45 +897,47 @@ def check_landmark_on_route(
     clean_lm_street = remove_accents(landmark_item.get("street", "")).lower()
     clean_lm_district = remove_accents(landmark_item.get("district", "")).lower()
     clean_lm_city = remove_accents(landmark_item.get("city", "")).lower()
+    lm_full_text = f"{clean_lm_name} {clean_lm_street} {clean_lm_district}"
 
-    # 1. Eastern / Central / Northern / Highland corridors (HCM -> Da Lat, Dak Nong, Vung Tau, Nha Trang, etc.)
-    east_highland_routes = [
-        "da lat", "lam dong", "cu jut", "dak nong", "dak lak", "buon ma thuot",
-        "vung tau", "ba ria", "nha trang", "khanh hoa", "phan thiet", "binh thuan",
-        "quy nhon", "binh dinh", "da nang", "ha noi", "hue", "quang nam"
-    ]
-    is_east_route = any(r in clean_route for r in east_highland_routes) or "sai gon" in clean_route or "hcm" in clean_route or "ho chi minh" in clean_route
+    # 1. Highland routes (QL13 -> QL14 corridor only: Bến xe Miền Đông cũ, Bình Triệu, Ngã tư Bình Phước, Bình Dương, Chơn Thành, Đồng Xoài, Đắk Nông, Cư Jút)
+    highland_routes = ["cu jut", "dak nong", "gia nghia", "buon ma thuot", "dak lak", "dak mil"]
+    is_highland = any(r in clean_route for r in highland_routes)
+    highland_corridors = ["quoc lo 13", "ql13", "binh trieu", "nga tu binh phuoc", "lai thieu", "thuan an", "thu dau mot", "ben cat", "bau bang", "chon thanh", "dong xoai", "bu dang", "dak r'lap", "gia nghia", "dak mil", "cu jut", "bx mien dong cu", "dinh bo linh"]
 
-    # Corridors keywords in HCM for Eastern routes
+    # 2. Eastern / Central routes (Xa lộ Hà Nội, QL1A, QL20, QL51)
+    east_routes = ["da lat", "lam dong", "vung tau", "ba ria", "nha trang", "khanh hoa", "phan thiet", "binh thuan", "quy nhon", "da nang"]
+    is_east_route = any(r in clean_route for r in east_routes)
     east_hcm_corridors = [
-        "dien bien phu", "hang xanh", "landmark 81", "landmark", "nguyen huu canh",
-        "suoi tien", "nga tu thu duc", "khu cong nghe cao", "binh thanh", "thu duc",
+        "dien bien phu", "hang xanh", "landmark 81", "nguyen huu canh",
+        "suoi tien", "nga tu thu duc", "khu cong nghe cao", "thu duc",
         "xa lo ha noi", "linh xuan", "dong nai", "bien hoa", "dau giay", "madagui",
-        "bao loc", "tan van", "bx mien dong", "ben xe mien dong"
+        "bao loc", "bx mien dong moi"
     ]
 
-    # 2. Western / Mekong Delta routes
+    # 3. Western / Mekong Delta routes
     west_routes = ["can tho", "ca mau", "ben tre", "tien giang", "my tho", "kien giang", "rach gia", "an giang", "chau doc", "long an", "soc trang", "bac lieu", "dong thap"]
     is_west_route = any(r in clean_route for r in west_routes)
     west_hcm_corridors = ["bx mien tay", "ben xe mien tay", "kinh duong vuong", "an lac", "binh tan", "binh chanh", "ben luc", "tan an", "trung luong"]
 
-    # 3. Tay Ninh routes
+    # 4. Tay Ninh routes
     is_tayninh_route = "tay ninh" in clean_route or "moc bai" in clean_route
     tayninh_corridors = ["an suong", "quoc lo 22", "hoc mon", "cu chi", "trang bang", "tay ninh"]
 
     # Landmark name matching logic
     landmark_matched = False
-    if is_east_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in east_hcm_corridors):
+    if is_highland and any(c in lm_full_text for c in highland_corridors):
         landmark_matched = True
-    elif is_west_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in west_hcm_corridors):
+    elif is_east_route and any(c in lm_full_text for c in east_hcm_corridors):
         landmark_matched = True
-    elif is_tayninh_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in tayninh_corridors):
+    elif is_west_route and any(c in lm_full_text for c in west_hcm_corridors):
+        landmark_matched = True
+    elif is_tayninh_route and any(c in lm_full_text for c in tayninh_corridors):
         landmark_matched = True
     elif any(loc in clean_route for loc in [clean_lm_city, clean_lm_district]) and len(clean_lm_city) > 3:
         landmark_matched = True
 
-    # Combine GPS & Landmark: GPS takes high authority
-    final_is_on_route = (gps_matched is True) if gps_matched is not None else landmark_matched
+    # Combine GPS & Landmark: GPS takes highest authority
+    final_is_on_route = (gps_matched is True) if gps_matched is not None else (landmark_matched if gps_matched is None else False)
 
     if final_is_on_route:
         gps_addon = f" (GPS xác thực: {user_lat:.5f}, {user_lng:.5f})" if user_lat and user_lng else ""
@@ -796,7 +959,7 @@ def check_landmark_on_route(
             "is_on_route": False,
             "route_name": route_name,
             "status_message": reason_text,
-            "recommendation": f"Vị trí này ngược hướng với đường xe chạy. Vui lòng di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
+            "recommendation": f"Vị trí này ngược hướng hoặc không nằm trên hành trình xe chạy. Vui lòng di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
             "landmark_name": landmark_item["name"],
             "pickup_point": None,
             "latitude": user_lat,
@@ -877,8 +1040,16 @@ def run_hybrid_vision_pipeline(
     # Stage 2: Reasoning & Vietnamese Synthesis via Qwen2.5
     user_q_text = f"Câu hỏi của khách hàng: \"{user_question}\"" if user_question else ""
 
-    # Look up landmark in known Vietnamese transit database
-    geo_match = lookup_landmark_info(visual_facts + " " + (user_question or ""))
+    # Look up landmark in known Vietnamese transit database (with GPS distance validation)
+    resolved_geo = None
+    if user_lat is not None and user_lng is not None:
+        resolved_geo = resolve_location_from_gps(user_lat, user_lng)
+
+    geo_match = lookup_landmark_info(
+        visual_facts + " " + (user_question or ""),
+        user_lat=user_lat,
+        user_lng=user_lng
+    )
     route_analysis = None
     if task_type == "pickup_location":
         route_analysis = check_landmark_on_route(
@@ -888,7 +1059,8 @@ def run_hybrid_vision_pipeline(
             start_point,
             end_point,
             user_lat=user_lat,
-            user_lng=user_lng
+            user_lng=user_lng,
+            resolved_geo=resolved_geo
         )
     if geo_match:
         geo_context = f"""
@@ -901,6 +1073,18 @@ THÔNG TIN TRA CỨU ĐỊA DANH CHÍNH XÁC:
 - Điểm đón xe khách thuận tiện: {geo_match['pickup_point']}
 
 QUY TẮC BẮT BUỘC: Bạn PHẢI điền chính xác tên địa điểm là {geo_match['name']}, thuộc {geo_match['district']}, {geo_match['city']}. TUYỆT ĐỐI không thay đổi tên địa danh hay tự bịa ra tỉnh thành khác.
+"""
+    elif resolved_geo:
+        geo_context = f"""
+THÔNG TIN VỊ TRÍ XÁC THỰC THEO TỌA ĐỘ GPS THIẾT BỊ:
+- Tọa độ GPS hành khách: {user_lat:.6f}, {user_lng:.6f}
+- Khu vực xác định: {resolved_geo['area_name']}
+- Thuộc Quận / Huyện / TP: {resolved_geo['district']}
+- Thuộc Tỉnh / Thành phố: {resolved_geo['city']}
+- Tuyến đường / Trục giao thông chính: {resolved_geo['street']}
+- Điểm đón xe khách thuận tiện: {resolved_geo['pickup_point']}
+
+QUY TẮC BẮT BUỘC: Bạn PHẢI trình bày vị trí đón của hành khách theo đúng tọa độ GPS ({user_lat:.5f}, {user_lng:.5f}) là {resolved_geo['area_name']}, thuộc {resolved_geo['district']}, {resolved_geo['city']}. TUYỆT ĐỐI KHÔNG tự nhận diện thành landmark nổi tiếng khác ở xa vị trí này.
 """
     else:
         geo_context = """
@@ -1063,41 +1247,40 @@ Hãy mô tả chi tiết, nhận diện rõ tên địa điểm, Quận/Huyện 
     # Clean up double spaces if any
     final_text = re.sub(r' +', ' ', final_text).strip()
 
-    # Ground Truth Enforcement: If landmark matched, strictly enforce location block
-    if geo_match and task_type == "pickup_location":
+    # Ground Truth Enforcement: If landmark matched or GPS resolved, enforce location block
+    effective_geo = geo_match or resolved_geo
+    if effective_geo and task_type == "pickup_location":
+        loc_name = effective_geo.get("name") or effective_geo.get("area_name", "Vị trí GPS thiết bị")
         final_text = re.sub(
             r"(- Tên địa điểm / Khu vực:).*",
-            f"\\1 {geo_match['name']}",
+            f"\\1 {loc_name}",
             final_text,
             flags=re.IGNORECASE
         )
         final_text = re.sub(
             r"(- Thuộc Quận / Huyện / TP:).*",
-            f"\\1 {geo_match['district']}",
+            f"\\1 {effective_geo['district']}",
             final_text,
             flags=re.IGNORECASE
         )
         final_text = re.sub(
             r"(- Thuộc Tỉnh / Thành phố:).*",
-            f"\\1 {geo_match['city']}",
+            f"\\1 {effective_geo['city']}",
             final_text,
             flags=re.IGNORECASE
         )
         final_text = re.sub(
             r"(- Tuyến đường / Trục giao thông chính:).*",
-            f"\\1 {geo_match['street']}",
+            f"\\1 {effective_geo['street']}",
             final_text,
             flags=re.IGNORECASE
         )
         final_text = re.sub(
             r"(- Điểm đón xe khách thuận tiện:).*",
-            f"\\1 {geo_match['pickup_point']}",
+            f"\\1 {effective_geo['pickup_point']}",
             final_text,
             flags=re.IGNORECASE
         )
-        if "Bình Dương" in final_text and "Bình Dương" not in geo_match['city']:
-            match_name = geo_match['name']
-            final_text = final_text.replace('"Bình Dương"', f'"{match_name}"').replace("Bình Dương", geo_match['city'])
 
     if route_analysis and route_analysis.get("has_route"):
         status_tag = "NẰM TRÊN LỘ TRÌNH ĐÓN KHÁCH" if route_analysis.get("is_on_route") else "NẰM NGOÀI LỘ TRÌNH"

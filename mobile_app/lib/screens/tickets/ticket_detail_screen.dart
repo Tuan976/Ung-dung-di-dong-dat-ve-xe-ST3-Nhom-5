@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
+import '../../services/smart_boarding_service.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   final int bookingId;
@@ -269,7 +270,11 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+
+          // Smart Boarding Card (Redmi Watch 5 Active / Smart Watch Sync)
+          _buildSmartBoardingCard(booking),
+          const SizedBox(height: 20),
 
           // Actions
           if (!booking.isCancelled)
@@ -335,5 +340,200 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     if (location.toLowerCase().contains('hồ chí minh')) return 'HCM';
     if (location.toLowerCase().contains('đà nẵng')) return 'ĐN';
     return location.split(' ').last;
+  }
+
+  Widget _buildSmartBoardingCard(Booking booking) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.watch_outlined, color: Colors.amber, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Smart Boarding',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF10B981), width: 0.8),
+                          ),
+                          child: const Text(
+                            'Sẵn sàng',
+                            style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Đồng bộ Redmi Watch 5 Active (qua Mi Fitness)',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Nhấn nút dưới đây để kích hoạt rung thử nghiệm trên đồng hồ:',
+            style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildWatchActionButton(
+                icon: Icons.check_circle_outline,
+                label: '1. Vé xác nhận',
+                color: const Color(0xFF10B981),
+                onTap: () async {
+                  await SmartBoardingService.instance.testScenario(scenario: 1, booking: booking);
+                  _showWatchToast('Đã gửi thông báo Vé xác nhận tới Redmi Watch 5 Active!');
+                },
+              ),
+              _buildWatchActionButton(
+                icon: Icons.alarm,
+                label: '2. Nhắc 30 phút',
+                color: const Color(0xFFF59E0B),
+                onTap: () async {
+                  await SmartBoardingService.instance.testScenario(scenario: 2, booking: booking);
+                  _showWatchToast('Đã gửi cảnh báo Sắp đến giờ xe chạy tới đồng hồ!');
+                },
+              ),
+              _buildWatchActionButton(
+                icon: Icons.directions_bus,
+                label: '3. Xe đến đón (5p)',
+                color: const Color(0xFF38BDF8),
+                onTap: () async {
+                  await SmartBoardingService.instance.testScenario(scenario: 3, booking: booking);
+                  _showWatchToast('Đã gửi cảnh báo Xe sắp đến đón tới đồng hồ!');
+                },
+              ),
+              _buildWatchActionButton(
+                icon: Icons.warning_amber_rounded,
+                label: '4. Đổi xe / Điểm',
+                color: const Color(0xFFEF4444),
+                onTap: () async {
+                  await SmartBoardingService.instance.testScenario(scenario: 4, booking: booking);
+                  _showWatchToast('Đã gửi cảnh báo khẩn cấp Đổi xe tới đồng hồ!');
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.info_outline, color: Color(0xFF94A3B8), size: 14),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Mẹo: Mở app Mi Fitness -> Thiết bị -> Bật "Thông báo ứng dụng Đặt Vé Xe" để đồng hồ rung.',
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWatchActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.4), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWatchToast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.watch, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message, style: const TextStyle(fontSize: 12.5))),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0F172A),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 }

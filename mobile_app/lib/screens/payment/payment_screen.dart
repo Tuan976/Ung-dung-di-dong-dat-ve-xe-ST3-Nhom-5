@@ -10,6 +10,7 @@ import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 import '../../models/trip.dart';
 import '../../core/services/notification_service.dart';
+import '../../services/smart_boarding_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Booking booking;
@@ -86,6 +87,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _countdownTimer?.cancel();
         setState(() => _isPaid = true);
         await NotificationService().showPaymentSuccess(widget.booking.ticketCode);
+        final depTimeStr = widget.trip.departureTime.isNotEmpty
+            ? '${widget.trip.departureTime} - ${widget.trip.departureDate}'
+            : 'Giờ khởi hành';
+        await SmartBoardingService.instance.notifyTicketConfirmed(
+          ticketCode: widget.booking.ticketCode,
+          routeName: widget.trip.routeName,
+          departureTime: depTimeStr,
+          seatNumber: widget.booking.seatNumber,
+        );
+        SmartBoardingService.instance.scheduleRemindersForBooking(widget.booking);
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) context.pushReplacement('/booking_confirmation', extra: {'booking': widget.booking, 'trip': widget.trip});
       } else if (!silent && mounted) {
