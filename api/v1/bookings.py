@@ -245,6 +245,179 @@ def cancel_booking(booking_id):
     return api_success(message="Hủy vé thành công", data={"status": booking.status})
 
 
+@api_v1_bp.route('/bookings/active', methods=['GET'])
+@jwt_required()
+def get_active_bookings():
+    """Lấy danh sách các vé sắp đi của hành khách để đối chiếu điểm đón AI Vision."""
+    user = request.current_user
+    # Lấy các vé đã xác nhận hoặc đang giữ chỗ, chưa hoàn thành
+    active_bookings = Booking.query.filter(
+        Booking.user_id == user.id,
+        Booking.status.in_(['CONFIRMED', 'HOLD'])
+    ).order_by(Booking.booking_time.desc()).limit(10).all()
+
+    items = []
+    for b in active_bookings:
+        trip = b.trip
+        route = trip.route if trip else None
+        items.append({
+            "id": b.id,
+            "ticket_code": b.ticket_code,
+            "seat_number": b.seat_number,
+            "passenger_name": b.passenger_name,
+            "passenger_phone": b.passenger_phone,
+            "pickup_point": b.pickup_point,
+            "status": b.status,
+            "trip_id": trip.id if trip else None,
+            "departure_time": trip.departure_time.isoformat() if trip else None,
+            "route_name": f"{route.start_point} - {route.end_point}" if route else "Chưa xác định",
+            "start_point": route.start_point if route else "",
+            "end_point": route.end_point if route else "",
+            "company_name": route.company.name if route and route.company else "Nhà xe"
+        })
+
+    return api_success(data={"items": items, "count": len(items)})
+
+
+@api_v1_bp.route('/bookings/<int:booking_id>/notify-pickup', methods=['POST'])
+@jwt_required()
+def notify_pickup_location(booking_id):
+    """Cập nhật điểm đón đã xác thực bằng AI Vision và phát tín hiệu cho nhà xe/tài xế."""
+    user = request.current_user
+    booking = Booking.query.filter_by(id=booking_id, user_id=user.id).first()
+    if not booking:
+        return api_error(message="Không tìm thấy thông tin vé", error_code="BOOKING_NOT_FOUND", status=404)
+
+    data = request.json or {}
+    pickup_location = data.get('pickup_location', '').strip()
+    note = data.get('note', '')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    landmark_name = data.get('landmark_name', '')
+
+    if not pickup_location:
+        return api_error(message="Vui lòng cung cấp vị trí điểm đón", error_code="MISSING_PICKUP_LOCATION", status=400)
+
+    # Cập nhật điểm đón mới vào cơ sở dữ liệu
+    formatted_point = f"{pickup_location} [Xác thực AI Vision]"
+    booking.pickup_point = formatted_point
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return api_error(message=f"Lỗi cập nhật điểm đón: {str(e)}", error_code="DATABASE_ERROR", status=500)
+
+    # Gửi tín hiệu Socket.IO thời gian thực đến Dashboard điều hành và Tài xế
+    try:
+        from extensions import socketio
+        notice_payload = {
+            'event': 'PASSENGER_PICKUP_UPDATE',
+            'booking_id': booking.id,
+            'ticket_code': booking.ticket_code,
+            'passenger_name': booking.passenger_name,
+            'passenger_phone': booking.passenger_phone,
+            'seat_number': booking.seat_number,
+            'trip_id': booking.trip_id,
+            'route_name': f"{booking.trip.route.start_point} - {booking.trip.route.end_point}" if booking.trip and booking.trip.route else "",
+            'pickup_location': pickup_location,
+            'landmark_name': landmark_name,
+            'latitude': latitude,
+            'longitude': longitude,
+            'note': note,
+            'timestamp': datetime.utcnow().isoformat(),
+            'message': f"Hành khách {booking.passenger_name} (Ghế {booking.seat_number}) đã xác thực vị trí đón tại: {pickup_location}. Bác tài lưu ý đón khách!"
+        }
+        socketio.emit('passenger_pickup_notice', notice_payload, namespace='/ops')
+        socketio.emit('seat_update', {
+            'trip_id': booking.trip_id,
+            'seat_number': booking.seat_number,
+            'pickup_point': formatted_point,
+            'status': booking.boarding_status
+        }, namespace='/ops')
+    except Exception as sock_err:
+        print(f"Socket emit notice warning: {sock_err}")
+
+    return api_success(
+        message="Đã cập nhật điểm đón và thông báo cho nhà xe & bác tài thành công!",
+        data={
+            "booking_id": booking.id,
+            "ticket_code": booking.ticket_code,
+            "pickup_point": booking.pickup_point,
+            "passenger_name": booking.passenger_name,
+            "passenger_phone": booking.passenger_phone,
+            "seat_number": booking.seat_number
+        }
+    )
+
+
+@api_v1_bp.route('/bookings/notify-pickup-public', methods=['POST'])
+def notify_pickup_public():
+    """Thông báo điểm đón trực tiếp qua mã vé hoặc số điện thoại (hỗ trợ cả khách vãng lai)."""
+    data = request.json or {}
+    pickup_location = data.get('pickup_location', '').strip()
+    ticket_code = data.get('ticket_code', '').strip().upper()
+    passenger_phone = data.get('passenger_phone', '').strip()
+    passenger_name = data.get('passenger_name', '').strip() or "Hành khách"
+    route_name = data.get('route_name', '').strip()
+    landmark_name = data.get('landmark_name', '')
+    note = data.get('note', '')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+
+    if not pickup_location:
+        return api_error(message="Vui lòng cung cấp vị trí điểm đón", error_code="MISSING_PICKUP_LOCATION", status=400)
+
+    booking = None
+    if ticket_code:
+        booking = Booking.query.filter_by(ticket_code=ticket_code).first()
+    elif passenger_phone:
+        booking = Booking.query.filter_by(passenger_phone=passenger_phone).order_by(Booking.id.desc()).first()
+
+    if booking:
+        formatted_point = f"{pickup_location} [Xác thực AI Vision]"
+        booking.pickup_point = formatted_point
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+
+    # Phát thông báo Socket.IO cho Trung tâm Điều hành & Bác tài
+    try:
+        from extensions import socketio
+        notice_payload = {
+            'event': 'PASSENGER_PICKUP_UPDATE',
+            'booking_id': booking.id if booking else None,
+            'ticket_code': booking.ticket_code if booking else ticket_code,
+            'passenger_name': booking.passenger_name if booking else passenger_name,
+            'passenger_phone': booking.passenger_phone if booking else passenger_phone,
+            'seat_number': booking.seat_number if booking else "Chờ xếp",
+            'trip_id': booking.trip_id if booking else None,
+            'route_name': route_name or (f"{booking.trip.route.start_point} - {booking.trip.route.end_point}" if booking and booking.trip and booking.trip.route else "Tuyến xe"),
+            'pickup_location': pickup_location,
+            'landmark_name': landmark_name,
+            'latitude': latitude,
+            'longitude': longitude,
+            'note': note,
+            'timestamp': datetime.utcnow().isoformat(),
+            'message': f"Hành khách {booking.passenger_name if booking else passenger_name} báo điểm đón tại: {pickup_location}. Nhà xe lưu ý điều phối đón khách!"
+        }
+        socketio.emit('passenger_pickup_notice', notice_payload, namespace='/ops')
+    except Exception as sock_err:
+        print(f"Socket emit warning: {sock_err}")
+
+    return api_success(
+        message="Đã gửi thông báo điểm đón đến nhà xe và tài xế thành công!",
+        data={
+            "ticket_code": booking.ticket_code if booking else ticket_code,
+            "pickup_location": pickup_location,
+            "landmark_name": landmark_name,
+            "passenger_phone": booking.passenger_phone if booking else passenger_phone
+        }
+    )
+
+
+
 # NOTE: POST /sos da duoc chuyen sang api/v1/sos.py (canh bao SOS theo vi tri, bat buoc dang nhap).
 
 @api_v1_bp.route('/update_device_info', methods=['POST'])

@@ -285,6 +285,93 @@ def remove_accents(input_str: str) -> str:
 
 VIETNAMESE_LANDMARKS_DB = [
     {
+        "keywords": [
+            "landmark 81", "landmark81", "landmark", "vinpearl landmark", "vinhomes central park",
+            "tallest building", "tallest skyscraper", "tallest", "81-story", "81 story",
+            "toa nha cao nhat", "toa nha landmark", "khu do thi vinhomes", "toa nha tallest"
+        ],
+        "name": "Tòa nhà The Landmark 81 (Vinhomes Central Park)",
+        "ward": "Phường 22",
+        "district": "Quận Bình Thạnh",
+        "city": "TP. Hồ Chí Minh",
+        "street": "Số 720A Điện Biên Phủ / Đường Nguyễn Hữu Cảnh",
+        "pickup_point": "Sảnh đón trả khách Landmark 81, Cổng chính công viên Central Park hoặc Cầu Sài Gòn / ngã tư Hàng Xanh (cách 500m) để đón các tuyến xe khách đi Vũng Tàu, Đồng Nai, Bình Thuận, Miền Trung, Miền Bắc.",
+    },
+    {
+        "keywords": [
+            "bitexco", "bitexco financial", "toa nha bitexco", "helipad building", "lotus building", "toa nha hinh bup sen"
+        ],
+        "name": "Tòa nhà Bitexco Financial Tower",
+        "ward": "Phường Bến Nghé",
+        "district": "Quận 1",
+        "city": "TP. Hồ Chí Minh",
+        "street": "Số 2 Hải Triều / Đường Hồ Tùng Mậu",
+        "pickup_point": "Khu vực sảnh đón taxi Bitexco hoặc trạm trung chuyển xe buýt Hàm Nghi (cách 200m).",
+    },
+    {
+        "keywords": ["phan chu trinh", "thpt phan chu trinh", "truong thpt phan chu trinh", "truong phan chu trinh"],
+        "name": "Trường THPT Phan Chu Trinh",
+        "ward": "Khu vực trường học",
+        "district": "Cơ sở giáo dục",
+        "city": "Việt Nam",
+        "street": "Cổng chính trường học",
+        "pickup_point": "Trước cổng trường THPT Phan Chu Trinh hoặc trạm dừng xe buýt gần cổng trường nhất.",
+    },
+    {
+        "keywords": ["tan son nhat", "san bay tan son nhat", "tsn airport", "san bay tsn", "ga quoc noi", "ga quoc te"],
+        "name": "Sân bay Quốc tế Tân Sơn Nhất",
+        "ward": "Phường 2",
+        "district": "Quận Tân Bình",
+        "city": "TP. Hồ Chí Minh",
+        "street": "Đường Trường Sơn",
+        "pickup_point": "Làn đón xe công nghệ / Taxi Ga Quốc nội hoặc Ga Quốc tế.",
+    },
+    {
+        "keywords": ["ben thanh", "cho ben thanh", "ben thanh market"],
+        "name": "Chợ Bến Thành",
+        "ward": "Phường Bến Thành",
+        "district": "Quận 1",
+        "city": "TP. Hồ Chí Minh",
+        "street": "Quảng trường Quách Thị Trang / Đường Lê Lợi",
+        "pickup_point": "Ga Metro Bến Thành hoặc trạm trung chuyển xe buýt Hàm Nghi.",
+    },
+    {
+        "keywords": ["dinh doc lap", "dinh thong nhat", "reunification palace", "independence palace"],
+        "name": "Dinh Độc Lập (Dinh Thống Nhất)",
+        "ward": "Phường Bến Thành",
+        "district": "Quận 1",
+        "city": "TP. Hồ Chí Minh",
+        "street": "Số 135 Nam Kỳ Khởi Nghĩa",
+        "pickup_point": "Cổng chính Dinh Độc Lập trên đường Nam Kỳ Khởi Nghĩa.",
+    },
+    {
+        "keywords": ["nha tho duc ba", "notre dame", "buu dien thanh pho", "saigon post office"],
+        "name": "Nhà thờ Đức Bà & Bưu điện Trung tâm Sài Gòn",
+        "ward": "Phường Bến Nghé",
+        "district": "Quận 1",
+        "city": "TP. Hồ Chí Minh",
+        "street": "Công xã Paris",
+        "pickup_point": "Trước Bưu điện Thành phố hoặc đường Nguyễn Du.",
+    },
+    {
+        "keywords": ["keangnam", "keangnam 72", "landmark 72", "lotte center", "lotte hanoi"],
+        "name": "Tòa nhà Keangnam Landmark 72 Hà Nội",
+        "ward": "Phường Mễ Trì",
+        "district": "Quận Nam Từ Liêm",
+        "city": "TP. Hà Nội",
+        "street": "Đường Phạm Hùng",
+        "pickup_point": "Sảnh đón xe Keangnam hoặc trạm dừng buýt đường Phạm Hùng hướng đi Bến xe Mỹ Đình.",
+    },
+    {
+        "keywords": ["hutech", "dai hoc cong nghe", "truong dai hoc hutech", "hutech university"],
+        "name": "Trường Đại học Công nghệ TP.HCM (HUTECH)",
+        "ward": "Phường 25",
+        "district": "Quận Bình Thạnh",
+        "city": "TP. Hồ Chí Minh",
+        "street": "475A Điện Biên Phủ",
+        "pickup_point": "Cổng chính HUTECH Điện Biên Phủ hoặc trạm dừng buýt dưới chân cầu vượt Hàng Xanh.",
+    },
+    {
         "keywords": ["khu cong nghe cao", "cong nghe cao", "shtp", "high tech park", "hightech park"],
         "name": "Khu Công Nghệ Cao TP.HCM (SHTP)",
         "ward": "Phường Tân Phú / Tăng Nhơn Phú B",
@@ -531,11 +618,125 @@ def lookup_landmark_info(text: str) -> Optional[Dict[str, str]]:
     return None
 
 
+def check_landmark_on_route(
+    landmark_item: Optional[Dict[str, Any]],
+    raw_facts: str,
+    route_name: Optional[str],
+    start_point: Optional[str] = "",
+    end_point: Optional[str] = ""
+) -> Dict[str, Any]:
+    """
+    Checks if a detected landmark matches the travel corridor of a given bus route.
+    Returns structured analysis with recommendation.
+    """
+    if not route_name:
+        return {
+            "has_route": False,
+            "is_on_route": None,
+            "route_name": None,
+            "status_message": "Chưa chọn chuyến xe để đối soát lộ trình.",
+            "recommendation": "Vui lòng chọn chuyến xe của bạn để AI kiểm tra xe có đi ngang qua vị trí này không.",
+            "landmark_name": landmark_item["name"] if landmark_item else None,
+            "pickup_point": landmark_item.get("pickup_point") if landmark_item else None
+        }
+
+    clean_route = remove_accents(f"{route_name} {start_point} {end_point}").lower()
+
+    if not landmark_item:
+        clean_facts = remove_accents(raw_facts).lower()
+        cities = ["ho chi minh", "sai gon", "da lat", "dak nong", "cu jut", "vung tau", "nha trang", "can tho", "tay ninh", "ha noi", "da nang"]
+        matched_cities = [c for c in cities if c in clean_facts and c in clean_route]
+        if matched_cities:
+            return {
+                "has_route": True,
+                "is_on_route": True,
+                "route_name": route_name,
+                "status_message": f"Điểm đón này nằm trong khu vực hành lang tuyến {route_name}.",
+                "recommendation": "Vị trí có thể đón được xe. Hãy bấm nút gửi thông báo để bác tài chủ động đón bạn.",
+                "landmark_name": "Khu vực nhận diện qua ảnh",
+                "pickup_point": "Trục đường tại vị trí bạn đang đứng"
+            }
+        return {
+            "has_route": True,
+            "is_on_route": False,
+            "route_name": route_name,
+            "status_message": f"Vị trí này có vẻ nằm ngoài hành lang di chuyển của tuyến {route_name}.",
+            "recommendation": f"Vui lòng kiểm tra lại lộ trình hoặc di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
+            "landmark_name": None,
+            "pickup_point": None
+        }
+
+    clean_lm_name = remove_accents(landmark_item.get("name", "")).lower()
+    clean_lm_street = remove_accents(landmark_item.get("street", "")).lower()
+    clean_lm_district = remove_accents(landmark_item.get("district", "")).lower()
+    clean_lm_city = remove_accents(landmark_item.get("city", "")).lower()
+
+    # 1. Eastern / Central / Northern / Highland corridors (HCM -> Da Lat, Dak Nong, Vung Tau, Nha Trang, etc.)
+    east_highland_routes = [
+        "da lat", "lam dong", "cu jut", "dak nong", "dak lak", "buon ma thuot",
+        "vung tau", "ba ria", "nha trang", "khanh hoa", "phan thiet", "binh thuan",
+        "quy nhon", "binh dinh", "da nang", "ha noi", "hue", "quang nam"
+    ]
+    is_east_route = any(r in clean_route for r in east_highland_routes) or "sai gon" in clean_route or "hcm" in clean_route or "ho chi minh" in clean_route
+
+    # Corridors keywords in HCM for Eastern routes
+    east_hcm_corridors = [
+        "dien bien phu", "hang xanh", "landmark 81", "landmark", "nguyen huu canh",
+        "suoi tien", "nga tu thu duc", "khu cong nghe cao", "binh thanh", "thu duc",
+        "xa lo ha noi", "linh xuan", "dong nai", "bien hoa", "dau giay", "madagui",
+        "bao loc", "tan van", "bx mien dong", "ben xe mien dong"
+    ]
+
+    # 2. Western / Mekong Delta routes (HCM -> Can Tho, Ca Mau, Ben Tre, Tien Giang, Kien Giang, An Giang)
+    west_routes = ["can tho", "ca mau", "ben tre", "tien giang", "my tho", "kien giang", "rach gia", "an giang", "chau doc", "long an", "soc trang", "bac lieu", "dong thap"]
+    is_west_route = any(r in clean_route for r in west_routes)
+    west_hcm_corridors = ["bx mien tay", "ben xe mien tay", "kinh duong vuong", "an lac", "binh tan", "binh chanh", "ben luc", "tan an", "trung luong"]
+
+    # 3. Tay Ninh routes
+    is_tayninh_route = "tay ninh" in clean_route or "moc bai" in clean_route
+    tayninh_corridors = ["an suong", "quoc lo 22", "hoc mon", "cu chi", "trang bang", "tay ninh"]
+
+    # Matching logic
+    is_matched = False
+    if is_east_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in east_hcm_corridors):
+        is_matched = True
+    elif is_west_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in west_hcm_corridors):
+        is_matched = True
+    elif is_tayninh_route and any(c in f"{clean_lm_name} {clean_lm_street} {clean_lm_district}" for c in tayninh_corridors):
+        is_matched = True
+    elif any(loc in clean_route for loc in [clean_lm_city, clean_lm_district]) and len(clean_lm_city) > 3:
+        is_matched = True
+
+    if is_matched:
+        return {
+            "has_route": True,
+            "is_on_route": True,
+            "route_name": route_name,
+            "status_message": f"Điểm đón '{landmark_item['name']}' NẰM TRÊN LỘ TRÌNH tuyến xe {route_name}!",
+            "recommendation": f"Xe sẽ đi ngang qua trục đường {landmark_item.get('street', '')}. Điểm đón thuận tiện nhất: {landmark_item.get('pickup_point', 'Cổng sảnh chính')}.",
+            "landmark_name": landmark_item["name"],
+            "pickup_point": landmark_item.get("pickup_point")
+        }
+    else:
+        return {
+            "has_route": True,
+            "is_on_route": False,
+            "route_name": route_name,
+            "status_message": f"Điểm đón '{landmark_item['name']}' KHÔNG NẰM TRONG LỘ TRÌNH tuyến xe {route_name}.",
+            "recommendation": f"Vị trí này ngược hướng với đường xe chạy. Vui lòng di chuyển đến điểm đón chính: {start_point or 'Bến xe xuất bến'}.",
+            "landmark_name": landmark_item["name"],
+            "pickup_point": None
+        }
+
+
 def run_hybrid_vision_pipeline(
     image_bytes: bytes,
     task_type: str,
-    user_question: Optional[str] = None
-) -> Tuple[bool, str]:
+    user_question: Optional[str] = None,
+    route_name: Optional[str] = None,
+    start_point: Optional[str] = None,
+    end_point: Optional[str] = None
+) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """
     Two-Stage Hybrid Vision Pipeline:
     1. Vision Model (Moondream) extracts visual facts and visible text in English.
@@ -556,9 +757,10 @@ def run_hybrid_vision_pipeline(
         )
     elif task_type == "pickup_location":
         v_prompt = (
-            "Examine this location, road, entrance, bus stop, or building carefully. "
-            "Transcribe all readable text on signs, billboards, gate plaques, street banners, and address plates. "
-            "Describe the distinctive landmarks, building structure, road signs, and geographic surroundings."
+            "Examine this image carefully to identify the exact location, famous building, school, or landmark in Vietnam. "
+            "1. If this is a famous building, skyscraper, or landmark (such as Landmark 81, Bitexco, Keangnam, Ben Thanh Market, Dragon Bridge, etc.), identify and state its exact name. "
+            "2. Transcribe all readable text on signs, billboards, gate plaques, street banners, school names, and address plates. "
+            "3. Describe the distinctive landmarks, building structure, road signs, and geographic surroundings."
         )
     else:
         v_prompt = (
@@ -591,32 +793,34 @@ def run_hybrid_vision_pipeline(
         }
     )
     if not ok_v:
-        return False, visual_facts
+        return False, visual_facts, None
 
     # Stage 2: Reasoning & Vietnamese Synthesis via Qwen2.5
     user_q_text = f"Câu hỏi của khách hàng: \"{user_question}\"" if user_question else ""
 
     # Look up landmark in known Vietnamese transit database
     geo_match = lookup_landmark_info(visual_facts + " " + (user_question or ""))
+    route_analysis = None
+    if task_type == "pickup_location":
+        route_analysis = check_landmark_on_route(geo_match, visual_facts, route_name, start_point, end_point)
     if geo_match:
         geo_context = f"""
-THÔNG TIN TRA CỨU ĐỊA DANH GIAO THÔNG CHÍNH XÁC:
+THÔNG TIN TRA CỨU ĐỊA DANH CHÍNH XÁC:
 - Địa danh xác định: {geo_match['name']}
 - Thuộc Phường / Xã: {geo_match['ward']}
 - Thuộc Quận / Huyện / TP: {geo_match['district']}
 - Thuộc Tỉnh / Thành phố: {geo_match['city']}
 - Tuyến đường tiếp giáp: {geo_match['street']}
-- Điểm đón xe khách phổ biến: {geo_match['pickup_point']}
-(Hãy sử dụng đầy đủ các thông tin địa danh, quận/huyện, tỉnh/thành phố này để trả lời rõ ràng cho khách hàng).
+- Điểm đón xe khách thuận tiện: {geo_match['pickup_point']}
+
+QUY TẮC BẮT BUỘC: Bạn PHẢI điền chính xác tên địa điểm là {geo_match['name']}, thuộc {geo_match['district']}, {geo_match['city']}. TUYỆT ĐỐI không thay đổi tên địa danh hay tự bịa ra tỉnh thành khác.
 """
     else:
         geo_context = """
 HƯỚNG DẪN XÁC ĐỊNH ĐỊA GIỚI HÀNH CHÍNH VIỆT NAM:
-Dựa trên biển hiệu, chữ đọc được, số nhà hoặc đặc điểm địa danh, hãy suy luận và chỉ rõ:
-- Tên địa điểm cụ thể
-- Thuộc Quận / Huyện nào (hoặc Thành phố trực thuộc như TP. Thủ Đức)
-- Thuộc Tỉnh / Thành phố nào (TP. Hồ Chí Minh, Hà Nội, Đà Nẵng, Cần Thơ, Bình Dương...)
-- Tuyến đường / Trục giao thông chính.
+Dựa trên biển hiệu, chữ đọc được, số nhà hoặc đặc điểm địa danh:
+- Hãy xác định đúng tên địa điểm thực tế hoặc biển hiệu đọc được từ ảnh.
+- Tuyệt đối KHÔNG tự bịa ra tỉnh thành phố không có cơ sở trong ảnh.
 """
 
     if task_type == "ticket":
@@ -772,7 +976,47 @@ Hãy mô tả chi tiết, nhận diện rõ tên địa điểm, Quận/Huyện 
     # Clean up double spaces if any
     final_text = re.sub(r' +', ' ', final_text).strip()
 
-    return True, final_text
+    # Ground Truth Enforcement: If landmark matched, strictly enforce location block
+    if geo_match and task_type == "pickup_location":
+        final_text = re.sub(
+            r"(- Tên địa điểm / Khu vực:).*",
+            f"\\1 {geo_match['name']}",
+            final_text,
+            flags=re.IGNORECASE
+        )
+        final_text = re.sub(
+            r"(- Thuộc Quận / Huyện / TP:).*",
+            f"\\1 {geo_match['district']}",
+            final_text,
+            flags=re.IGNORECASE
+        )
+        final_text = re.sub(
+            r"(- Thuộc Tỉnh / Thành phố:).*",
+            f"\\1 {geo_match['city']}",
+            final_text,
+            flags=re.IGNORECASE
+        )
+        final_text = re.sub(
+            r"(- Tuyến đường / Trục giao thông chính:).*",
+            f"\\1 {geo_match['street']}",
+            final_text,
+            flags=re.IGNORECASE
+        )
+        final_text = re.sub(
+            r"(- Điểm đón xe khách thuận tiện:).*",
+            f"\\1 {geo_match['pickup_point']}",
+            final_text,
+            flags=re.IGNORECASE
+        )
+        if "Bình Dương" in final_text and "Bình Dương" not in geo_match['city']:
+            match_name = geo_match['name']
+            final_text = final_text.replace('"Bình Dương"', f'"{match_name}"').replace("Bình Dương", geo_match['city'])
+
+    if route_analysis and route_analysis.get("has_route"):
+        status_tag = "NẰM TRÊN LỘ TRÌNH ĐÓN KHÁCH" if route_analysis.get("is_on_route") else "NẰM NGOÀI LỘ TRÌNH"
+        final_text += f"\n\n4. Đánh giá Lộ trình Tuyến xe ({route_analysis.get('route_name', '')}):\n- Kết luận: {status_tag}\n- Chi tiết: {route_analysis.get('status_message', '')}\n- Hướng dẫn đón: {route_analysis.get('recommendation', '')}"
+
+    return True, final_text, route_analysis
 
 
 # ================== REST ENDPOINTS ==================
@@ -902,7 +1146,7 @@ def describe_image():
 
     start_time = time.time()
     try:
-        ok, result = run_hybrid_vision_pipeline(
+        ok, result, _ = run_hybrid_vision_pipeline(
             image_bytes=img_bytes,
             task_type="describe",
             user_question=user_prompt
@@ -948,7 +1192,7 @@ def ocr_image():
     start_time = time.time()
     try:
         qr_text = detect_qr_code(img_bytes)
-        ok, result = run_hybrid_vision_pipeline(
+        ok, result, _ = run_hybrid_vision_pipeline(
             image_bytes=img_bytes,
             task_type="ocr",
             user_question=user_prompt
@@ -989,6 +1233,9 @@ def analyze_image():
     json_data = request.get_json(silent=True) or {}
     analysis_type = request.form.get("type") or json_data.get("type") or "general"
     custom_prompt = request.form.get("prompt") or json_data.get("prompt")
+    route_name = request.form.get("route_name") or json_data.get("route_name")
+    start_point = request.form.get("start_point") or json_data.get("start_point")
+    end_point = request.form.get("end_point") or json_data.get("end_point")
 
     # Detect QR code first
     qr_content = detect_qr_code(img_bytes)
@@ -1002,10 +1249,13 @@ def analyze_image():
 
     start_time = time.time()
     try:
-        ok, vision_description = run_hybrid_vision_pipeline(
+        ok, vision_description, route_analysis = run_hybrid_vision_pipeline(
             image_bytes=img_bytes,
             task_type=analysis_type,
-            user_question=custom_prompt
+            user_question=custom_prompt,
+            route_name=route_name,
+            start_point=start_point,
+            end_point=end_point
         )
         elapsed = round(time.time() - start_time, 2)
         if not ok:
@@ -1019,6 +1269,7 @@ def analyze_image():
             "model": f"{VISION_MODEL} + {REASONING_MODEL}",
             "image_dimensions": {"width": image_pil.width, "height": image_pil.height},
             "analysis_result": vision_description,
+            "route_analysis": route_analysis,
             "qr_detected": qr_content is not None,
             "qr_code": qr_content,
             "ticket_verification": ticket_verification,

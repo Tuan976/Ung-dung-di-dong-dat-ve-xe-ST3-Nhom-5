@@ -112,4 +112,77 @@ class BookingService {
       throw Exception(e.response?.data['message'] ?? 'Lỗi kết nối');
     }
   }
+
+  Future<List<Map<String, dynamic>>> getActiveBookings() async {
+    try {
+      final response = await _apiClient.get('/bookings/active');
+      if (response.data['success'] == true) {
+        final List<dynamic> items = response.data['data']['items'] ?? [];
+        return items.map((i) => Map<String, dynamic>.from(i)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Lỗi tải active bookings: $e');
+      return [];
+    }
+  }
+
+  Future<bool> notifyPickupLocation({
+    required int bookingId,
+    required String pickupLocation,
+    String? landmarkName,
+    String? note,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/bookings/$bookingId/notify-pickup',
+        data: {
+          'pickup_location': pickupLocation,
+          if (landmarkName != null) 'landmark_name': landmarkName,
+          if (note != null) 'note': note,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        },
+      );
+      return response.data['success'] == true;
+    } catch (e) {
+      debugPrint('Lỗi báo điểm đón: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> notifyPickupPublic({
+    required String pickupLocation,
+    String? ticketCode,
+    String? passengerPhone,
+    String? passengerName,
+    String? routeName,
+    String? landmarkName,
+    String? note,
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/bookings/notify-pickup-public',
+        data: {
+          'pickup_location': pickupLocation,
+          if (ticketCode != null && ticketCode.isNotEmpty) 'ticket_code': ticketCode,
+          if (passengerPhone != null && passengerPhone.isNotEmpty) 'passenger_phone': passengerPhone,
+          if (passengerName != null && passengerName.isNotEmpty) 'passenger_name': passengerName,
+          if (routeName != null && routeName.isNotEmpty) 'route_name': routeName,
+          if (landmarkName != null && landmarkName.isNotEmpty) 'landmark_name': landmarkName,
+          if (note != null && note.isNotEmpty) 'note': note,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        },
+      );
+      return response.data is Map<String, dynamic> ? response.data : {'success': true};
+    } catch (e) {
+      debugPrint('Lỗi notifyPickupPublic: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }

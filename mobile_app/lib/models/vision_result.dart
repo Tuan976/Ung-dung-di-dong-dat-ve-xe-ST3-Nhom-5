@@ -6,6 +6,13 @@ class VisionResult {
   final bool qrDetected;
   final String? qrContent;
   final Map<String, dynamic>? ticketVerification;
+  final Map<String, dynamic>? routeAnalysis;
+  final bool? isOnRoute;
+  final String? routeName;
+  final String? statusMessage;
+  final String? pickupRecommendation;
+  final String? matchedLandmark;
+  final String? pickupPointSuggested;
   final double? executionTime;
   final String? error;
 
@@ -17,11 +24,22 @@ class VisionResult {
     this.qrDetected = false,
     this.qrContent,
     this.ticketVerification,
+    this.routeAnalysis,
+    this.isOnRoute,
+    this.routeName,
+    this.statusMessage,
+    this.pickupRecommendation,
+    this.matchedLandmark,
+    this.pickupPointSuggested,
     this.executionTime,
     this.error,
   });
 
   factory VisionResult.fromJson(Map<String, dynamic> json) {
+    final routeMap = json['route_analysis'] != null
+        ? Map<String, dynamic>.from(json['route_analysis'])
+        : null;
+
     return VisionResult(
       success: json['success'] == true,
       task: json['task'] as String?,
@@ -32,6 +50,15 @@ class VisionResult {
       ticketVerification: json['ticket_verification'] != null
           ? Map<String, dynamic>.from(json['ticket_verification'])
           : null,
+      routeAnalysis: routeMap,
+      isOnRoute: routeMap != null && routeMap['has_route'] == true
+          ? routeMap['is_on_route'] == true
+          : null,
+      routeName: routeMap?['route_name'] as String?,
+      statusMessage: routeMap?['status_message'] as String?,
+      pickupRecommendation: routeMap?['recommendation'] as String?,
+      matchedLandmark: (routeMap?['landmark_name'] ?? routeMap?['matched_landmark']) as String?,
+      pickupPointSuggested: (routeMap?['pickup_point'] ?? routeMap?['pickup_point_suggested']) as String?,
       executionTime: (json['execution_time_seconds'] as num?)?.toDouble(),
       error: json['error'] as String?,
     );

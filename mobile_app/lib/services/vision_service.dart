@@ -39,6 +39,9 @@ class VisionService {
     required String filename,
     String type = 'general',
     String? prompt,
+    String? routeName,
+    String? startPoint,
+    String? endPoint,
   }) async {
     return _sendMultipartRequest(
       endpoint: '/v1/vision/analyze',
@@ -47,6 +50,9 @@ class VisionService {
       fields: {
         'type': type,
         if (prompt != null && prompt.isNotEmpty) 'prompt': prompt,
+        if (routeName != null && routeName.isNotEmpty) 'route_name': routeName,
+        if (startPoint != null && startPoint.isNotEmpty) 'start_point': startPoint,
+        if (endPoint != null && endPoint.isNotEmpty) 'end_point': endPoint,
       },
     );
   }
