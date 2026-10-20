@@ -175,7 +175,6 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
           startPoint: _selectedStartPoint,
           endPoint: _selectedEndPoint,
         );
-      }
       } else if (_currentMode == 'ocr') {
         res = await _visionService.extractText(
           imageBytes: _selectedImageBytes!,
