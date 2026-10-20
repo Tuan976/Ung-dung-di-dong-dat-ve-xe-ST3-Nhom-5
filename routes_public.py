@@ -608,6 +608,7 @@ def register_public_routes(app):
                 'departure_time': booking.trip.departure_time.isoformat(),
                 'seat_number': booking.seat_number,
                 'pickup_point': booking.pickup_point,
+                'license_plate': booking.trip.bus.license_plate if booking.trip and booking.trip.bus else None,
                 'ticket_price': booking.ticket_price,
                 'status': booking.status,
                 'payment_status': booking.payment_status
