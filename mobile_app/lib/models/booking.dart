@@ -4,6 +4,7 @@ class TripInfo {
   final String endPoint;
   final String companyName;
   final String departureTime;
+  final String? licensePlate;
 
   TripInfo({
     required this.id,
@@ -11,6 +12,7 @@ class TripInfo {
     required this.endPoint,
     required this.companyName,
     required this.departureTime,
+    this.licensePlate,
   });
 
   factory TripInfo.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class TripInfo {
       endPoint: json['end_point'] ?? '',
       companyName: json['company_name'] ?? '',
       departureTime: json['departure_time'] ?? '',
+      licensePlate: json['license_plate'],
     );
   }
 

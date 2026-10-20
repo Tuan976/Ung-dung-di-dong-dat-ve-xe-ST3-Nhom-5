@@ -166,7 +166,8 @@ def get_user_bookings():
                 "departure_time": b.trip.departure_time.isoformat(),
                 "start_point": b.trip.route.start_point,
                 "end_point": b.trip.route.end_point,
-                "company_name": b.trip.route.company.name
+                "company_name": b.trip.route.company.name,
+                "license_plate": b.trip.bus.license_plate if b.trip.bus else None
             }
         })
 
@@ -210,7 +211,8 @@ def get_booking_detail(booking_id):
                 "arrival_time": booking.trip.arrival_time.isoformat() if booking.trip.arrival_time else None,
                 "start_point": booking.trip.route.start_point,
                 "end_point": booking.trip.route.end_point,
-                "company_name": booking.trip.route.company.name
+                "company_name": booking.trip.route.company.name,
+                "license_plate": booking.trip.bus.license_plate if booking.trip.bus else None
             }
         }
     )

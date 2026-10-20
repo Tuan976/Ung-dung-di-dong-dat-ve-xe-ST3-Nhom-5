@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/booking.dart';
@@ -204,15 +205,70 @@ class SmartBoardingService {
     );
   }
 
-  /// Các mốc nhắc trước giờ xe chạy (phút)
-  static const List<int> reminderMinutes = [60, 30, 15];
+  /// 0. Chờ thanh toán: báo ngay khi giữ ghế và hẹn nhắc lại khi còn 5 phút trước lúc hết hạn giữ chỗ
+  Future<void> notifyPaymentPending({
+    required String ticketCode,
+    required String routeName,
+    required String seatNumber,
+    String? expiresAt,
+  }) async {
+    if (kIsWeb) return;
+    await initialize();
+
+    final expires = _parseDepartureTime(expiresAt);
+    final vn = tz.getLocation('Asia/Ho_Chi_Minh');
+    final deadline = expires == null
+        ? null
+        : tz.TZDateTime(vn, expires.year, expires.month, expires.day, expires.hour, expires.minute, expires.second);
+    final deadlineText = expires == null
+        ? '15 phút'
+        : '${expires.hour.toString().padLeft(2, '0')}:${expires.minute.toString().padLeft(2, '0')}';
+
+    await _notifications.show(
+      id: 105,
+      title: '⏳ [CHỜ THANH TOÁN] Vé #$ticketCode',
+      body: '$routeName\nGhế $seatNumber đang được giữ chỗ.\nVui lòng thanh toán trước $deadlineText để không mất ghế.',
+      notificationDetails: _buildWatchNotificationDetails(subtitle: 'Giữ chỗ 15 phút'),
+      payload: 'payment_pending_$ticketCode',
+    );
+
+    if (deadline == null) return;
+    final remindAt = deadline.subtract(const Duration(minutes: 5));
+    if (!remindAt.isAfter(tz.TZDateTime.now(vn))) return;
+    try {
+      await _notifications.zonedSchedule(
+        id: 106,
+        title: '⚠️ [CÒN 5 PHÚT] Sắp hết hạn giữ chỗ',
+        body: 'Vé #$ticketCode - Ghế $seatNumber sẽ bị hủy lúc $deadlineText nếu chưa thanh toán.',
+        scheduledDate: remindAt,
+        notificationDetails: _buildWatchNotificationDetails(subtitle: 'Sắp hết hạn giữ chỗ'),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: 'payment_expiring_$ticketCode',
+      );
+    } catch (e) {
+      debugPrint('Lỗi lập lịch nhắc thanh toán: $e');
+    }
+  }
+
+  /// Hủy thông báo chờ thanh toán (khi đã thanh toán hoặc hủy vé)
+  Future<void> cancelPaymentPending() async {
+    if (kIsWeb) return;
+    await _notifications.cancel(id: 105);
+    await _notifications.cancel(id: 106);
+  }
+
+  /// Các mốc trước giờ xe chạy (phút): 60 và 30 là nhắc giờ, 10 là "xe sắp đến điểm đón"
+  static const List<int> reminderMinutes = [60, 30, 10];
+  static const int _arrivingMinutes = 10;
 
   int _reminderId(String ticketCode, int minutes) {
     final base = (ticketCode.hashCode.abs() % 100000) * 1000;
     return 10000 + base + minutes;
   }
 
-  /// Tự động lập lịch nhắc giờ xe chạy (60, 30, 15 phút trước giờ chạy).
+  String _plateKey(String ticketCode) => 'boarding_plate_$ticketCode';
+
+  /// Tự động lập lịch nhắc giờ xe chạy (60, 30 phút) và xe đến đón (10 phút).
   /// Lịch do hệ điều hành giữ nên vẫn nổ đúng giờ kể cả khi app đã đóng/khóa màn hình.
   Future<void> scheduleRemindersForBooking(Booking booking) async {
     if (kIsWeb) return;
@@ -224,19 +280,35 @@ class SmartBoardingService {
     final departure = tz.TZDateTime(vn, depTime.year, depTime.month, depTime.day, depTime.hour, depTime.minute);
     final now = tz.TZDateTime.now(vn);
 
+    final route = booking.trip?.routeName ?? 'Hành trình xe khách';
+    final pickup = booking.trip?.startPoint ?? 'Bến xe';
+    final plate = booking.trip?.licensePlate;
+
+    if (plate != null && plate.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_plateKey(booking.ticketCode), plate);
+    }
+
     for (final minutes in reminderMinutes) {
       final fireAt = departure.subtract(Duration(minutes: minutes));
       if (!fireAt.isAfter(now)) continue;
 
-      final route = booking.trip?.routeName ?? 'Hành trình xe khách';
-      final pickup = booking.trip?.startPoint ?? 'Bến xe';
+      final isArriving = minutes == _arrivingMinutes;
+      final title = isArriving
+          ? '🚌 [XE SẮP ĐẾN ĐIỂM ĐÓN] Còn ~$minutes phút'
+          : '⏰ [CÒN $minutes PHÚT] Xe sắp chạy!';
+      final body = isArriving
+          ? 'Biển số: ${(plate == null || plate.isEmpty) ? "đang cập nhật" : plate}\nĐiểm đón: $pickup\nHãy ra điểm đón, xe sắp tới!'
+          : '$route\nĐiểm đón: $pickup\nHãy chuẩn bị hành lý và đứng sẵn ở điểm đón.';
       try {
         await _notifications.zonedSchedule(
           id: _reminderId(booking.ticketCode, minutes),
-          title: '⏰ [CÒN $minutes PHÚT] Xe sắp chạy!',
-          body: '$route\nĐiểm đón: $pickup\nHãy chuẩn bị hành lý và đứng sẵn ở điểm đón.',
+          title: title,
+          body: body,
           scheduledDate: fireAt,
-          notificationDetails: _buildWatchNotificationDetails(subtitle: 'Nhắc giờ xe chạy'),
+          notificationDetails: _buildWatchNotificationDetails(
+            subtitle: isArriving ? 'Xe sắp đến điểm đón' : 'Nhắc giờ xe chạy',
+          ),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           payload: 'departure_reminder_${booking.ticketCode}',
         );
@@ -251,6 +323,56 @@ class SmartBoardingService {
     if (kIsWeb) return;
     for (final minutes in reminderMinutes) {
       await _notifications.cancel(id: _reminderId(ticketCode, minutes));
+    }
+  }
+
+  Timer? _watchTimer;
+
+  /// Theo dõi đổi xe: kiểm tra ngay và lặp lại mỗi 15 phút khi app đang chạy
+  void startWatching(Future<List<Booking>> Function() fetchBookings) {
+    if (kIsWeb) return;
+    _watchTimer?.cancel();
+    Future<void> run() async {
+      try {
+        await checkBusChanges(await fetchBookings());
+      } catch (e) {
+        debugPrint('Lỗi theo dõi đổi xe: $e');
+      }
+    }
+
+    run();
+    _watchTimer = Timer.periodic(const Duration(minutes: 15), (_) => run());
+  }
+
+  /// So biển số hiện tại của các vé đã thanh toán, chưa chạy với biển số đã lưu.
+  /// Nếu khác: báo đổi xe gấp và lập lại lịch nhắc với biển số mới.
+  Future<void> checkBusChanges(List<Booking> bookings) async {
+    if (kIsWeb) return;
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+
+    for (final b in bookings) {
+      final plate = b.trip?.licensePlate;
+      if (plate == null || plate.isEmpty || b.isCancelled || !b.isPaid) continue;
+      final dep = _parseDepartureTime(b.trip?.departureTime);
+      if (dep == null || !dep.isAfter(now)) continue;
+
+      final key = _plateKey(b.ticketCode);
+      final oldPlate = prefs.getString(key);
+      if (oldPlate == null) {
+        await prefs.setString(key, plate);
+        continue;
+      }
+      if (oldPlate == plate) continue;
+
+      await prefs.setString(key, plate);
+      await notifyUrgentChange(
+        newPlateNumber: plate,
+        newPickupPoint: b.trip?.startPoint ?? 'Điểm đón',
+        reason: 'Xe đã đổi từ $oldPlate sang $plate.',
+      );
+      await cancelRemindersForBooking(b.ticketCode);
+      await scheduleRemindersForBooking(b);
     }
   }
 

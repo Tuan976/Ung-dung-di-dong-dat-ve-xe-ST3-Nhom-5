@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../services/booking_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/trip.dart';
+import '../../services/smart_boarding_service.dart';
 
 class PassengerInfoScreen extends StatefulWidget {
   final Trip trip;
@@ -94,6 +95,13 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
         dropoffPoint: _selectedDropoff,
         pickupStationId: widget.pickupStationId,
         dropoffStationId: widget.dropoffStationId,
+      );
+
+      SmartBoardingService.instance.notifyPaymentPending(
+        ticketCode: booking.ticketCode,
+        routeName: widget.trip.routeName,
+        seatNumber: widget.seat,
+        expiresAt: booking.expiresAt,
       );
 
       if (!mounted) return;

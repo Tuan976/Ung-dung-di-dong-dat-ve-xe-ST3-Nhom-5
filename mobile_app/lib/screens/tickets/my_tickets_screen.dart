@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 import '../../widgets/app_nav_bar.dart';
+import '../../services/smart_boarding_service.dart';
 
 class MyTicketsScreen extends StatefulWidget {
   const MyTicketsScreen({super.key});
@@ -41,6 +42,7 @@ class _MyTicketsScreenState extends State<MyTicketsScreen>
     try {
       final bookings =
           await context.read<BookingService>().getMyBookings();
+      SmartBoardingService.instance.checkBusChanges(bookings);
       if (mounted) setState(() {
         _bookings = bookings;
         _isLoading = false;

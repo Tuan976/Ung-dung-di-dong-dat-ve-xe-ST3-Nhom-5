@@ -461,6 +461,19 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 },
               ),
               _buildWatchActionButton(
+                icon: Icons.hourglass_bottom,
+                label: '5. Chờ thanh toán',
+                color: const Color(0xFFFB923C),
+                onTap: () async {
+                  await SmartBoardingService.instance.notifyPaymentPending(
+                    ticketCode: booking.ticketCode,
+                    routeName: booking.trip?.routeName ?? 'Hành trình xe khách',
+                    seatNumber: booking.seatNumber,
+                  );
+                  _showWatchToast('Đã gửi thông báo Chờ thanh toán tới đồng hồ!');
+                },
+              ),
+              _buildWatchActionButton(
                 icon: Icons.vibration,
                 label: '⚡ Test rung (Sau 3s - Khóa màn hình)',
                 color: const Color(0xFF8B5CF6),

@@ -10,6 +10,8 @@ import '../../services/map_booking_service.dart';
 import '../../models/booking_strategy.dart';
 import '../../core/config/api_config.dart';
 import '../../services/nearby_alert_service.dart';
+import '../../services/booking_service.dart';
+import '../../services/smart_boarding_service.dart';
 import '../../widgets/app_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -75,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _requestLocationPermission();
+    final bookingService = context.read<BookingService>();
+    SmartBoardingService.instance.startWatching(() => bookingService.getMyBookings());
   }
 
   Future<void> _requestLocationPermission() async {

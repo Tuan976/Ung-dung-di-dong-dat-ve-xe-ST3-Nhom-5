@@ -86,6 +86,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _pollingTimer?.cancel();
         _countdownTimer?.cancel();
         setState(() => _isPaid = true);
+        await SmartBoardingService.instance.cancelPaymentPending();
         await NotificationService().showPaymentSuccess(widget.booking.ticketCode);
         final depTimeStr = widget.trip.departureTime.isNotEmpty
             ? '${widget.trip.departureTime} - ${widget.trip.departureDate}'
@@ -96,7 +97,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
           departureTime: depTimeStr,
           seatNumber: widget.booking.seatNumber,
         );
-        SmartBoardingService.instance.scheduleRemindersForBooking(widget.booking);
+        Booking fullBooking = widget.booking;
+        try {
+          fullBooking = await context.read<BookingService>().getBookingById(widget.booking.id);
+        } catch (e) {
+          debugPrint('Không tải được chi tiết vé để lập lịch nhắc: $e');
+        }
+        await SmartBoardingService.instance.scheduleRemindersForBooking(fullBooking);
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) context.pushReplacement('/booking_confirmation', extra: {'booking': widget.booking, 'trip': widget.trip});
       } else if (!silent && mounted) {
