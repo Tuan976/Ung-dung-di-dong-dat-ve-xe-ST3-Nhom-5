@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 import '../models/booking.dart';
 
 /// Dịch vụ Smart Boarding - Đồng bộ rung & hiển thị trên đồng hồ thông minh
@@ -21,6 +23,7 @@ class SmartBoardingService {
     if (kIsWeb || _initialized) return;
 
     try {
+      tzdata.initializeTimeZones();
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const darwinSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
@@ -201,40 +204,53 @@ class SmartBoardingService {
     );
   }
 
-  /// Tự động lập lịch nhắc giờ xe chạy khi khách đặt vé (60 phút & 30 phút trước giờ chạy)
+  /// Các mốc nhắc trước giờ xe chạy (phút)
+  static const List<int> reminderMinutes = [60, 30, 15];
+
+  int _reminderId(String ticketCode, int minutes) {
+    final base = (ticketCode.hashCode.abs() % 100000) * 1000;
+    return 10000 + base + minutes;
+  }
+
+  /// Tự động lập lịch nhắc giờ xe chạy (60, 30, 15 phút trước giờ chạy).
+  /// Lịch do hệ điều hành giữ nên vẫn nổ đúng giờ kể cả khi app đã đóng/khóa màn hình.
   Future<void> scheduleRemindersForBooking(Booking booking) async {
     if (kIsWeb) return;
+    await initialize();
     final depTime = _parseDepartureTime(booking.trip?.departureTime);
     if (depTime == null) return;
 
-    final now = DateTime.now();
+    final vn = tz.getLocation('Asia/Ho_Chi_Minh');
+    final departure = tz.TZDateTime(vn, depTime.year, depTime.month, depTime.day, depTime.hour, depTime.minute);
+    final now = tz.TZDateTime.now(vn);
 
-    // Nhắc trước 60 phút
-    final t60 = depTime.subtract(const Duration(minutes: 60));
-    if (t60.isAfter(now)) {
-      final delay = t60.difference(now);
-      Timer(delay, () {
-        notifyDepartureApproaching(
-          ticketCode: booking.ticketCode,
-          routeName: booking.trip?.routeName ?? 'Hành trình xe khách',
-          minutesLeft: 60,
-          pickupPoint: booking.trip?.startPoint,
+    for (final minutes in reminderMinutes) {
+      final fireAt = departure.subtract(Duration(minutes: minutes));
+      if (!fireAt.isAfter(now)) continue;
+
+      final route = booking.trip?.routeName ?? 'Hành trình xe khách';
+      final pickup = booking.trip?.startPoint ?? 'Bến xe';
+      try {
+        await _notifications.zonedSchedule(
+          id: _reminderId(booking.ticketCode, minutes),
+          title: '⏰ [CÒN $minutes PHÚT] Xe sắp chạy!',
+          body: '$route\nĐiểm đón: $pickup\nHãy chuẩn bị hành lý và đứng sẵn ở điểm đón.',
+          scheduledDate: fireAt,
+          notificationDetails: _buildWatchNotificationDetails(subtitle: 'Nhắc giờ xe chạy'),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: 'departure_reminder_${booking.ticketCode}',
         );
-      });
+      } catch (e) {
+        debugPrint('Lỗi lập lịch nhắc $minutes phút: $e');
+      }
     }
+  }
 
-    // Nhắc trước 30 phút
-    final t30 = depTime.subtract(const Duration(minutes: 30));
-    if (t30.isAfter(now)) {
-      final delay = t30.difference(now);
-      Timer(delay, () {
-        notifyDepartureApproaching(
-          ticketCode: booking.ticketCode,
-          routeName: booking.trip?.routeName ?? 'Hành trình xe khách',
-          minutesLeft: 30,
-          pickupPoint: booking.trip?.startPoint,
-        );
-      });
+  /// Hủy các lịch nhắc của một vé (khi hủy vé / đổi vé)
+  Future<void> cancelRemindersForBooking(String ticketCode) async {
+    if (kIsWeb) return;
+    for (final minutes in reminderMinutes) {
+      await _notifications.cancel(id: _reminderId(ticketCode, minutes));
     }
   }
 
@@ -282,10 +298,23 @@ class SmartBoardingService {
     }
   }
 
-  /// Hàm test hẹn giờ gửi sau N giây để người dùng kịp KHÓA MÀN HÌNH iPhone (ANCS Bluetooth chỉ rung đồng hồ khi màn hình điện thoại tắt)
+  /// Test hẹn giờ: HĐH tự bắn thông báo sau N giây (vẫn chạy khi đã khóa màn hình iPhone)
   Future<void> testScenarioWithDelay({required int scenario, Booking? booking, int delaySeconds = 3}) async {
-    Timer(Duration(seconds: delaySeconds), () {
-      testScenario(scenario: scenario, booking: booking);
-    });
+    await initialize();
+    final vn = tz.getLocation('Asia/Ho_Chi_Minh');
+    final ticketCode = booking?.ticketCode ?? 'VX8899';
+    try {
+      await _notifications.zonedSchedule(
+        id: 199,
+        title: '🎟️ [TEST HẸN GIỜ] Vé #$ticketCode',
+        body: 'Thông báo hẹn giờ do hệ điều hành gửi sau $delaySeconds giây.',
+        scheduledDate: tz.TZDateTime.now(vn).add(Duration(seconds: delaySeconds)),
+        notificationDetails: _buildWatchNotificationDetails(subtitle: 'Test hẹn giờ'),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: 'test_delay_$ticketCode',
+      );
+    } catch (e) {
+      debugPrint('Lỗi test hẹn giờ: $e');
+    }
   }
 }
