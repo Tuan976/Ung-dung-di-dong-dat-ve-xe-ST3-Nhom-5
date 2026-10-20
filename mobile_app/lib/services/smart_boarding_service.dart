@@ -281,4 +281,11 @@ class SmartBoardingService {
         break;
     }
   }
+
+  /// Hàm test hẹn giờ gửi sau N giây để người dùng kịp KHÓA MÀN HÌNH iPhone (ANCS Bluetooth chỉ rung đồng hồ khi màn hình điện thoại tắt)
+  Future<void> testScenarioWithDelay({required int scenario, Booking? booking, int delaySeconds = 3}) async {
+    Timer(Duration(seconds: delaySeconds), () {
+      testScenario(scenario: scenario, booking: booking);
+    });
+  }
 }

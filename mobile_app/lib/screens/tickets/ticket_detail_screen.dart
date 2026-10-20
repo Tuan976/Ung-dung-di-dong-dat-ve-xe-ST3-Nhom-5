@@ -460,6 +460,19 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                   _showWatchToast('Đã gửi cảnh báo khẩn cấp Đổi xe tới đồng hồ!');
                 },
               ),
+              _buildWatchActionButton(
+                icon: Icons.vibration,
+                label: '⚡ Test rung (Sau 3s - Khóa màn hình)',
+                color: const Color(0xFF8B5CF6),
+                onTap: () async {
+                  _showWatchToast('Đang đếm ngược 3s... Hãy BẤM KHÓA MÀN HÌNH ngay để đồng hồ rung!');
+                  await SmartBoardingService.instance.testScenarioWithDelay(
+                    scenario: 1,
+                    booking: booking,
+                    delaySeconds: 3,
+                  );
+                },
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -475,7 +488,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Mẹo: Mở app Mi Fitness -> Thiết bị -> Bật "Thông báo ứng dụng Đặt Vé Xe" để đồng hồ rung.',
+                    'Lưu ý Apple iOS: Khi bạn đang nhìn vào màn hình iPhone, iOS sẽ không làm rung đồng hồ. Hãy bấm nút hẹn giờ 3s và KHÓA MÀN HÌNH để đồng hồ rung mạnh trên cổ tay!',
                     style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5),
                   ),
                 ),
