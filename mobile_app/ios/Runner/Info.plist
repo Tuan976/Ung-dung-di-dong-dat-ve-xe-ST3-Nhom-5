@@ -51,5 +51,14 @@
 	<string>Ứng dụng cần vị trí để tìm bến xe gần nhất và hỗ trợ chức năng SOS khẩn cấp.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Ứng dụng cần vị trí để gửi tọa độ cứu hộ khi bạn kích hoạt SOS.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Ứng dụng cần quyền kết nối mạng nội bộ để giao tiếp với máy chủ AI Vision (LM Studio / Vision Service) trong mạng Wi-Fi.</string>
 </dict>
 </plist>

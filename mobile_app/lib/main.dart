@@ -11,6 +11,7 @@ import 'services/booking_service.dart';
 import 'services/trip_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'core/config/vision_config.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -36,6 +37,12 @@ void main() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (e) {
     debugPrint("Firebase background handler error: $e");
+  }
+
+  try {
+    await VisionConfig.init();
+  } catch (e) {
+    debugPrint("VisionConfig init error: $e");
   }
 
   runApp(const MyApp());

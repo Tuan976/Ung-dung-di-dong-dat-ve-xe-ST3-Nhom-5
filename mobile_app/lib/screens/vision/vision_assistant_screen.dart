@@ -584,35 +584,58 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
   void _showEnvironmentSelector() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Cấu hình kết nối Vision AI',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Cấu hình kết nối Vision AI',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  )
+                ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               const Text(
                 'Chọn địa chỉ phù hợp với thiết bị bạn đang chạy app:',
                 style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 14),
               _buildEnvTile(
-                VisionEnvironment.production,
-                'Cloudflare HTTPS Tunnel (Toàn cầu)',
-                'Dùng cho điện thoại thật, 4G, mạng ngoài',
+                VisionEnvironment.lanDevice,
+                'Mạng nội bộ LAN (${VisionConfig.lanUrl})',
+                'Khuyên dùng cho iPhone thật cài IPA cùng Wi-Fi với PC',
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit, size: 20, color: Color(0xFF0B192C)),
+                  tooltip: 'Đổi IP máy chủ',
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showEditLanUrlDialog();
+                  },
+                ),
               ),
               _buildEnvTile(
-                VisionEnvironment.lanDevice,
-                'Mạng nội bộ LAN (192.168.123.41:5050)',
-                'Dùng cho điện thoại kết nối cùng Wi-Fi với PC',
+                VisionEnvironment.production,
+                'Cloudflare HTTPS Tunnel (Toàn cầu)',
+                'Dùng cho điện thoại thật qua 4G/Internet ngoài',
               ),
               _buildEnvTile(
                 VisionEnvironment.androidEmulator,
@@ -631,7 +654,65 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
     );
   }
 
-  Widget _buildEnvTile(VisionEnvironment env, String title, String subtitle) {
+  void _showEditLanUrlDialog() {
+    final controller = TextEditingController(text: VisionConfig.lanUrl);
+    showDialog(
+      context: context,
+      builder: (dlgCtx) => AlertDialog(
+        title: const Text('Nhập IP Máy tính (LAN)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Nhập địa chỉ IP Wi-Fi của máy tính đang chạy AI Vision (hoặc LM Studio):',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'http://10.12.20.125:5050',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lan),
+                helperText: 'Cổng 5050 (Vision Service) hoặc 1234 (LM Studio)',
+              ),
+              keyboardType: TextInputType.url,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlgCtx),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0B192C),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final newUrl = controller.text.trim();
+              if (newUrl.isNotEmpty) {
+                if (dlgCtx.mounted) Navigator.pop(dlgCtx);
+                await VisionConfig.setCustomLanUrl(newUrl);
+                await VisionConfig.setEnvironment(VisionEnvironment.lanDevice);
+                if (mounted) {
+                  _checkServerHealth();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Đã cập nhật máy chủ: ${VisionConfig.baseUrl}')),
+                  );
+                }
+              }
+            },
+            child: const Text('Lưu & Kết nối'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnvTile(VisionEnvironment env, String title, String subtitle, {Widget? trailing}) {
     final isSelected = VisionConfig.currentEnvironment == env;
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -641,6 +722,7 @@ class _VisionAssistantScreenState extends State<VisionAssistantScreen> {
       ),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+      trailing: trailing,
       onTap: () {
         VisionConfig.setEnvironment(env);
         Navigator.pop(context);

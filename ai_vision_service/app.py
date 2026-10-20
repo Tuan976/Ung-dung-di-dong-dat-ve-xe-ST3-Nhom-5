@@ -42,7 +42,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Load configurations with safe defaults
-VISION_HOST = os.getenv("VISION_HOST", "127.0.0.1")
+VISION_HOST = os.getenv("VISION_HOST", "0.0.0.0")
 VISION_PORT = int(os.getenv("VISION_PORT", "5050"))
 VISION_DEBUG = os.getenv("VISION_DEBUG", "false").lower() == "true"
 
