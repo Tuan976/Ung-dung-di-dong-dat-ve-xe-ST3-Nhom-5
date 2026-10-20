@@ -21,6 +21,19 @@ class SmartBoardingService {
     if (kIsWeb || _initialized) return;
 
     try {
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwinSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+      );
+
+      await _notifications.initialize(settings: initSettings);
+
       // Nhịp rung dồn dập đặc thù để truyền qua Bluetooth làm rung đồng hồ
       final Int64List vibrationPattern = Int64List.fromList([0, 500, 200, 500, 200, 1000]);
 
@@ -78,6 +91,8 @@ class SmartBoardingService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
+        presentBanner: true,
+        presentList: true,
         interruptionLevel: InterruptionLevel.timeSensitive, // Đẩy thẳng ra Bluetooth đồng hồ ngay cả khi bật Focus
         subtitle: subtitle,
       ),
