@@ -148,6 +148,11 @@ class Trip(db.Model):
     # Pricing modifiers specific to this trip (e.g., holiday surge)
     price_multiplier = db.Column(db.Float, default=1.0)
 
+    # Real-time GPS tracking for Driver & Passengers
+    current_lat = db.Column(db.Float, nullable=True)
+    current_lng = db.Column(db.Float, nullable=True)
+    last_location_update = db.Column(db.DateTime, nullable=True)
+
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -178,6 +183,12 @@ class Booking(db.Model):
     pickup_lng = db.Column(db.Float, nullable=True)
     pickup_landmark = db.Column(db.String(200), nullable=True)
     pickup_note = db.Column(db.String(255), nullable=True)
+
+    # Live passenger location sharing for Driver pickup
+    is_sharing_location = db.Column(db.Boolean, default=False)
+    live_lat = db.Column(db.Float, nullable=True)
+    live_lng = db.Column(db.Float, nullable=True)
+    live_location_time = db.Column(db.DateTime, nullable=True)
     
     __table_args__ = (db.UniqueConstraint('trip_id', 'seat_number', name='unique_seat_per_trip'),)
 
@@ -463,3 +474,68 @@ class SOSAuditLog(db.Model):
     detail = db.Column(db.String(300), nullable=True)
     ip = db.Column(db.String(64), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+def _auto_patch_sqlite_schema():
+    """Tự động thêm cột vào SQLite nếu DB trên host chưa có cột mới, tránh lỗi no such column."""
+    import sqlite3
+    import os
+    import glob
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, 'instance', 'bus_booking.db'),
+        os.path.join(base_dir, 'bus_booking.db'),
+        os.path.join(os.getcwd(), 'instance', 'bus_booking.db'),
+        os.path.join(os.getcwd(), 'bus_booking.db'),
+        '/home/nhkhouas/vexekhach.aweb.io.vn/instance/bus_booking.db',
+        '/home/nhkhouas/vexekhach.aweb.io.vn/bus_booking.db',
+    ]
+    for pattern in [
+        os.path.join(base_dir, '*.db'),
+        os.path.join(base_dir, 'instance', '*.db'),
+        '/home/nhkhouas/vexekhach.aweb.io.vn/*.db',
+        '/home/nhkhouas/vexekhach.aweb.io.vn/instance/*.db',
+    ]:
+        try:
+            candidates.extend(glob.glob(pattern))
+        except Exception:
+            pass
+
+    seen = set()
+    for db_path in candidates:
+        if db_path not in seen and os.path.exists(db_path):
+            seen.add(db_path)
+            try:
+                conn = sqlite3.connect(db_path)
+                c = conn.cursor()
+
+                c.execute("PRAGMA table_info(trip)")
+                trip_cols = [r[1] for r in c.fetchall()]
+                if trip_cols:
+                    if 'current_lat' not in trip_cols:
+                        c.execute("ALTER TABLE trip ADD COLUMN current_lat FLOAT")
+                    if 'current_lng' not in trip_cols:
+                        c.execute("ALTER TABLE trip ADD COLUMN current_lng FLOAT")
+                    if 'last_location_update' not in trip_cols:
+                        c.execute("ALTER TABLE trip ADD COLUMN last_location_update DATETIME")
+
+                c.execute("PRAGMA table_info(booking)")
+                b_cols = [r[1] for r in c.fetchall()]
+                if b_cols:
+                    if 'is_sharing_location' not in b_cols:
+                        c.execute("ALTER TABLE booking ADD COLUMN is_sharing_location BOOLEAN DEFAULT 0")
+                    if 'live_lat' not in b_cols:
+                        c.execute("ALTER TABLE booking ADD COLUMN live_lat FLOAT")
+                    if 'live_lng' not in b_cols:
+                        c.execute("ALTER TABLE booking ADD COLUMN live_lng FLOAT")
+                    if 'live_location_time' not in b_cols:
+                        c.execute("ALTER TABLE booking ADD COLUMN live_location_time DATETIME")
+
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+
+
+_auto_patch_sqlite_schema()
+

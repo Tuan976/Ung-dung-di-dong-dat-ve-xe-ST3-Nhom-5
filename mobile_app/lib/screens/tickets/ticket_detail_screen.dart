@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 import '../../services/smart_boarding_service.dart';
@@ -19,6 +20,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   bool _isLoading = true;
   String? _error;
   bool _isCancelling = false;
+  bool _isSharingLocation = false;
+  bool _isUpdatingLocation = false;
 
   @override
   void initState() {
@@ -30,7 +33,13 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     setState(() { _isLoading = true; _error = null; });
     try {
       final booking = await context.read<BookingService>().getBookingById(widget.bookingId);
-      if (mounted) setState(() { _booking = booking; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _booking = booking;
+          _isSharingLocation = booking.isSharingLocation;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
     }
@@ -272,6 +281,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           ),
           const SizedBox(height: 20),
 
+          // Live Location Sharing Card for Driver
+          _buildLiveLocationCard(booking),
+          const SizedBox(height: 20),
+
           // Smart Boarding Card (Redmi Watch 5 Active / Smart Watch Sync)
           _buildSmartBoardingCard(booking),
           const SizedBox(height: 20),
@@ -340,6 +353,187 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     if (location.toLowerCase().contains('hồ chí minh')) return 'HCM';
     if (location.toLowerCase().contains('đà nẵng')) return 'ĐN';
     return location.split(' ').last;
+  }
+
+  Future<void> _toggleLiveLocation(Booking booking) async {
+    setState(() => _isUpdatingLocation = true);
+    try {
+      if (_isSharingLocation) {
+        final res = await context.read<BookingService>().shareLiveLocation(
+          bookingId: booking.id,
+          isSharing: false,
+        );
+        if (mounted) {
+          setState(() {
+            _isSharingLocation = false;
+            _isUpdatingLocation = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã dừng chia sẻ vị trí trực tiếp cho bác tài.'), backgroundColor: Colors.black87),
+          );
+        }
+      } else {
+        LocationPermission perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied) {
+          perm = await Geolocator.requestPermission();
+        }
+        if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+          if (mounted) {
+            setState(() => _isUpdatingLocation = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Vui lòng cấp quyền vị trí GPS để chia sẻ vị trí cho bác tài.'), backgroundColor: Colors.orange),
+            );
+          }
+          return;
+        }
+
+        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        final res = await context.read<BookingService>().shareLiveLocation(
+          bookingId: booking.id,
+          isSharing: true,
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          landmark: 'Vị trí đón của khách (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})',
+        );
+
+        if (mounted) {
+          setState(() {
+            _isSharingLocation = true;
+            _isUpdatingLocation = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã bật chia sẻ vị trí! Bác tài có thể nhìn thấy bạn trên bản đồ lộ trình.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUpdatingLocation = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi chia sẻ vị trí: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Widget _buildLiveLocationCard(Booking booking) {
+    if (booking.isCancelled || booking.isBoarded) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _isSharingLocation
+              ? [const Color(0xFF065F46), const Color(0xFF047857)]
+              : [const Color(0xFF0B192C), const Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: (_isSharingLocation ? Colors.green : const Color(0xFF0B192C)).withOpacity(0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isSharingLocation ? Icons.location_on : Icons.share_location,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isSharingLocation
+                          ? 'ĐANG CHIA SẺ VỊ TRÍ CHO BÁC TÀI'
+                          : 'CHIA SẺ VỊ TRÍ ĐÓN TRỰC TIẾP',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _isSharingLocation
+                          ? 'Bác tài đang thấy vị trí đón trực tiếp của bạn trên bản đồ lộ trình'
+                          : 'Giúp tài xế thấy bạn đứng đón trên đường & tấp xe đón chính xác',
+                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (_isSharingLocation)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.radar, color: Colors.amberAccent, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tài xế sẽ nhận thông báo khi xe chạy đến gần vị trí của bạn (< 500m).',
+                      style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isSharingLocation ? Colors.white : const Color(0xFF10B981),
+                foregroundColor: _isSharingLocation ? Colors.red.shade700 : Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: _isUpdatingLocation
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(_isSharingLocation ? Icons.stop_circle_outlined : Icons.my_location, size: 18),
+              label: Text(
+                _isUpdatingLocation
+                    ? 'Đang xử lý...'
+                    : (_isSharingLocation ? 'Dừng chia sẻ vị trí' : '📍 Bật chia sẻ vị trí đón cho Bác tài'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              onPressed: _isUpdatingLocation ? null : () => _toggleLiveLocation(booking),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSmartBoardingCard(Booking booking) {

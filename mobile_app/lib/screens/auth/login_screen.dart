@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  String _selectedRole = 'passenger'; // 'passenger' or 'company'
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -27,12 +28,17 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await authService.login(
       _phoneController.text.trim(),
       _passwordController.text,
+      role: _selectedRole,
     );
 
     if (!mounted) return;
 
     if (success) {
-      context.go('/home');
+      if (authService.isOperator || _selectedRole == 'company') {
+        context.go('/operator');
+      } else {
+        context.go('/home');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -176,25 +182,112 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 24,
                         children: [
+                          // Role Switcher Tabs (Hành khách vs Đối tác Nhà xe)
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2E8F0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _selectedRole = 'passenger'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _selectedRole == 'passenger' ? Colors.white : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(9),
+                                        boxShadow: _selectedRole == 'passenger'
+                                            ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.person_outline,
+                                              size: 16,
+                                              color: _selectedRole == 'passenger' ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Hành khách',
+                                              style: TextStyle(
+                                                color: _selectedRole == 'passenger' ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _selectedRole = 'company'),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: _selectedRole == 'company' ? const Color(0xFFEF5222) : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(9),
+                                        boxShadow: _selectedRole == 'company'
+                                            ? [BoxShadow(color: const Color(0xFFEF5222).withOpacity(0.25), blurRadius: 4, offset: const Offset(0, 2))]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.business,
+                                              size: 16,
+                                              color: _selectedRole == 'company' ? Colors.white : const Color(0xFF64748B),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Đối tác Nhà xe',
+                                              style: TextStyle(
+                                                color: _selectedRole == 'company' ? Colors.white : const Color(0xFF64748B),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                           // Title
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             spacing: 8,
-                            children: const [
+                            children: [
                               Text(
-                                'Đăng nhập',
-                                style: TextStyle(
+                                _selectedRole == 'company' ? 'Cổng Quản Trị Nhà Xe' : 'Đăng nhập',
+                                style: const TextStyle(
                                   color: Color(0xFF0F172A),
-                                  fontSize: 28,
+                                  fontSize: 26,
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               Text(
-                                'Vui lòng đăng nhập để bắt đầu hành trình của bạn.',
-                                style: TextStyle(
+                                _selectedRole == 'company'
+                                    ? 'Dành cho chủ nhà xe, quản lý bến bãi, phơi xe & tài xế.'
+                                    : 'Vui lòng đăng nhập để bắt đầu hành trình của bạn.',
+                                style: const TextStyle(
                                   color: Color(0xFF475569),
-                                  fontSize: 15,
+                                  fontSize: 14,
                                   fontFamily: 'Inter',
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -332,7 +425,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: ElevatedButton(
                                   onPressed: authService.isLoading ? null : _login,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0B192C),
+                                    backgroundColor: _selectedRole == 'company'
+                                        ? const Color(0xFFEF5222)
+                                        : const Color(0xFF0B192C),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(24),
@@ -348,72 +443,83 @@ class _LoginScreenState extends State<LoginScreen> {
                                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                           ),
                                         )
-                                      : const Text(
-                                          'Đăng nhập',
-                                          style: TextStyle(
+                                      : Text(
+                                          _selectedRole == 'company' ? 'Đăng nhập Cổng Nhà Xe' : 'Đăng nhập',
+                                          style: const TextStyle(
                                             fontSize: 15,
                                             fontFamily: 'Inter',
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                 ),
                               ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                spacing: 6,
-                                children: [
-                                  const Text(
-                                    'Chưa có tài khoản?',
-                                    style: TextStyle(
-                                      color: Color(0xFF475569),
-                                      fontSize: 14,
-                                      fontFamily: 'Inter',
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => context.push('/register'),
-                                    child: const Text(
-                                      'Đăng ký ngay',
+                              if (_selectedRole == 'passenger')
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  spacing: 6,
+                                  children: [
+                                    const Text(
+                                      'Chưa có tài khoản?',
                                       style: TextStyle(
-                                        color: Color(0xFF00639B),
+                                        color: Color(0xFF475569),
                                         fontSize: 14,
                                         fontFamily: 'Inter',
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
+                                    GestureDetector(
+                                      onTap: () => context.push('/register'),
+                                      child: const Text(
+                                        'Đăng ký ngay',
+                                        style: TextStyle(
+                                          color: Color(0xFF00639B),
+                                          fontSize: 14,
+                                          fontFamily: 'Inter',
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              else
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 4),
+                                  child: Text(
+                                    'Liên hệ quản trị viên hãng xe để được cấp hoặc reset tài khoản nhân sự.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          // Divider
-                          Row(
-                            spacing: 12,
-                            children: [
-                              const Expanded(
-                                child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
-                              ),
-                              const Text(
-                                'Hoặc tiếp tục bằng',
-                                style: TextStyle(
-                                  color: Color(0xFF94A3B8),
-                                  fontSize: 13,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w400,
                                 ),
-                              ),
-                              const Expanded(
-                                child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
-                              ),
                             ],
                           ),
 
-                          // Social buttons
-                          Row(
-                            spacing: 12,
-                            children: [
+                          if (_selectedRole == 'passenger') ...[
+                            // Divider
+                            Row(
+                              spacing: 12,
+                              children: [
+                                const Expanded(
+                                  child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
+                                ),
+                                const Text(
+                                  'Hoặc tiếp tục bằng',
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 13,
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
+                                ),
+                              ],
+                            ),
+
+                            // Social buttons
+                            Row(
+                              spacing: 12,
+                              children: [
                               Expanded(
                                 child: OutlinedButton(
                                   onPressed: (_isGoogleLoading || authService.isLoading) ? null : _googleLogin,
@@ -449,10 +555,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
 
                 // Bottom bar
                 Padding(

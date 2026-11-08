@@ -34,13 +34,24 @@ def jwt_required():
                 if not user_id:
                     return api_error(message="Invalid token payload", error_code="INVALID_TOKEN", status=401)
                 
-                # Fetch user
-                user = User.query.get(int(user_id))
+                # Fetch entity based on role
+                role = payload.get('role', 'passenger')
+                if role == 'company':
+                    from models import Company
+                    user = Company.query.get(int(user_id))
+                elif role == 'staff':
+                    from models import Staff
+                    user = Staff.query.get(int(user_id))
+                else:
+                    user = User.query.get(int(user_id))
+                    
                 if not user:
                     return api_error(message="User not found", error_code="USER_NOT_FOUND", status=401)
                 
                 # Attach user to request context
                 request.current_user = user
+                request.current_user_role = role
+                request.current_company_id = payload.get('company_id')
                 
             except jwt.ExpiredSignatureError:
                 return api_error(message="Token has expired", error_code="TOKEN_EXPIRED", status=401)

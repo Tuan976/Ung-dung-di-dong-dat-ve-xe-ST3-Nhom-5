@@ -21,7 +21,7 @@ class VisionConfig {
   static const String _localUrl = 'http://127.0.0.1:5050';
   static const String _emulatorUrl = 'http://10.0.2.2:5050';
   static String _lanUrl = 'http://10.12.20.125:5050';
-  static const String _productionUrl = 'https://hall-allocated-graphic-screensaver.trycloudflare.com';
+  static const String _productionUrl = 'https://rim-wiring-duplicate-rome.trycloudflare.com';
 
   // API Token for Bearer authorization
   static const String apiToken = 'vexekhach_ai_vision_sec_2026_tok';

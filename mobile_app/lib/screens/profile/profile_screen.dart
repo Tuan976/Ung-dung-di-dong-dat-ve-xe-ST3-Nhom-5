@@ -119,6 +119,59 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    // Operator Portal entry
+                    GestureDetector(
+                      onTap: () => context.push('/operator'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0B192C), Color(0xFF1E293B)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0B192C).withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF5222),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.business_center, color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cổng Quản Trị Nhà Xe',
+                                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Tạo chuyến, phơi khách, phơi hàng, xe & tài xế',
+                                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     _buildMenuItem(Icons.person_outline, 'Thông tin cá nhân', () {}),
                     const SizedBox(height: 12),
                     _buildMenuItem(Icons.history, 'Lịch sử chuyến đi', () {

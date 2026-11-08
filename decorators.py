@@ -3,6 +3,30 @@ import functools
 from flask import flash, redirect, session, url_for
 
 
+def _authenticate_from_bearer():
+    from flask import request, session
+    if 'company_id' in session:
+        return
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        try:
+            import jwt
+            from api.v1.decorators import get_jwt_secret
+            token = auth_header.split(' ', 1)[1].strip()
+            payload = jwt.decode(token, get_jwt_secret(), algorithms=['HS256'], leeway=60)
+            role = payload.get('role', '')
+            company_id = payload.get('company_id')
+            if company_id:
+                session['company_id'] = int(company_id)
+                session['role'] = 'ADMIN' if role in ('company', 'ADMIN', 'operator') else 'STAFF'
+                if role == 'staff':
+                    session['staff_id'] = int(payload.get('sub', 0))
+                    session['staff_role'] = payload.get('staff_role', 'STATION_STAFF')
+                session['company_name'] = payload.get('name', 'Nhà xe')
+        except Exception:
+            pass
+
+
 def _redirect_company_login():
     flash('Vui lòng đăng nhập!')
     return redirect(url_for('company_login'))
@@ -27,6 +51,7 @@ def company_login_required(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         from flask import request, jsonify
+        _authenticate_from_bearer()
         if 'company_id' not in session:
             if request.is_json or request.path.startswith('/api/'):
                 return jsonify({'error': 'Unauthorized'}), 401
@@ -39,6 +64,7 @@ def admin_only(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         from flask import request, jsonify
+        _authenticate_from_bearer()
         if 'company_id' not in session:
             if request.is_json or request.path.startswith('/api/'):
                 return jsonify({'error': 'Unauthorized'}), 401

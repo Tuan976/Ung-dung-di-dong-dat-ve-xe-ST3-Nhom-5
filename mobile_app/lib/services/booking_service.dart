@@ -186,4 +186,28 @@ class BookingService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  Future<Map<String, dynamic>> shareLiveLocation({
+    required int bookingId,
+    required bool isSharing,
+    double? latitude,
+    double? longitude,
+    String? landmark,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/bookings/$bookingId/share-location',
+        data: {
+          'is_sharing': isSharing,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+          if (landmark != null) 'landmark': landmark,
+        },
+      );
+      return response.data is Map<String, dynamic> ? response.data : {'success': true};
+    } catch (e) {
+      debugPrint('Lỗi shareLiveLocation: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }

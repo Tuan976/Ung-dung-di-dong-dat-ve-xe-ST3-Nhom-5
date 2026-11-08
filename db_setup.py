@@ -22,11 +22,18 @@ def init_database(app):
             "ALTER TABLE trip ADD COLUMN canceled_at DATETIME",
             "ALTER TABLE trip ADD COLUMN canceled_by_id INTEGER REFERENCES staff(id)",
             "ALTER TABLE trip ADD COLUMN price_multiplier REAL DEFAULT 1.0",
+            "ALTER TABLE trip ADD COLUMN current_lat FLOAT",
+            "ALTER TABLE trip ADD COLUMN current_lng FLOAT",
+            "ALTER TABLE trip ADD COLUMN last_location_update DATETIME",
             "ALTER TABLE route ADD COLUMN routing_mode TEXT DEFAULT 'standard'",
             "ALTER TABLE booking ADD COLUMN payment_id VARCHAR(50)",
             "ALTER TABLE booking ADD COLUMN boarding_status TEXT DEFAULT 'NOT_BOARDED'",
             "ALTER TABLE booking ADD COLUMN check_in_time DATETIME",
             "ALTER TABLE booking ADD COLUMN checked_in_by_id INTEGER REFERENCES staff(id)",
+            "ALTER TABLE booking ADD COLUMN is_sharing_location BOOLEAN DEFAULT 0",
+            "ALTER TABLE booking ADD COLUMN live_lat FLOAT",
+            "ALTER TABLE booking ADD COLUMN live_lng FLOAT",
+            "ALTER TABLE booking ADD COLUMN live_location_time DATETIME",
             
             "ALTER TABLE menu_item ADD COLUMN image_url VARCHAR(200)",
             "ALTER TABLE cargo ADD COLUMN company_id INTEGER REFERENCES company(id)",
@@ -46,15 +53,12 @@ def init_database(app):
             "ALTER TABLE user ADD COLUMN last_location_time DATETIME"
         ]
 
-        try:
-            with db.engine.begin() as conn:
-                for cmd in upgrades:
-                    try:
-                        conn.execute(text(cmd))
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+        for cmd in upgrades:
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(text(cmd))
+            except Exception:
+                pass
 
 if __name__ == '__main__':
     from app import app

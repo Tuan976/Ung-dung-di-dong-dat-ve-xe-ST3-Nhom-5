@@ -2,7 +2,15 @@ name: Build iOS IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile_app/**'
+      - '.github/workflows/build-ios.yml'
 
+permissions:
+  contents: write
 
 jobs:
   build-ios:
@@ -41,3 +49,17 @@ jobs:
           name: WebDatVeXe-iOS-IPA
           path: mobile_app/build/ios/iphoneos/WebDatVeXe.ipa
           retention-days: 7
+
+      - name: Release IPA to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: ios-release-latest
+          name: "Bản Cài Đặt iOS (IPA) Mới Nhất"
+          body: |
+            ### 📱 File cài đặt ứng dụng iOS (WebDatVeXe.ipa)
+            - **Cập nhật mới nhất:** Quản lý nhà xe, Radar GPS đón khách trực diện cho Tài xế, Bản đồ Google Maps.
+            - **Cách cài đặt trên iPhone:** Tải file `WebDatVeXe.ipa` và cài đặt qua **TrollStore**, **AltStore**, **Sideloadly**, hoặc **Scarlet**.
+          files: mobile_app/build/ios/iphoneos/WebDatVeXe.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

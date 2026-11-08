@@ -18,13 +18,15 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAuthenticated => _currentUser != null;
+  bool get isOperator => _currentUser?.isOperator ?? false;
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {String role = 'passenger'}) async {
     _setLoading(true);
     try {
       final response = await _apiClient.post('/auth/login', data: {
         'email': email,
         'password': password,
+        'role': role,
       });
 
       if (response.data['success']) {
@@ -34,7 +36,7 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _error = response.data['message'] ?? 'Login failed';
+        _error = response.data['message'] ?? 'Đăng nhập thất bại';
         return false;
       }
     } catch (e) {

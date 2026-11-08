@@ -24,7 +24,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from constants import VIETNAM_PROVINCES
 from decorators import admin_only, company_login_required, staff_role_required
 from extensions import db, mail
-from models import Assistant, Booking, Bus, Cargo, Driver, FoodOrder, MenuItem, Office, RestStop, Route, Staff, Trip
+from models import Assistant, Booking, Bus, Cargo, Driver, FoodOrder, MenuItem, Notification, Office, RestStop, Route, Staff, Trip, TripIncident
 
 
 def _now():
@@ -80,7 +80,79 @@ def auto_complete_trips():
 
 
 
+def _ensure_location_columns(app=None):
+    import sqlite3, os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, 'instance', 'bus_booking.db'),
+        os.path.join(base_dir, 'bus_booking.db'),
+        os.path.join(os.getcwd(), 'instance', 'bus_booking.db'),
+        os.path.join(os.getcwd(), 'bus_booking.db'),
+        '/home/nhkhouas/vexekhach.aweb.io.vn/instance/bus_booking.db',
+        '/home/nhkhouas/vexekhach.aweb.io.vn/bus_booking.db',
+    ]
+    seen = set()
+    for db_path in candidates:
+        if db_path not in seen and os.path.exists(db_path):
+            seen.add(db_path)
+            try:
+                conn = sqlite3.connect(db_path)
+                c = conn.cursor()
+                c.execute("PRAGMA table_info(trip)")
+                trip_cols = [r[1] for r in c.fetchall()]
+                if trip_cols:
+                    if 'current_lat' not in trip_cols: c.execute("ALTER TABLE trip ADD COLUMN current_lat FLOAT")
+                    if 'current_lng' not in trip_cols: c.execute("ALTER TABLE trip ADD COLUMN current_lng FLOAT")
+                    if 'last_location_update' not in trip_cols: c.execute("ALTER TABLE trip ADD COLUMN last_location_update DATETIME")
+                
+                c.execute("PRAGMA table_info(booking)")
+                b_cols = [r[1] for r in c.fetchall()]
+                if b_cols:
+                    if 'is_sharing_location' not in b_cols: c.execute("ALTER TABLE booking ADD COLUMN is_sharing_location BOOLEAN DEFAULT 0")
+                    if 'live_lat' not in b_cols: c.execute("ALTER TABLE booking ADD COLUMN live_lat FLOAT")
+                    if 'live_lng' not in b_cols: c.execute("ALTER TABLE booking ADD COLUMN live_lng FLOAT")
+                    if 'live_location_time' not in b_cols: c.execute("ALTER TABLE booking ADD COLUMN live_location_time DATETIME")
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+
+    if app:
+        try:
+            with app.app_context():
+                from extensions import db
+                engine = db.engine
+                with engine.connect() as conn:
+                    dialect = engine.dialect.name
+                    if dialect == 'sqlite':
+                        cols = [r[1] for r in conn.execute(db.text("PRAGMA table_info(trip)")).fetchall()]
+                        if 'current_lat' not in cols: conn.execute(db.text("ALTER TABLE trip ADD COLUMN current_lat FLOAT"))
+                        if 'current_lng' not in cols: conn.execute(db.text("ALTER TABLE trip ADD COLUMN current_lng FLOAT"))
+                        if 'last_location_update' not in cols: conn.execute(db.text("ALTER TABLE trip ADD COLUMN last_location_update DATETIME"))
+                        
+                        b_cols = [r[1] for r in conn.execute(db.text("PRAGMA table_info(booking)")).fetchall()]
+                        if 'is_sharing_location' not in b_cols: conn.execute(db.text("ALTER TABLE booking ADD COLUMN is_sharing_location BOOLEAN DEFAULT 0"))
+                        if 'live_lat' not in b_cols: conn.execute(db.text("ALTER TABLE booking ADD COLUMN live_lat FLOAT"))
+                        if 'live_lng' not in b_cols: conn.execute(db.text("ALTER TABLE booking ADD COLUMN live_lng FLOAT"))
+                        if 'live_location_time' not in b_cols: conn.execute(db.text("ALTER TABLE booking ADD COLUMN live_location_time DATETIME"))
+                        conn.commit()
+                    elif dialect == 'mysql':
+                        for col, typ in [('current_lat', 'FLOAT'), ('current_lng', 'FLOAT'), ('last_location_update', 'DATETIME')]:
+                            try:
+                                conn.execute(db.text(f"ALTER TABLE trip ADD COLUMN {col} {typ}"))
+                                conn.commit()
+                            except Exception: pass
+                        for col, typ in [('is_sharing_location', 'TINYINT(1) DEFAULT 0'), ('live_lat', 'FLOAT'), ('live_lng', 'FLOAT'), ('live_location_time', 'DATETIME')]:
+                            try:
+                                conn.execute(db.text(f"ALTER TABLE booking ADD COLUMN {col} {typ}"))
+                                conn.commit()
+                            except Exception: pass
+        except Exception:
+            pass
+
+
 def register_admin_routes(app):
+    _ensure_location_columns(app)
     def admin_trips_data():
         company_id = session.get('company_id')
         if not company_id: return jsonify({'error': 'Unauthorized'}), 401
@@ -95,6 +167,10 @@ def register_admin_routes(app):
             'route_id': t.route_id,
             'route': f"{t.route.start_point} - {t.route.end_point}",
             'bus': t.bus.license_plate,
+            'driver_id': t.driver_id,
+            'driver_name': t.driver_name,
+            'assistant_id': t.assistant_id,
+            'assistant_name': t.assistant_name,
             'departure_time': t.departure_time.isoformat(),
             'status': t.status,
             'price': t.route.base_price * t.price_multiplier,
@@ -108,11 +184,15 @@ def register_admin_routes(app):
         now = _now()
         
         # 1. Basic Stats
-        revenue_tickets = db.session.query(db.func.sum(Booking.ticket_price)).join(Trip).join(Route)\
-            .filter(Route.company_id == company_id, Booking.status == 'CONFIRMED').scalar() or 0
+        user_role = session.get('role')
+        staff_role = (session.get('staff_role') or '').upper()
+        is_crew = user_role != 'ADMIN' and staff_role in ('DRIVER', 'ASSISTANT')
+
+        revenue_tickets = 0 if is_crew else (db.session.query(db.func.sum(Booking.ticket_price)).join(Trip).join(Route)\
+            .filter(Route.company_id == company_id, Booking.status == 'CONFIRMED').scalar() or 0)
         
-        revenue_cargo = db.session.query(db.func.sum(Cargo.cost)).join(Trip).join(Route)\
-            .filter(Route.company_id == company_id).scalar() or 0
+        revenue_cargo = 0 if is_crew else (db.session.query(db.func.sum(Cargo.cost)).join(Trip).join(Route)\
+            .filter(Route.company_id == company_id).scalar() or 0)
             
         active_trips = Trip.query.join(Route).filter(Route.company_id == company_id, Trip.status == 'Running').count()
         cargo_count = Cargo.query.join(Trip).join(Route).filter(Route.company_id == company_id).count()
@@ -247,6 +327,10 @@ def register_admin_routes(app):
             'phone': b.passenger_phone,
             'seat': b.seat_number,
             'boarding_status': b.boarding_status,
+            'is_sharing_location': getattr(b, 'is_sharing_location', False),
+            'live_lat': getattr(b, 'live_lat', None),
+            'live_lng': getattr(b, 'live_lng', None),
+            'live_location_time': b.live_location_time.isoformat() if getattr(b, 'live_location_time', None) else None,
             'pickup': b.pickup_point,
             'pickup_lat': getattr(b, 'pickup_lat', None),
             'pickup_lng': getattr(b, 'pickup_lng', None),
@@ -300,6 +384,10 @@ def register_admin_routes(app):
         try:
             company_id = session.get('company_id')
             if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+            
+            user_role = session.get('role')
+            if user_role != 'ADMIN':
+                return jsonify({'error': 'Quyền hạn bị từ chối: Chỉ Quản trị viên nhà xe mới có quyền quản lý đội xe!'}), 403
             
             data = request.json or {}
             action = request.method
@@ -554,6 +642,10 @@ def register_admin_routes(app):
             company_id = session.get('company_id')
             if not company_id: return jsonify({'error': 'Unauthorized'}), 401
             
+            user_role = session.get('role')
+            if user_role != 'ADMIN':
+                return jsonify({'error': 'Quyền hạn bị từ chối: Chỉ Quản trị viên nhà xe mới có quyền quản lý nhân sự!'}), 403
+            
             data = request.json
             action = request.method
             
@@ -620,6 +712,10 @@ def register_admin_routes(app):
     def admin_create_route():
         company_id = session.get('company_id')
         if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+        
+        user_role = session.get('role')
+        if user_role != 'ADMIN':
+            return jsonify({'error': 'Quyền hạn bị từ chối: Chỉ Quản trị viên nhà xe mới có quyền tạo tuyến đường!'}), 403
         data = request.json
         new_route = Route(
             company_id=company_id,
@@ -638,6 +734,11 @@ def register_admin_routes(app):
             company_id = session.get('company_id')
             if not company_id:
                 return jsonify({'error': 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!'}), 401
+            
+            user_role = session.get('role')
+            staff_role = (session.get('staff_role') or '').upper()
+            if user_role != 'ADMIN' and staff_role not in ('STATION_STAFF', 'DISPATCHER'):
+                return jsonify({'error': 'Quyền hạn bị từ chối: Tài xế / Phụ xe không có quyền tạo chuyến xe! Chỉ Quản trị viên hoặc Điều hành bến mới có quyền này.'}), 403
             data = request.json or {}
             
             route_id = data.get('route_id')
@@ -1251,6 +1352,255 @@ def register_admin_routes(app):
         flash(f'Đã sang xe thành công và gửi email thông báo cho {len(confirmed_bookings)} hành khách! Xe mới: {new_bus_plate} (thay cho {old_bus_plate}).')
         return redirect(url_for('admin_trips_page'))
 
+    def admin_incidents_data():
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+        
+        incidents = TripIncident.query.join(Trip).join(Route).filter(
+            Route.company_id == company_id
+        ).order_by(TripIncident.timestamp.desc()).limit(100).all()
+        
+        return jsonify([{
+            'id': inc.id,
+            'trip_id': inc.trip_id,
+            'route': f"{inc.trip.route.start_point} - {inc.trip.route.end_point}",
+            'bus': inc.trip.bus.license_plate,
+            'type': inc.type,
+            'description': inc.description,
+            'location': inc.location or 'Chưa cập nhật',
+            'status': inc.status,
+            'timestamp': inc.timestamp.isoformat() if inc.timestamp else None,
+            'pax_count': len([b for b in inc.trip.bookings if b.status == 'CONFIRMED']),
+            'driver_name': inc.trip.driver_name or (inc.trip.driver_ref.name if inc.trip.driver_ref else 'Chưa gán')
+        } for inc in incidents])
+
+    def admin_report_incident():
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.json or {}
+        trip_id = data.get('trip_id')
+        incident_type = data.get('type', 'BREAKDOWN') # BREAKDOWN, ACCIDENT, TRAFFIC, DRIVER_UNABLE, OTHER
+        description = data.get('description', '')
+        location = data.get('location', '')
+        notify_pax = data.get('notify_passengers', True)
+        
+        if not trip_id or not description:
+            return jsonify({'error': 'Vui lòng chọn chuyến xe và nhập mô tả sự cố!'}), 400
+            
+        trip = Trip.query.get_or_404(int(trip_id))
+        if trip.route.company_id != company_id:
+            return jsonify({'error': 'Forbidden'}), 403
+            
+        staff_id = session.get('staff_id')
+        if not staff_id:
+            first_staff = Staff.query.filter_by(company_id=company_id).first()
+            staff_id = first_staff.id if first_staff else 1
+            
+        incident = TripIncident(
+            trip_id=trip.id,
+            staff_id=staff_id,
+            type=incident_type,
+            description=description,
+            location=location,
+            status='REPORTED'
+        )
+        db.session.add(incident)
+        
+        # Update trip status
+        if incident_type in ('BREAKDOWN', 'ACCIDENT', 'DRIVER_UNABLE'):
+            trip.status = 'Broken'
+        elif incident_type == 'TRAFFIC':
+            trip.status = 'Delayed' if hasattr(Trip, 'status') else trip.status
+            
+        # Notify passengers
+        notified_count = 0
+        if notify_pax:
+            type_labels = {
+                'BREAKDOWN': 'Hỏng xe kỹ thuật',
+                'ACCIDENT': 'Sự cố va chạm giao thông',
+                'TRAFFIC': 'Tắc đường / Sạt lở đèo',
+                'DRIVER_UNABLE': 'Thay đổi tài xế đột xuất',
+                'OTHER': 'Sự cố vận hành'
+            }
+            label = type_labels.get(incident_type, 'Sự cố chuyến xe')
+            for b in trip.bookings:
+                if b.status == 'CONFIRMED':
+                    notif = Notification(
+                        user_id=b.user_id,
+                        type='REMINDER',
+                        title=f'[CẢNH BÁO SỰ CỐ] {label}',
+                        message=f"Chuyến xe {trip.route.start_point} - {trip.route.end_point} gặp sự cố tại {location or 'trên hành trình'}. Nhà xe đang triển khai cứu viện khẩn cấp, xin quý khách yên tâm giữ vị trí!"
+                    )
+                    db.session.add(notif)
+                    notified_count += 1
+                    
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': f'Đã ghi nhận sự cố và thông báo tự động cho {notified_count} hành khách!',
+            'incident_id': incident.id
+        }), 201
+
+    def admin_incident_replacements(trip_id):
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+        
+        trip = Trip.query.get_or_404(trip_id)
+        if trip.route.company_id != company_id:
+            return jsonify({'error': 'Forbidden'}), 403
+            
+        now = datetime.utcnow()
+        # Busy buses +- 6 hours
+        busy_buses_ids = [t.bus_id for t in Trip.query.filter(
+            (Trip.status.in_(['Scheduled', 'Running', 'Broken'])) |
+            ((Trip.departure_time >= now - timedelta(hours=6)) & (Trip.departure_time <= now + timedelta(hours=6)))
+        ).all()]
+        busy_buses_ids.append(trip.bus_id)
+        
+        available_buses = Bus.query.filter(
+            Bus.company_id == company_id,
+            Bus.id.notin_(busy_buses_ids)
+        ).all()
+        
+        # Busy drivers +- 4 hours
+        busy_drivers_ids = [t.driver_id for t in Trip.query.filter(
+            Trip.departure_time >= now - timedelta(hours=4),
+            Trip.departure_time <= now + timedelta(hours=4),
+            Trip.status != 'Cancelled'
+        ).all() if t.driver_id]
+        if trip.driver_id:
+            busy_drivers_ids.append(trip.driver_id)
+            
+        available_drivers = Driver.query.filter(
+            Driver.company_id == company_id,
+            Driver.id.notin_(busy_drivers_ids)
+        ).all()
+        
+        # Transfer candidate trips
+        candidate_trips = Trip.query.filter(
+            Trip.route_id == trip.route_id,
+            Trip.id != trip.id,
+            Trip.status.in_(['Scheduled', 'Running'])
+        ).all()
+        
+        return jsonify({
+            'trip': {
+                'id': trip.id,
+                'route': f"{trip.route.start_point} - {trip.route.end_point}",
+                'current_bus': trip.bus.license_plate,
+                'current_driver': trip.driver_name or (trip.driver_ref.name if trip.driver_ref else 'Chưa gán'),
+                'total_seats': trip.bus.total_seats,
+                'pax_count': len([b for b in trip.bookings if b.status == 'CONFIRMED']),
+            },
+            'available_buses': [{
+                'id': b.id,
+                'license_plate': b.license_plate,
+                'bus_type': b.bus_type,
+                'total_seats': b.total_seats,
+                'is_match_capacity': b.total_seats >= trip.bus.total_seats
+            } for b in available_buses],
+            'available_drivers': [{
+                'id': d.id,
+                'name': d.name,
+                'phone': d.phone,
+                'license_number': d.license_number
+            } for d in available_drivers],
+            'candidate_trips': [{
+                'id': ct.id,
+                'departure_time': ct.departure_time.isoformat(),
+                'bus': ct.bus.license_plate,
+                'bus_type': ct.bus.bus_type,
+                'driver': ct.driver_name or 'Chưa gán',
+                'available_seats': ct.bus.total_seats - Booking.query.filter_by(trip_id=ct.id, status='CONFIRMED').count()
+            } for ct in candidate_trips]
+        })
+
+    def admin_resolve_incident_transfer():
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+        
+        user_role = session.get('role')
+        staff_role = (session.get('staff_role') or '').upper()
+        if user_role != 'ADMIN' and staff_role not in ('STATION_STAFF', 'DISPATCHER'):
+            return jsonify({'error': 'Chỉ Quản trị viên hoặc Điều hành bến mới có quyền ra lệnh điều xe cứu hộ và chuyển khách!'}), 403
+        
+        data = request.json or {}
+        trip_id = data.get('trip_id')
+        incident_id = data.get('incident_id')
+        resolution_mode = data.get('mode', 'REPLACE_VEHICLE') # 'REPLACE_VEHICLE' or 'TRANSFER_PASSENGERS'
+        
+        if not trip_id:
+            return jsonify({'error': 'Vui lòng cung cấp mã chuyến xe!'}), 400
+            
+        trip = Trip.query.get_or_404(int(trip_id))
+        if trip.route.company_id != company_id:
+            return jsonify({'error': 'Forbidden'}), 403
+            
+        old_bus_plate = trip.bus.license_plate
+        notified_count = 0
+        
+        if resolution_mode == 'REPLACE_VEHICLE':
+            new_bus_id = data.get('new_bus_id')
+            new_driver_id = data.get('new_driver_id')
+            if not new_bus_id:
+                return jsonify({'error': 'Vui lòng chọn xe thay thế!'}), 400
+                
+            new_bus = Bus.query.get_or_404(int(new_bus_id))
+            trip.bus_id = new_bus.id
+            if new_driver_id:
+                new_driver = Driver.query.get(int(new_driver_id))
+                if new_driver:
+                    trip.driver_id = new_driver.id
+                    trip.driver_name = new_driver.name
+            
+            trip.status = 'Running'
+            
+            # Send Notification to confirmed passengers
+            for b in trip.bookings:
+                if b.status == 'CONFIRMED':
+                    notif = Notification(
+                        user_id=b.user_id,
+                        type='REMINDER',
+                        title='[THÔNG BÁO] Xe dự phòng đã tiếp quản chuyến đi',
+                        message=f"Xe cứu hộ biển số {new_bus.license_plate} (thay cho {old_bus_plate}) đã được điều động đến tiếp quản chuyến đi của quý khách. Chúc quý khách chuyến đi an toàn!"
+                    )
+                    db.session.add(notif)
+                    notified_count += 1
+            message = f'Đã điều động xe dự phòng {new_bus.license_plate} và gửi thông báo cho {notified_count} hành khách!'
+            
+        else: # TRANSFER_PASSENGERS
+            target_trip_id = data.get('target_trip_id')
+            if not target_trip_id:
+                return jsonify({'error': 'Vui lòng chọn chuyến xe chuyển tiếp!'}), 400
+            target_trip = Trip.query.get_or_404(int(target_trip_id))
+            
+            # Move bookings to target trip
+            for b in trip.bookings:
+                if b.status == 'CONFIRMED':
+                    b.trip_id = target_trip.id
+                    notif = Notification(
+                        user_id=b.user_id,
+                        type='REMINDER',
+                        title='[ĐỔI CHUYẾN THÀNH CÔNG] Sang xe mới do sự cố',
+                        message=f"Do sự cố kỹ thuật, quý khách đã được chuyển sang chuyến xe lúc {target_trip.departure_time.strftime('%H:%M')} (Xe {target_trip.bus.license_plate} - Tuyến {target_trip.route.start_point} - {target_trip.route.end_point})."
+                    )
+                    db.session.add(notif)
+                    notified_count += 1
+            trip.status = 'Cancelled'
+            message = f'Đã chuyển {notified_count} hành khách sang chuyến #{target_trip.id} ({target_trip.bus.license_plate}) và gửi thông báo tự động!'
+            
+        # Update incident status if provided
+        if incident_id:
+            inc = TripIncident.query.get(int(incident_id))
+            if inc: inc.status = 'RESOLVED'
+        else:
+            open_inc = TripIncident.query.filter_by(trip_id=trip.id, status='REPORTED').first()
+            if open_inc: open_inc.status = 'RESOLVED'
+            
+        db.session.commit()
+        return jsonify({'success': True, 'message': message})
+
     def add_route():
         company_id = session['company_id']
         start_point = request.form.get('start_point')
@@ -1280,6 +1630,153 @@ def register_admin_routes(app):
         db.session.commit()
         flash(f'Đã xóa tuyến {route.start_point} → {route.end_point}.')
         return redirect(url_for('admin_routes_page'))
+
+    def admin_trip_live_radar(trip_id):
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+
+        user_role = session.get('role')
+        staff_role = (session.get('staff_role') or '').upper()
+        if user_role != 'ADMIN' and staff_role not in ('DRIVER', 'ASSISTANT', 'STATION_STAFF'):
+            return jsonify({'error': 'Chức năng Radar đón khách trực diện chỉ dành cho tài xế và phụ xe!'}), 403
+
+        trip = Trip.query.get_or_404(trip_id)
+        if trip.route.company_id != company_id: return jsonify({'error': 'Forbidden'}), 403
+
+        bookings = Booking.query.filter_by(trip_id=trip_id).filter(
+            Booking.status.in_(['CONFIRMED', 'HOLD'])
+        ).all()
+
+        bus_lat = getattr(trip, 'current_lat', None)
+        bus_lng = getattr(trip, 'current_lng', None)
+
+        import math
+        def haversine_m(lat1, lon1, lat2, lon2):
+            if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+                return None
+            R = 6371000  # meters
+            dlat = math.radians(lat2 - lat1)
+            dlon = math.radians(lon2 - lon1)
+            a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+            return round(R * c)
+
+        passengers_data = []
+        for b in bookings:
+            p_lat = b.live_lat if getattr(b, 'is_sharing_location', False) and b.live_lat else getattr(b, 'pickup_lat', None)
+            p_lng = b.live_lng if getattr(b, 'is_sharing_location', False) and b.live_lng else getattr(b, 'pickup_lng', None)
+            dist = haversine_m(bus_lat, bus_lng, p_lat, p_lng) if (bus_lat and p_lat) else None
+            is_near = (dist is not None and dist <= 1000)
+
+            passengers_data.append({
+                'id': b.id,
+                'ticket_code': b.ticket_code,
+                'name': b.passenger_name,
+                'phone': b.passenger_phone,
+                'seat': b.seat_number,
+                'boarding_status': b.boarding_status or 'PENDING',
+                'is_sharing_location': getattr(b, 'is_sharing_location', False),
+                'live_lat': getattr(b, 'live_lat', None),
+                'live_lng': getattr(b, 'live_lng', None),
+                'live_location_time': b.live_location_time.isoformat() if getattr(b, 'live_location_time', None) else None,
+                'pickup': b.pickup_point,
+                'pickup_lat': getattr(b, 'pickup_lat', None),
+                'pickup_lng': getattr(b, 'pickup_lng', None),
+                'pickup_landmark': getattr(b, 'pickup_landmark', None),
+                'effective_lat': p_lat,
+                'effective_lng': p_lng,
+                'distance_meters': dist,
+                'is_near': is_near
+            })
+
+        return jsonify({
+            'trip': {
+                'id': trip.id,
+                'route': f"{trip.route.start_point} - {trip.route.end_point}",
+                'bus': trip.bus.license_plate,
+                'driver_name': trip.driver_name,
+                'status': trip.status,
+                'departure_time': trip.departure_time.isoformat(),
+                'current_lat': getattr(trip, 'current_lat', None),
+                'current_lng': getattr(trip, 'current_lng', None),
+                'last_location_update': trip.last_location_update.isoformat() if getattr(trip, 'last_location_update', None) else None
+            },
+            'passengers': passengers_data,
+            'total_passengers': len(passengers_data),
+            'boarded_count': sum(1 for p in passengers_data if p['boarding_status'] == 'BOARDED'),
+            'sharing_count': sum(1 for p in passengers_data if p['is_sharing_location'])
+        })
+
+    def admin_driver_update_location():
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+
+        user_role = session.get('role')
+        staff_role = (session.get('staff_role') or '').upper()
+        if user_role != 'ADMIN' and staff_role not in ('DRIVER', 'ASSISTANT', 'STATION_STAFF'):
+            return jsonify({'error': 'Chỉ tài xế và phụ xe mới có quyền cập nhật tọa độ xe!'}), 403
+
+        data = request.json or {}
+        trip_id = data.get('trip_id')
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+
+        if not trip_id or latitude is None or longitude is None:
+            return jsonify({'error': 'Thiếu trip_id hoặc tọa độ GPS'}), 400
+
+        trip = Trip.query.filter_by(id=trip_id).first()
+        if not trip or trip.route.company_id != company_id:
+            return jsonify({'error': 'Chuyến xe không hợp lệ'}), 404
+
+        try:
+            trip.current_lat = float(latitude)
+            trip.current_lng = float(longitude)
+            trip.last_location_update = datetime.utcnow()
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+        return jsonify({
+            'success': True,
+            'message': 'Đã cập nhật vị trí xe trực tiếp',
+            'current_lat': trip.current_lat,
+            'current_lng': trip.current_lng
+        })
+
+    def admin_driver_mark_boarded(booking_id):
+        company_id = session.get('company_id')
+        if not company_id: return jsonify({'error': 'Unauthorized'}), 401
+
+        user_role = session.get('role')
+        staff_role = (session.get('staff_role') or '').upper()
+        if user_role != 'ADMIN' and staff_role not in ('DRIVER', 'ASSISTANT', 'STATION_STAFF'):
+            return jsonify({'error': 'Chỉ tài xế và phụ xe mới có quyền xác nhận đón khách!'}), 403
+
+        booking = Booking.query.get_or_404(booking_id)
+        if booking.trip.route.company_id != company_id:
+            return jsonify({'error': 'Forbidden'}), 403
+
+        booking.boarding_status = 'BOARDED'
+        booking.check_in_time = datetime.utcnow()
+        booking.is_sharing_location = False
+
+        staff_id = session.get('staff_id')
+        if staff_id:
+            booking.checked_in_by_id = staff_id
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+        return jsonify({
+            'success': True,
+            'message': f'Đã xác nhận đón hành khách {booking.passenger_name} (Ghế {booking.seat_number}) lên xe!',
+            'booking_id': booking.id,
+            'boarding_status': booking.boarding_status
+        })
 
     def add_bus():
         company_id = session['company_id']
@@ -2005,32 +2502,50 @@ def register_admin_routes(app):
             db.session.commit()
             return jsonify({'message': 'Đã xóa tuyến đường'})
     
-    # JSON API Endpoints for React
-    app.add_url_rule('/api/admin/trips', view_func=company_login_required(admin_trips_data), methods=['GET'])
-    app.add_url_rule('/api/admin/trips', view_func=company_login_required(admin_create_trip), methods=['POST'])
-    app.add_url_rule('/api/admin/routes', view_func=company_login_required(admin_routes_data), methods=['GET'])
-    app.add_url_rule('/api/admin/routes', view_func=company_login_required(admin_create_route), methods=['POST'])
-    app.add_url_rule('/api/admin/cargo', view_func=company_login_required(admin_cargo_data), methods=['GET'])
-    app.add_url_rule('/api/admin/cargo', view_func=company_login_required(admin_create_cargo), methods=['POST'])
-    app.add_url_rule('/api/admin/cargo/batch', view_func=company_login_required(admin_batch_update_cargo), methods=['PUT'])
-    app.add_url_rule('/api/admin/cargo/<int:cargo_id>/receipt', view_func=company_login_required(download_cargo_receipt))
-    app.add_url_rule('/api/admin/cargo/<int:cargo_id>', view_func=company_login_required(admin_update_cargo), methods=['PUT'])
-    app.add_url_rule('/api/admin/cargo/<int:cargo_id>', view_func=company_login_required(admin_delete_cargo), methods=['DELETE'])
-    app.add_url_rule('/api/admin/trip/<int:trip_id>/passengers', view_func=company_login_required(admin_trip_passengers))
-    app.add_url_rule('/api/admin/buses', view_func=company_login_required(admin_buses_data), methods=['GET'])
-    app.add_url_rule('/api/admin/buses', view_func=company_login_required(admin_manage_bus), methods=['POST'], endpoint='admin_post_bus')
-    app.add_url_rule('/api/admin/buses/<int:bus_id>', view_func=company_login_required(admin_manage_bus), methods=['PUT', 'DELETE'], endpoint='admin_put_delete_bus')
-    app.add_url_rule('/api/admin/staff/<role>', view_func=company_login_required(admin_staff_list))
-    app.add_url_rule('/api/admin/staff', view_func=company_login_required(admin_manage_staff), methods=['POST', 'PUT', 'DELETE'])
-    app.add_url_rule('/api/admin/trip/<int:trip_id>/export/manifest', view_func=company_login_required(download_manifest), endpoint='api_admin_export_manifest')
-    app.add_url_rule('/api/admin/trip/<int:trip_id>/export/order', view_func=company_login_required(download_order), endpoint='api_admin_export_order')
-    app.add_url_rule('/api/admin/trip/<int:trip_id>', view_func=company_login_required(admin_trip_detail))
-    app.add_url_rule('/api/admin/stats', view_func=company_login_required(admin_stats_data))
-    
-    app.add_url_rule('/api/admin/offices', view_func=company_login_required(admin_offices_data), methods=['GET'])
-    app.add_url_rule('/api/admin/offices', view_func=company_login_required(admin_create_office), methods=['POST'])
-    app.add_url_rule('/api/admin/offices/<int:office_id>', view_func=company_login_required(admin_update_office), methods=['PUT'])
-    app.add_url_rule('/api/admin/offices/<int:office_id>', view_func=company_login_required(admin_delete_office), methods=['DELETE'])
-    app.add_url_rule('/api/admin/passengers/search', view_func=company_login_required(admin_search_passengers), methods=['GET'])
-    app.add_url_rule('/api/admin/bookings/<int:booking_id>', view_func=company_login_required(admin_manage_booking), methods=['PUT', 'DELETE'])
-    app.add_url_rule('/api/admin/routes/<int:route_id>', view_func=company_login_required(admin_manage_route), methods=['PUT', 'DELETE'])
+    # JSON API Endpoints for React & Mobile Flutter App
+    api_routes = [
+        ('/trips', admin_trips_data, ['GET'], 'admin_trips_data'),
+        ('/trips', admin_create_trip, ['POST'], 'admin_create_trip'),
+        ('/routes', admin_routes_data, ['GET'], 'admin_routes_data'),
+        ('/routes', admin_create_route, ['POST'], 'admin_create_route'),
+        ('/cargo', admin_cargo_data, ['GET'], 'admin_cargo_data'),
+        ('/cargo', admin_create_cargo, ['POST'], 'admin_create_cargo'),
+        ('/cargo/batch', admin_batch_update_cargo, ['PUT'], 'admin_batch_update_cargo'),
+        ('/cargo/<int:cargo_id>/receipt', download_cargo_receipt, ['GET'], 'download_cargo_receipt'),
+        ('/cargo/<int:cargo_id>', admin_update_cargo, ['PUT'], 'admin_update_cargo'),
+        ('/cargo/<int:cargo_id>', admin_delete_cargo, ['DELETE'], 'admin_delete_cargo'),
+        ('/trip/<int:trip_id>/passengers', admin_trip_passengers, ['GET'], 'admin_trip_passengers'),
+        ('/buses', admin_buses_data, ['GET'], 'admin_buses_data'),
+        ('/buses', admin_manage_bus, ['POST'], 'admin_post_bus'),
+        ('/buses/<int:bus_id>', admin_manage_bus, ['PUT', 'DELETE'], 'admin_put_delete_bus'),
+        ('/staff/<role>', admin_staff_list, ['GET'], 'admin_staff_list'),
+        ('/staff', admin_manage_staff, ['POST', 'PUT', 'DELETE'], 'admin_manage_staff'),
+        ('/trip/<int:trip_id>/export/manifest', download_manifest, ['GET'], 'api_admin_export_manifest'),
+        ('/trip/<int:trip_id>/export/order', download_order, ['GET'], 'api_admin_export_order'),
+        ('/trip/<int:trip_id>', admin_trip_detail, ['GET'], 'admin_trip_detail'),
+        ('/stats', admin_stats_data, ['GET'], 'admin_stats_data'),
+        ('/offices', admin_offices_data, ['GET'], 'admin_offices_data'),
+        ('/offices', admin_create_office, ['POST'], 'admin_create_office'),
+        ('/offices/<int:office_id>', admin_update_office, ['PUT'], 'admin_update_office'),
+        ('/offices/<int:office_id>', admin_delete_office, ['DELETE'], 'admin_delete_office'),
+        ('/passengers/search', admin_search_passengers, ['GET'], 'admin_search_passengers'),
+        ('/bookings/<int:booking_id>', admin_manage_booking, ['PUT', 'DELETE'], 'admin_manage_booking'),
+        ('/routes/<int:route_id>', admin_manage_route, ['PUT', 'DELETE'], 'admin_manage_route'),
+        ('/incidents', admin_incidents_data, ['GET'], 'admin_incidents_data'),
+        ('/incidents/report', admin_report_incident, ['POST'], 'admin_report_incident'),
+        ('/incidents/replacements/<int:trip_id>', admin_incident_replacements, ['GET'], 'admin_incident_replacements'),
+        ('/incidents/resolve-transfer', admin_resolve_incident_transfer, ['POST'], 'admin_resolve_incident_transfer'),
+        ('/trip/<int:trip_id>/live-radar', admin_trip_live_radar, ['GET'], 'admin_trip_live_radar'),
+        ('/driver/update-location', admin_driver_update_location, ['POST'], 'admin_driver_update_location'),
+        ('/booking/<int:booking_id>/board', admin_driver_mark_boarded, ['POST'], 'admin_driver_mark_boarded'),
+    ]
+
+    for prefix in ['/api/admin', '/api/v1/admin']:
+        suffix = '_v1' if prefix.startswith('/api/v1') else ''
+        for path_suffix, view_func, methods, base_ep in api_routes:
+            app.add_url_rule(
+                f'{prefix}{path_suffix}',
+                view_func=company_login_required(view_func),
+                methods=methods,
+                endpoint=f'{base_ep}{suffix}'
+            )

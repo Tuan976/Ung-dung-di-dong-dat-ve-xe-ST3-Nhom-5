@@ -5,6 +5,9 @@ class TripInfo {
   final String companyName;
   final String departureTime;
   final String? licensePlate;
+  final double? currentLat;
+  final double? currentLng;
+  final String? driverName;
 
   TripInfo({
     required this.id,
@@ -13,6 +16,9 @@ class TripInfo {
     required this.companyName,
     required this.departureTime,
     this.licensePlate,
+    this.currentLat,
+    this.currentLng,
+    this.driverName,
   });
 
   factory TripInfo.fromJson(Map<String, dynamic> json) {
@@ -23,6 +29,9 @@ class TripInfo {
       companyName: json['company_name'] ?? '',
       departureTime: json['departure_time'] ?? '',
       licensePlate: json['license_plate'],
+      currentLat: json['current_lat'] != null ? (json['current_lat'] as num).toDouble() : null,
+      currentLng: json['current_lng'] != null ? (json['current_lng'] as num).toDouble() : null,
+      driverName: json['driver_name'],
     );
   }
 
@@ -41,6 +50,15 @@ class Booking {
   final String? bookingTime;
   final String? expiresAt;
   final TripInfo? trip;
+  final String boardingStatus; // PENDING, BOARDED
+  final bool isSharingLocation;
+  final double? liveLat;
+  final double? liveLng;
+  final String? pickupPoint;
+  final String? dropoffPoint;
+  final double? pickupLat;
+  final double? pickupLng;
+  final String? pickupLandmark;
 
   Booking({
     required this.id,
@@ -54,12 +72,22 @@ class Booking {
     this.bookingTime,
     this.expiresAt,
     this.trip,
+    this.boardingStatus = 'PENDING',
+    this.isSharingLocation = false,
+    this.liveLat,
+    this.liveLng,
+    this.pickupPoint,
+    this.dropoffPoint,
+    this.pickupLat,
+    this.pickupLng,
+    this.pickupLandmark,
   });
 
   bool get isPaid => paymentStatus.toLowerCase() == 'paid';
   bool get isCancelled => status.toUpperCase() == 'CANCELLED';
   bool get isHold => status.toUpperCase() == 'HOLD';
   bool get isConfirmed => status.toUpperCase() == 'CONFIRMED';
+  bool get isBoarded => boardingStatus.toUpperCase() == 'BOARDED';
 
   String get routeName => trip?.routeName ?? 'N/A';
   String get departureTime => trip?.departureTime ?? '';
@@ -77,6 +105,15 @@ class Booking {
       bookingTime: json['booking_time'],
       expiresAt: json['expires_at'],
       trip: json['trip'] != null ? TripInfo.fromJson(json['trip']) : null,
+      boardingStatus: json['boarding_status'] ?? 'PENDING',
+      isSharingLocation: json['is_sharing_location'] == true,
+      liveLat: json['live_lat'] != null ? (json['live_lat'] as num).toDouble() : null,
+      liveLng: json['live_lng'] != null ? (json['live_lng'] as num).toDouble() : null,
+      pickupPoint: json['pickup_point'],
+      dropoffPoint: json['dropoff_point'],
+      pickupLat: json['pickup_lat'] != null ? (json['pickup_lat'] as num).toDouble() : null,
+      pickupLng: json['pickup_lng'] != null ? (json['pickup_lng'] as num).toDouble() : null,
+      pickupLandmark: json['pickup_landmark'],
     );
   }
 

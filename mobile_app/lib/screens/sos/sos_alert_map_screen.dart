@@ -96,9 +96,10 @@ class _SosAlertMapScreenState extends State<SosAlertMapScreen> {
                   options: MapOptions(initialCenter: incident, initialZoom: 16, minZoom: 5, maxZoom: 18),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+                      subdomains: const ['0', '1', '2', '3'],
                       userAgentPackageName: 'com.nhom5.vexemobile',
-                      maxZoom: 19,
+                      maxZoom: 20,
                     ),
                     if (a.accuracyMeters != null)
                       CircleLayer(circles: [

@@ -88,4 +88,30 @@ class ApiClient {
       return await run();
     }
   }
+
+  Future<Response> put(String path, {dynamic data, Map<String, String>? headers}) async {
+    Future<Response> run() => _dio.put(path,
+        data: data,
+        options: headers == null ? null : Options(headers: headers));
+    try {
+      return await run();
+    } catch (e) {
+      if (!_isTransient(e)) rethrow;
+      await Future.delayed(const Duration(milliseconds: 800));
+      return await run();
+    }
+  }
+
+  Future<Response> delete(String path, {dynamic data, Map<String, String>? headers}) async {
+    Future<Response> run() => _dio.delete(path,
+        data: data,
+        options: headers == null ? null : Options(headers: headers));
+    try {
+      return await run();
+    } catch (e) {
+      if (!_isTransient(e)) rethrow;
+      await Future.delayed(const Duration(milliseconds: 800));
+      return await run();
+    }
+  }
 }

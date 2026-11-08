@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -36,7 +37,8 @@ class MapBookingScreen extends StatefulWidget {
   State<MapBookingScreen> createState() => _MapBookingScreenState();
 }
 
-class _MapBookingScreenState extends State<MapBookingScreen> with TickerProviderStateMixin {
+class _MapBookingScreenState extends State<MapBookingScreen>
+    with TickerProviderStateMixin {
   final MapBookingService _service = MapBookingService();
   final MapController _mapController = MapController();
   final ScrollController _cardsScrollController = ScrollController();
@@ -103,10 +105,12 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
         _departureDate = DateTime.parse(widget.initialDate!);
       } catch (_) {}
     }
-    if (widget.initialPassengerCount != null && widget.initialPassengerCount! > 0) {
+    if (widget.initialPassengerCount != null &&
+        widget.initialPassengerCount! > 0) {
       _passengerCount = widget.initialPassengerCount!;
     }
-    if (widget.initialDirection != null && widget.initialDirection!.isNotEmpty) {
+    if (widget.initialDirection != null &&
+        widget.initialDirection!.isNotEmpty) {
       _direction = widget.initialDirection!;
     }
 
@@ -137,14 +141,15 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
         setState(() {
           _isCheckingRouteGuard = false;
           _isRouteValidForMap = false;
-          _routeGuardErrorMessage = strategy.message ??
-              'Tuyến đường này chưa được cấu hình đặt vé qua bản đồ. Bạn có thể sử dụng phương thức tìm chuyến phổ thông.';
+          _routeGuardErrorMessage = strategy.message ?? 'Tuyến đường này chưa được cấu hình đặt vé qua bản đồ. Bạn có thể sử dụng phương thức tìm chuyến phổ thông.';
         });
         return;
       }
 
       _routeId = strategy.routeId ?? widget.routeId ?? 'sg_cj';
-      _direction = (widget.initialDirection != null && widget.initialDirection!.isNotEmpty)
+      _direction =
+          (widget.initialDirection != null &&
+              widget.initialDirection!.isNotEmpty)
           ? widget.initialDirection!
           : strategy.direction;
 
@@ -339,12 +344,17 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
         }
 
         // Sắp xếp gợi ý trạm gần nhất lên đầu
-        _pickupStops.sort((a, b) => (a.distanceFromUser ?? 999).compareTo(b.distanceFromUser ?? 999));
+        _pickupStops.sort(
+          (a, b) =>
+              (a.distanceFromUser ?? 999).compareTo(b.distanceFromUser ?? 999),
+        );
       });
 
       if (!silent) {
         _animatedMapMove(LatLng(pos.latitude, pos.longitude), 14.0);
-        _showSnackBar('Đã định vị thành công. Đã sắp xếp trạm đón gần bạn nhất.');
+        _showSnackBar(
+          'Đã định vị thành công. Đã sắp xếp trạm đón gần bạn nhất.',
+        );
       }
     } catch (e) {
       debugPrint('Lỗi GPS: $e');
@@ -381,7 +391,9 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
           _estimatedDuration = res.durationText;
           _isCalculatingRoute = false;
         });
-        _showSnackBar('Đã tối ưu theo: ${res.optimizationName} (${res.distanceKm} km)');
+        _showSnackBar(
+          'Đã tối ưu theo: ${res.optimizationName} (${res.distanceKm} km)',
+        );
       } else {
         setState(() => _isCalculatingRoute = false);
       }
@@ -428,7 +440,9 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
     }
 
     if (!_isSequenceValid()) {
-      _showSnackBar('Điểm trả khách phải nằm sau điểm đón trên lộ trình chuyến xe.');
+      _showSnackBar(
+        'Điểm trả khách phải nằm sau điểm đón trên lộ trình chuyến xe.',
+      );
       return;
     }
 
@@ -477,7 +491,10 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
         backgroundColor: darkPrimary,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
@@ -499,7 +516,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
               SizedBox(height: 16),
               Text(
                 'Đang kiểm tra cấu hình bản đồ tuyến...',
-                style: TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -517,24 +538,13 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
         child: Stack(
           children: [
             // 1. Bản đồ tương tác chính
-            Positioned.fill(
-              child: _buildInteractiveMap(),
-            ),
+            Positioned.fill(child: _buildInteractiveMap()),
 
             // 2. Thanh tiêu đề & điều hướng trên cùng
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _buildTopHeader(),
-            ),
+            Positioned(top: 0, left: 0, right: 0, child: _buildTopHeader()),
 
             // 3. Nút điều khiển tiện ích bản đồ (GPS, Tối ưu hành trình, Toàn cảnh)
-            Positioned(
-              right: 16,
-              top: 150,
-              child: _buildMapFloatingControls(),
-            ),
+            Positioned(right: 16, top: 150, child: _buildMapFloatingControls()),
 
             // 4. Panel trạm dừng & thao tác ở dưới cùng
             Positioned(
@@ -552,18 +562,36 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 right: 20,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: darkPrimary.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10)],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 10,
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
                         SizedBox(width: 10),
-                        Text('Đang tính toán tuyến đường tối ưu...', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        Text(
+                          'Đang tính toán tuyến đường tối ưu...',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
                       ],
                     ),
                   ),
@@ -669,7 +697,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: Icon(Icons.my_location_rounded, color: Color(0xFF059669), size: 24),
+              child: Icon(
+                Icons.my_location_rounded,
+                color: Color(0xFF059669),
+                size: 24,
+              ),
             ),
           ),
         ),
@@ -679,17 +711,20 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        initialCenter: _routePolyline.isNotEmpty ? _routePolyline.first : const LatLng(10.8145, 106.7123),
+        initialCenter: _routePolyline.isNotEmpty
+            ? _routePolyline.first
+            : const LatLng(10.8145, 106.7123),
         initialZoom: 8.5,
         minZoom: 5.0,
         maxZoom: 18.0,
       ),
       children: [
-        // Bản đồ chuẩn quốc tế OpenStreetMap Carto CDN tốc độ cao không cần API Key
+        // Bản đồ Google Maps vệ tinh / đường phố tốc độ cao có hỗ trợ CORS cho Web & Mobile
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+          subdomains: const ['0', '1', '2', '3'],
           userAgentPackageName: 'com.nhom5.vexemobile',
-          maxZoom: 19,
+          maxZoom: 20,
         ),
 
         // Đường dẫn tuyến xe khách thực tế
@@ -774,7 +809,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: darkPrimary),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    size: 18,
+                    color: darkPrimary,
+                  ),
                   onPressed: () {
                     if (_currentStep > 1) {
                       setState(() => _currentStep--);
@@ -789,13 +828,21 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                     children: [
                       Text(
                         _routeName,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: darkPrimary),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: darkPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         '$_highway • ${_distanceKm.toStringAsFixed(1)} km • $_estimatedDuration',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -804,7 +851,10 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 ),
                 IconButton(
                   tooltip: 'Đảo chiều di chuyển',
-                  icon: const Icon(Icons.swap_horiz_rounded, color: brandOrange),
+                  icon: const Icon(
+                    Icons.swap_horiz_rounded,
+                    color: brandOrange,
+                  ),
                   onPressed: _swapDirection,
                 ),
               ],
@@ -846,7 +896,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
   }
 
   /// Nút chọn chế độ tối ưu
-  Widget _buildOptimizationTab({required String mode, required IconData icon, required String label}) {
+  Widget _buildOptimizationTab({
+    required String mode,
+    required IconData icon,
+    required String label,
+  }) {
     final isSelected = _optimizationMode == mode;
     return Expanded(
       child: GestureDetector(
@@ -856,12 +910,23 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 14, color: isSelected ? brandOrange : const Color(0xFF64748B)),
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? brandOrange : const Color(0xFF64748B),
+              ),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -901,7 +966,14 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
           onPressed: () => _locateUser(silent: false),
           tooltip: 'Vị trí của tôi',
           child: _isLocatingUser
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: brandOrange))
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: brandOrange,
+                  ),
+                )
               : const Icon(Icons.my_location_rounded, size: 18),
         ),
       ],
@@ -913,7 +985,17 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
     final activeStops = _currentStep == 2 ? _pickupStops : _dropoffStops;
     final filteredStops = _searchKeyword.isEmpty
         ? activeStops
-        : activeStops.where((s) => s.name.toLowerCase().contains(_searchKeyword.toLowerCase()) || s.address.toLowerCase().contains(_searchKeyword.toLowerCase())).toList();
+        : activeStops
+              .where(
+                (s) =>
+                    s.name.toLowerCase().contains(
+                      _searchKeyword.toLowerCase(),
+                    ) ||
+                    s.address.toLowerCase().contains(
+                      _searchKeyword.toLowerCase(),
+                    ),
+              )
+              .toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -988,9 +1070,18 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 controller: _searchController,
                 style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
-                  hintText: _currentStep == 2 ? 'Tìm trạm đón tại $_departureArea...' : 'Tìm trạm trả tại $_destinationArea...',
-                  hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                  hintText: _currentStep == 2
+                      ? 'Tìm trạm đón tại $_departureArea...'
+                      : 'Tìm trạm trả tại $_destinationArea...',
+                  hintStyle: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    size: 18,
+                    color: Color(0xFF94A3B8),
+                  ),
                   suffixIcon: _searchKeyword.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear, size: 16),
@@ -1020,12 +1111,20 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFDC2626)),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 16,
+                    color: Color(0xFFDC2626),
+                  ),
                   SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Điểm trả phải nằm sau điểm đón trên lộ trình chuyến xe.',
-                      style: TextStyle(fontSize: 11, color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFFDC2626),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -1039,7 +1138,10 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 ? Center(
                     child: Text(
                       'Không tìm thấy trạm dừng nào phù hợp',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -1049,8 +1151,11 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                     itemCount: filteredStops.length,
                     itemBuilder: (context, index) {
                       final station = filteredStops[index];
-                      final isSelected = (_currentStep == 2 && _selectedPickup?.id == station.id) ||
-                          (_currentStep == 3 && _selectedDropoff?.id == station.id);
+                      final isSelected =
+                          (_currentStep == 2 &&
+                              _selectedPickup?.id == station.id) ||
+                          (_currentStep == 3 &&
+                              _selectedDropoff?.id == station.id);
 
                       return _buildStationHorizontalCard(station, isSelected);
                     },
@@ -1065,17 +1170,29 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isSequenceValid() ? brandOrange : Colors.grey.shade400,
+                      backgroundColor: _isSequenceValid()
+                          ? brandOrange
+                          : Colors.grey.shade400,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
-                    onPressed: _isSequenceValid() ? _proceedToExistingBookingFlow : null,
+                    onPressed: _isSequenceValid()
+                        ? _proceedToExistingBookingFlow
+                        : null,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Text('Xác nhận & Tìm chuyến', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                        Text(
+                          'Xác nhận & Tìm chuyến',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         SizedBox(width: 8),
                         Icon(Icons.arrow_forward_rounded, size: 18),
                       ],
@@ -1119,7 +1236,10 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -1203,14 +1323,23 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                 ),
                 if (station.distanceFromUser != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFECFDF5),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      MapBookingService.formatDistance(station.distanceFromUser),
-                      style: const TextStyle(fontSize: 10, color: Color(0xFF059669), fontWeight: FontWeight.w700),
+                      MapBookingService.formatDistance(
+                        station.distanceFromUser,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF059669),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
               ],
@@ -1226,10 +1355,16 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
               children: [
                 Text(
                   'Thứ tự: #${station.sequence}',
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  isSelected
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
                   size: 16,
                   color: isSelected ? color : Colors.grey.shade400,
                 ),
@@ -1246,11 +1381,22 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Bản đồ tuyến xe', style: TextStyle(color: darkPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Bản đồ tuyến xe',
+          style: TextStyle(
+            color: darkPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: darkPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: darkPrimary,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -1266,34 +1412,56 @@ class _MapBookingScreenState extends State<MapBookingScreen> with TickerProvider
                   color: const Color(0xFFFFF7ED),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.map_outlined, size: 54, color: brandOrange),
+                child: const Icon(
+                  Icons.map_outlined,
+                  size: 54,
+                  color: brandOrange,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Tuyến chưa hỗ trợ chọn trạm trên bản đồ',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: darkPrimary),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: darkPrimary,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
-                _routeGuardErrorMessage ??
-                    'Tuyến đường này hiện chưa có dữ liệu điểm dừng bản đồ. Quý khách vui lòng sử dụng phương thức tìm chuyến xe phổ thông.',
+                _routeGuardErrorMessage ?? 'Tuyến đường này hiện chưa có dữ liệu điểm dừng bản đồ. Quý khách vui lòng sử dụng phương thức tìm chuyến xe phổ thông.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF64748B),
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: brandOrange,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 onPressed: () {
-                  final dateStr = DateFormat('yyyy-MM-dd').format(_departureDate);
-                  context.push('/search_results?from=${Uri.encodeComponent(_dbOrigin)}&to=${Uri.encodeComponent(_dbDestination)}&date=$dateStr');
+                  final dateStr = DateFormat('yyyy-MM-dd')
+                      .format(_departureDate);
+                  context.push(
+                    '/search_results?from=${Uri.encodeComponent(_dbOrigin)}&to=${Uri.encodeComponent(_dbDestination)}&date=$dateStr',
+                  );
                 },
-                child: const Text('Chuyển sang tìm chuyến phổ thông', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'Chuyển sang tìm chuyến phổ thông',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),

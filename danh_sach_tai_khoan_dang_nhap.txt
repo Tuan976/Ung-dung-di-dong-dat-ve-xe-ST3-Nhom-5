@@ -1,0 +1,198 @@
+======================================================================
+DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP DÀNH CHO NHÀ XE, TÀI XẾ & PHỤ XE
+Hệ thống: HUTECH BUS / Đặt Vé Xe Khách
+======================================================================
+
+[1] TÀI KHOẢN QUẢN TRỊ VIÊN NHÀ XE (COMPANY ADMIN)
+----------------------------------------------------------------------
+Nhà xe: Nhà xe Minh An
+  - Email đăng nhập: nghethodlt2018@gmail.com
+  - Số điện thoại:   0943715926
+  - Mật khẩu:        Chưa xác định
+
+Nhà xe: Futa Phương Trang
+  - Email đăng nhập: bophanhotrohuyhoang@gmail.com
+  - Số điện thoại:   0319005151
+  - Mật khẩu:        Chưa xác định
+
+Nhà xe: Nguyễn Thành Công
+  - Email đăng nhập: nguyenthanhcong1st@gmail.com
+  - Số điện thoại:   0374316776
+  - Mật khẩu:        Chưa xác định
+
+Nhà xe: Minh An Express
+  - Email đăng nhập: minhan@bus.com
+  - Số điện thoại:   0929473933
+  - Mật khẩu:        123456
+
+Nhà xe: Hutech Luxury
+  - Email đăng nhập: hutech@bus.com
+  - Số điện thoại:   0911227407
+  - Mật khẩu:        123456
+
+Nhà xe: FUTA Bus Lines
+  - Email đăng nhập: futa@bus.com
+  - Số điện thoại:   0969453371
+  - Mật khẩu:        123456
+
+Nhà xe: Thanh Buoi
+  - Email đăng nhập: thanhbuoi@bus.com
+  - Số điện thoại:   0959641333
+  - Mật khẩu:        123456
+
+Nhà xe: Hoang Long
+  - Email đăng nhập: hoanglong@bus.com
+  - Số điện thoại:   0934051059
+  - Mật khẩu:        123456
+
+
+======================================================================
+[2] TÀI KHOẢN TÀI XẾ (DRIVER)
+----------------------------------------------------------------------
+Tài xế: Teo
+  - Email đăng nhập: nghethodlt7171@gmail.com
+  - Số điện thoại:   091900178
+  - Mật khẩu:        123456
+
+Tài xế: an
+  - Email đăng nhập: nghethodlt2026@gmail.com
+  - Số điện thoại:   0944667616
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 1
+  - Email đăng nhập: driver1_1@hutechbus.vn
+  - Số điện thoại:   0902025587
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 2
+  - Email đăng nhập: driver2_1@hutechbus.vn
+  - Số điện thoại:   0904861187
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 3
+  - Email đăng nhập: driver3_1@hutechbus.vn
+  - Số điện thoại:   0902504364
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 4
+  - Email đăng nhập: driver4_1@hutechbus.vn
+  - Số điện thoại:   0904731347
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 5
+  - Email đăng nhập: driver5_1@hutechbus.vn
+  - Số điện thoại:   0907843113
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 6
+  - Email đăng nhập: driver6_1@hutechbus.vn
+  - Số điện thoại:   0902681795
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 7
+  - Email đăng nhập: driver7_1@hutechbus.vn
+  - Số điện thoại:   0905977386
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 8
+  - Email đăng nhập: driver8_1@hutechbus.vn
+  - Số điện thoại:   0904481134
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 9
+  - Email đăng nhập: driver9_1@hutechbus.vn
+  - Số điện thoại:   0905214640
+  - Mật khẩu:        123456
+
+Tài xế: Tai xe 10
+  - Email đăng nhập: driver10_1@hutechbus.vn
+  - Số điện thoại:   0906173521
+  - Mật khẩu:        123456
+
+
+======================================================================
+[3] TÀI KHOẢN PHỤ XE (ASSISTANT)
+----------------------------------------------------------------------
+Phụ xe: Phu xe 1
+  - Email đăng nhập: assistant1_1@hutechbus.vn
+  - Số điện thoại:   0918533295
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 2
+  - Email đăng nhập: assistant2_1@hutechbus.vn
+  - Số điện thoại:   0913278891
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 3
+  - Email đăng nhập: assistant3_1@hutechbus.vn
+  - Số điện thoại:   0911084101
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 4
+  - Email đăng nhập: assistant4_1@hutechbus.vn
+  - Số điện thoại:   0911873219
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 5
+  - Email đăng nhập: assistant5_1@hutechbus.vn
+  - Số điện thoại:   0914717796
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 6
+  - Email đăng nhập: assistant6_1@hutechbus.vn
+  - Số điện thoại:   0919371839
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 7
+  - Email đăng nhập: assistant7_1@hutechbus.vn
+  - Số điện thoại:   0919217645
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 8
+  - Email đăng nhập: assistant8_1@hutechbus.vn
+  - Số điện thoại:   0911025526
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 9
+  - Email đăng nhập: assistant9_1@hutechbus.vn
+  - Số điện thoại:   0917483027
+  - Mật khẩu:        123456
+
+Phụ xe: Phu xe 10
+  - Email đăng nhập: assistant10_1@hutechbus.vn
+  - Số điện thoại:   0914263844
+  - Mật khẩu:        123456
+
+
+======================================================================
+[4] TÀI KHOẢN NHÂN VIÊN ĐIỀU HÀNH / TRẠM XE (STATION STAFF)
+----------------------------------------------------------------------
+Nhân viên: Nhan vien tram 1 (Vai trò: STATION_STAFF)
+  - Email đăng nhập: staff1_1@hutechbus.vn
+  - Số điện thoại:   0926107430
+  - Mật khẩu:        123456
+
+Nhân viên: Nhan vien tram 2 (Vai trò: STATION_STAFF)
+  - Email đăng nhập: staff2_1@hutechbus.vn
+  - Số điện thoại:   0927224420
+  - Mật khẩu:        123456
+
+Nhân viên: Nhan vien tram 3 (Vai trò: STATION_STAFF)
+  - Email đăng nhập: staff3_1@hutechbus.vn
+  - Số điện thoại:   0921857428
+  - Mật khẩu:        123456
+
+Nhân viên: Nhan vien tram 4 (Vai trò: STATION_STAFF)
+  - Email đăng nhập: staff4_1@hutechbus.vn
+  - Số điện thoại:   0924640635
+  - Mật khẩu:        123456
+
+Nhân viên: Nhan vien tram 5 (Vai trò: STATION_STAFF)
+  - Email đăng nhập: staff5_1@hutechbus.vn
+  - Số điện thoại:   0927545501
+  - Mật khẩu:        123456
+
+Nhân viên: test1 (Vai trò: STATION_STAFF)
+  - Email đăng nhập: csc@gmail.com
+  - Số điện thoại:   205561
+  - Mật khẩu:        123456

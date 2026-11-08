@@ -4,7 +4,7 @@ import jwt
 import secrets
 from flask import request
 from werkzeug.security import check_password_hash, generate_password_hash
-from models import User
+from models import User, Company, Staff
 from extensions import db
 
 from . import api_v1_bp
@@ -15,23 +15,28 @@ from .decorators import jwt_required, get_jwt_secret
 _reset_tokens = {}  # token -> {user_id, expires_at}
 
 
-def _generate_access_token(user):
+def _generate_access_token(entity, role='passenger', company_id=None, staff_role=None):
     expires_in = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 2592000))
     expiration = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
     payload = {
-        'sub': str(user.id),
-        'email': user.email,
+        'sub': str(entity.id),
+        'email': getattr(entity, 'email', ''),
+        'role': role,
+        'company_id': company_id,
+        'staff_role': staff_role,
+        'name': getattr(entity, 'name', ''),
         'type': 'access',
         'iat': datetime.datetime.utcnow(),
         'exp': expiration
     }
     return jwt.encode(payload, get_jwt_secret(), algorithm='HS256'), expires_in
 
-def _generate_refresh_token(user):
+def _generate_refresh_token(entity, role='passenger'):
     expires_in = 365 * 24 * 3600  # 365 days
     expiration = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
     payload = {
-        'sub': str(user.id),
+        'sub': str(entity.id),
+        'role': role,
         'type': 'refresh',
         'iat': datetime.datetime.utcnow(),
         'exp': expiration
@@ -42,32 +47,132 @@ def _generate_refresh_token(user):
 @api_v1_bp.route('/auth/login', methods=['POST'])
 def login():
     data = request.json or {}
-    identifier = data.get('email') or data.get('phone')
+    identifier = (data.get('email') or data.get('phone') or '').strip()
     password = data.get('password')
+    req_role = data.get('role', 'passenger')
 
     if not identifier or not password:
         return api_error(message="Vui lòng cung cấp thông tin đăng nhập", error_code="MISSING_CREDENTIALS", status=400)
 
-    # Allow login by email or phone
-    user = User.query.filter_by(email=identifier).first()
-    if not user:
-        user = User.query.filter_by(phone=identifier).first()
+    # 1. If explicit company/operator role requested
+    if req_role in ('company', 'operator', 'partner'):
+        company = Company.query.filter((Company.email == identifier) | (Company.phone == identifier)).first()
+        if company and check_password_hash(company.password, password):
+            access_token, expires_in = _generate_access_token(company, role='company', company_id=company.id)
+            refresh_token = _generate_refresh_token(company, role='company')
+            return api_success(
+                message="Đăng nhập nhà xe thành công",
+                data={
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "token_type": "Bearer",
+                    "expires_in": expires_in,
+                    "user": {
+                        "id": company.id,
+                        "name": company.name,
+                        "email": company.email,
+                        "phone": company.phone,
+                        "role": "company",
+                        "company_id": company.id
+                    }
+                }
+            )
 
-    if not user or not check_password_hash(user.password, password):
-        return api_error(message="Thông tin đăng nhập không chính xác", error_code="INVALID_CREDENTIALS", status=401)
+        staff = Staff.query.filter((Staff.email == identifier) | (Staff.phone == identifier)).first()
+        if staff and check_password_hash(staff.password, password):
+            access_token, expires_in = _generate_access_token(staff, role='staff', company_id=staff.company_id, staff_role=staff.role)
+            refresh_token = _generate_refresh_token(staff, role='staff')
+            return api_success(
+                message="Đăng nhập nhân sự thành công",
+                data={
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "token_type": "Bearer",
+                    "expires_in": expires_in,
+                    "user": {
+                        "id": staff.id,
+                        "name": staff.name,
+                        "email": staff.email,
+                        "phone": staff.phone,
+                        "role": "staff",
+                        "staff_role": staff.role,
+                        "company_id": staff.company_id,
+                        "company_name": staff.company.name if staff.company else None
+                    }
+                }
+            )
+        return api_error(message="Tài khoản nhà xe hoặc mật khẩu không chính xác", error_code="INVALID_CREDENTIALS", status=401)
 
-    access_token, expires_in = _generate_access_token(user)
-    refresh_token = _generate_refresh_token(user)
-    return api_success(
-        message="Đăng nhập thành công",
-        data={
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "Bearer",
-            "expires_in": expires_in,
-            "user": {"id": user.id, "name": user.name, "email": user.email, "phone": user.phone}
-        }
-    )
+    # 2. Check Passenger
+    user = User.query.filter((User.email == identifier) | (User.phone == identifier)).first()
+    if user and check_password_hash(user.password, password):
+        access_token, expires_in = _generate_access_token(user, role='passenger')
+        refresh_token = _generate_refresh_token(user, role='passenger')
+        return api_success(
+            message="Đăng nhập thành công",
+            data={
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "Bearer",
+                "expires_in": expires_in,
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "phone": user.phone,
+                    "role": "passenger"
+                }
+            }
+        )
+
+    # 3. Fallback: if identifier belongs to Company or Staff
+    company = Company.query.filter((Company.email == identifier) | (Company.phone == identifier)).first()
+    if company and check_password_hash(company.password, password):
+        access_token, expires_in = _generate_access_token(company, role='company', company_id=company.id)
+        refresh_token = _generate_refresh_token(company, role='company')
+        return api_success(
+            message="Đăng nhập nhà xe thành công",
+            data={
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "Bearer",
+                "expires_in": expires_in,
+                "user": {
+                    "id": company.id,
+                    "name": company.name,
+                    "email": company.email,
+                    "phone": company.phone,
+                    "role": "company",
+                    "company_id": company.id
+                }
+            }
+        )
+
+    staff = Staff.query.filter((Staff.email == identifier) | (Staff.phone == identifier)).first()
+    if staff and check_password_hash(staff.password, password):
+        access_token, expires_in = _generate_access_token(staff, role='staff', company_id=staff.company_id, staff_role=staff.role)
+        refresh_token = _generate_refresh_token(staff, role='staff')
+        return api_success(
+            message="Đăng nhập nhân sự thành công",
+            data={
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "token_type": "Bearer",
+                "expires_in": expires_in,
+                "user": {
+                    "id": staff.id,
+                    "name": staff.name,
+                    "email": staff.email,
+                    "phone": staff.phone,
+                    "role": "staff",
+                    "staff_role": staff.role,
+                    "company_id": staff.company_id,
+                    "company_name": staff.company.name if staff.company else None
+                }
+            }
+        )
+
+    return api_error(message="Thông tin đăng nhập không chính xác", error_code="INVALID_CREDENTIALS", status=401)
 
 
 @api_v1_bp.route('/auth/register', methods=['POST'])
@@ -104,10 +209,37 @@ def register():
 @api_v1_bp.route('/auth/me', methods=['GET'])
 @jwt_required()
 def me():
-    user = request.current_user
+    entity = request.current_user
+    role = getattr(request, 'current_user_role', 'passenger')
+    company_id = getattr(request, 'current_company_id', None)
+    
+    if role == 'company':
+        c_id = entity.id
+        c_name = entity.name
+        staff_role = None
+    elif role == 'staff':
+        c_id = entity.company_id
+        c_name = entity.company.name if entity.company else None
+        staff_role = entity.role
+    else:
+        c_id = None
+        c_name = None
+        staff_role = None
+
     return api_success(
         message="Lấy thông tin thành công",
-        data={"user": {"id": user.id, "name": user.name, "email": user.email, "phone": user.phone}}
+        data={
+            "user": {
+                "id": entity.id,
+                "name": entity.name,
+                "email": entity.email,
+                "phone": entity.phone,
+                "role": role,
+                "company_id": c_id,
+                "company_name": c_name,
+                "staff_role": staff_role
+            }
+        }
     )
 
 

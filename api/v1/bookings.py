@@ -1,6 +1,5 @@
 from flask import request
-from models import Booking, Trip, PassengerSOS
-from extensions import db
+from models import Booking, Trip, PassengerSOS, Notification, Staff
 from extensions import db
 import string
 import random
@@ -199,6 +198,15 @@ def get_booking_detail(booking_id):
             "seat_number": booking.seat_number,
             "passenger_name": booking.passenger_name,
             "passenger_phone": booking.passenger_phone,
+            "pickup_point": booking.pickup_point,
+            "dropoff_point": booking.dropoff_point,
+            "boarding_status": getattr(booking, 'boarding_status', 'PENDING'),
+            "is_sharing_location": getattr(booking, 'is_sharing_location', False),
+            "live_lat": getattr(booking, 'live_lat', None),
+            "live_lng": getattr(booking, 'live_lng', None),
+            "pickup_lat": getattr(booking, 'pickup_lat', None),
+            "pickup_lng": getattr(booking, 'pickup_lng', None),
+            "pickup_landmark": getattr(booking, 'pickup_landmark', None),
             "booking_time": booking.booking_time.isoformat(),
             "status": booking.status,
             "payment_status": booking.payment_status,
@@ -212,8 +220,73 @@ def get_booking_detail(booking_id):
                 "start_point": booking.trip.route.start_point,
                 "end_point": booking.trip.route.end_point,
                 "company_name": booking.trip.route.company.name,
-                "license_plate": booking.trip.bus.license_plate if booking.trip.bus else None
+                "license_plate": booking.trip.bus.license_plate if booking.trip.bus else None,
+                "current_lat": getattr(booking.trip, 'current_lat', None),
+                "current_lng": getattr(booking.trip, 'current_lng', None),
+                "driver_name": booking.trip.driver_name
             }
+        }
+    )
+
+
+@api_v1_bp.route('/bookings/<int:booking_id>/share-location', methods=['POST'])
+@jwt_required()
+def share_passenger_location(booking_id):
+    user = request.current_user
+    booking = Booking.query.filter_by(id=booking_id, user_id=user.id).first()
+    if not booking:
+        return api_error(message="Không tìm thấy vé hợp lệ", error_code="BOOKING_NOT_FOUND", status=404)
+
+    data = request.json or {}
+    is_sharing = bool(data.get('is_sharing', True))
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    landmark = data.get('landmark')
+
+    booking.is_sharing_location = is_sharing
+    if is_sharing and latitude is not None and longitude is not None:
+        try:
+            booking.live_lat = float(latitude)
+            booking.live_lng = float(longitude)
+            booking.live_location_time = datetime.utcnow()
+            if landmark:
+                booking.pickup_landmark = str(landmark)[:200]
+        except (ValueError, TypeError):
+            pass
+
+    # Send Notification to Trip Driver & Staff
+    if is_sharing and booking.trip:
+        trip = booking.trip
+        loc_str = landmark or f"{round(booking.live_lat, 5)}, {round(booking.live_lng, 5)}" if booking.live_lat else "vị trí GPS"
+        msg = f"Khách {booking.passenger_name} (Ghế {booking.seat_number}, SĐT: {booking.passenger_phone}) đã chia sẻ vị trí đón trực tiếp tại: {loc_str}"
+
+        try:
+            notif = Notification(
+                user_id=booking.user_id,
+                type='PASSENGER_LIVE_LOCATION',
+                title=f"Đón khách trực tiếp - Chuyến #{trip.id}",
+                message=msg,
+                is_read=False,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(notif)
+        except Exception:
+            pass
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return api_error(message="Không thể cập nhật vị trí", error_code="DATABASE_ERROR", status=500)
+
+    return api_success(
+        message="Đã bật chia sẻ vị trí cho bác tài" if is_sharing else "Đã dừng chia sẻ vị trí",
+        data={
+            "booking_id": booking.id,
+            "is_sharing_location": booking.is_sharing_location,
+            "live_lat": booking.live_lat,
+            "live_lng": booking.live_lng,
+            "live_location_time": booking.live_location_time.isoformat() if getattr(booking, 'live_location_time', None) else None
         }
     )
 
