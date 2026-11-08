@@ -220,10 +220,16 @@ def get_booking_detail(booking_id):
                 "start_point": booking.trip.route.start_point,
                 "end_point": booking.trip.route.end_point,
                 "company_name": booking.trip.route.company.name,
-                "license_plate": booking.trip.bus.license_plate if booking.trip.bus else None,
+                "license_plate": (booking.trip.bus.license_plate if booking.trip.bus else None) or "Chưa xếp xe",
+                "bus_type": booking.trip.bus.bus_type if booking.trip.bus else None,
                 "current_lat": getattr(booking.trip, 'current_lat', None),
                 "current_lng": getattr(booking.trip, 'current_lng', None),
-                "driver_name": booking.trip.driver_name
+                "last_location_update": booking.trip.last_location_update.isoformat() if getattr(booking.trip, 'last_location_update', None) else None,
+                "status": booking.trip.status,
+                "driver_name": booking.trip.driver_ref.name if booking.trip.driver_ref else (booking.trip.driver_name or "Đang phân công"),
+                "driver_phone": booking.trip.driver_ref.phone if booking.trip.driver_ref else None,
+                "assistant_name": booking.trip.assistant_ref.name if booking.trip.assistant_ref else booking.trip.assistant_name,
+                "assistant_phone": booking.trip.assistant_ref.phone if booking.trip.assistant_ref else None,
             }
         }
     )
@@ -287,6 +293,70 @@ def share_passenger_location(booking_id):
             "live_lat": booking.live_lat,
             "live_lng": booking.live_lng,
             "live_location_time": booking.live_location_time.isoformat() if getattr(booking, 'live_location_time', None) else None
+        }
+    )
+
+
+@api_v1_bp.route('/bookings/<int:booking_id>/live-bus', methods=['GET'])
+@jwt_required()
+def get_live_bus_tracking(booking_id):
+    """API cho hành khách theo dõi trực tiếp vị trí xe khách và biển số xe theo thời gian thực."""
+    user = request.current_user
+    booking = Booking.query.filter_by(id=booking_id, user_id=user.id).first()
+    if not booking:
+        return api_error(message="Không tìm thấy vé", error_code="BOOKING_NOT_FOUND", status=404)
+
+    trip = booking.trip
+    if not trip:
+        return api_error(message="Không tìm thấy chuyến xe", error_code="TRIP_NOT_FOUND", status=404)
+
+    bus = trip.bus
+    driver = trip.driver_ref
+
+    # Tính khoảng cách giữa xe và hành khách (hoặc điểm đón)
+    distance_m = None
+    bus_lat = getattr(trip, 'current_lat', None)
+    bus_lng = getattr(trip, 'current_lng', None)
+    target_lat = booking.live_lat if booking.is_sharing_location and booking.live_lat else booking.pickup_lat
+    target_lng = booking.live_lng if booking.is_sharing_location and booking.live_lng else booking.pickup_lng
+
+    if bus_lat is not None and bus_lng is not None and target_lat is not None and target_lng is not None:
+        import math
+        R = 6371000
+        d_lat = math.radians(target_lat - bus_lat)
+        d_lng = math.radians(target_lng - bus_lng)
+        a = math.sin(d_lat / 2)**2 + math.cos(math.radians(bus_lat)) * math.cos(math.radians(target_lat)) * math.sin(d_lng / 2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance_m = round(R * c, 1)
+
+    return api_success(
+        data={
+            "booking_id": booking.id,
+            "ticket_code": booking.ticket_code,
+            "seat_number": booking.seat_number,
+            "boarding_status": getattr(booking, 'boarding_status', 'PENDING'),
+            "is_sharing_location": getattr(booking, 'is_sharing_location', False),
+            "passenger_lat": target_lat,
+            "passenger_lng": target_lng,
+            "pickup_point": booking.pickup_point,
+            "dropoff_point": booking.dropoff_point,
+            "trip": {
+                "id": trip.id,
+                "status": trip.status,
+                "departure_time": trip.departure_time.isoformat(),
+                "route": f"{trip.route.start_point} → {trip.route.end_point}",
+                "company_name": trip.route.company.name,
+                "license_plate": bus.license_plate if bus else "Chưa xếp xe",
+                "bus_type": bus.bus_type if bus else "Xe khách cao cấp",
+                "total_seats": bus.total_seats if bus else 40,
+                "driver_name": driver.name if driver else (trip.driver_name or "Đang phân công"),
+                "driver_phone": driver.phone if driver else None,
+                "bus_lat": bus_lat,
+                "bus_lng": bus_lng,
+                "last_location_update": trip.last_location_update.isoformat() if getattr(trip, 'last_location_update', None) else None,
+            },
+            "distance_meters": distance_m,
+            "eta_minutes": max(1, round(distance_m / 666.0)) if distance_m is not None else None, # ~40km/h
         }
     )
 

@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 import '../../services/smart_boarding_service.dart';
+import 'passenger_live_tracking_screen.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   final int bookingId;
@@ -234,7 +235,18 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 const SizedBox(height: 16),
                 _buildInfoRow('Nhà xe', booking.trip?.companyName ?? 'N/A', isBold: true),
                 const SizedBox(height: 12),
-                _buildInfoRow('Loại xe', 'Limousine 34 chỗ'),
+                _buildInfoRow(
+                  'Biển số xe',
+                  (booking.trip?.licensePlate != null && booking.trip!.licensePlate!.isNotEmpty)
+                      ? booking.trip!.licensePlate!
+                      : 'Đang xếp xe',
+                  isBold: true,
+                  valueColor: const Color(0xFF0284C7),
+                ),
+                const SizedBox(height: 12),
+                _buildInfoRow('Loại xe', booking.trip?.busType ?? 'Limousine cao cấp'),
+                const SizedBox(height: 12),
+                _buildInfoRow('Tài xế', booking.trip?.driverName ?? 'Đang phân công'),
                 const SizedBox(height: 12),
                 _buildInfoRow('Khởi hành', departureFormatted, isBold: true),
                 const SizedBox(height: 12),
@@ -242,6 +254,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Live Bus Tracking Card for Passenger (Biển số xe & Vị trí di chuyển trực tiếp)
+          _buildLiveBusTrackingCard(booking),
           const SizedBox(height: 16),
 
           // Passenger info
@@ -417,6 +433,170 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         );
       }
     }
+  }
+
+  Widget _buildLiveBusTrackingCard(Booking booking) {
+    if (booking.isCancelled) return const SizedBox.shrink();
+
+    final trip = booking.trip;
+    final licensePlate = (trip?.licensePlate != null && trip!.licensePlate!.isNotEmpty)
+        ? trip.licensePlate!
+        : 'Chưa xếp xe';
+    final hasGps = trip?.currentLat != null && trip?.currentLng != null;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.35), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0284C7).withOpacity(0.25),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (ctx) => PassengerLiveTrackingScreen(
+                  bookingId: booking.id,
+                  ticketCode: booking.ticketCode,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE11D48).withOpacity(0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE11D48), width: 1.5),
+                      ),
+                      child: const Icon(Icons.near_me, color: Color(0xFFF43F5E), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'THEO DÕI XE TRỰC TIẾP',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: hasGps ? const Color(0xFF10B981) : Colors.orange,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  hasGps ? 'LIVE GPS' : 'CHỜ TÍN HIỆU',
+                                  style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Xem xe đang ở đâu trên bản đồ & khoảng cách tới bạn',
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.white60, size: 24),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Biển số xe nổi bật
+                      Row(
+                        children: [
+                          const Text('Biển số:', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFACC15),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(color: Colors.black, width: 1),
+                            ),
+                            child: Text(
+                              licensePlate,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nút Mở bản đồ
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.map, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'Mở bản đồ',
+                              style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildLiveLocationCard(Booking booking) {

@@ -5,9 +5,12 @@ class TripInfo {
   final String companyName;
   final String departureTime;
   final String? licensePlate;
+  final String? busType;
+  final String? status;
   final double? currentLat;
   final double? currentLng;
   final String? driverName;
+  final String? driverPhone;
 
   TripInfo({
     required this.id,
@@ -16,9 +19,12 @@ class TripInfo {
     required this.companyName,
     required this.departureTime,
     this.licensePlate,
+    this.busType,
+    this.status,
     this.currentLat,
     this.currentLng,
     this.driverName,
+    this.driverPhone,
   });
 
   factory TripInfo.fromJson(Map<String, dynamic> json) {
@@ -29,9 +35,12 @@ class TripInfo {
       companyName: json['company_name'] ?? '',
       departureTime: json['departure_time'] ?? '',
       licensePlate: json['license_plate'],
+      busType: json['bus_type'],
+      status: json['status'],
       currentLat: json['current_lat'] != null ? (json['current_lat'] as num).toDouble() : null,
       currentLng: json['current_lng'] != null ? (json['current_lng'] as num).toDouble() : null,
       driverName: json['driver_name'],
+      driverPhone: json['driver_phone'],
     );
   }
 

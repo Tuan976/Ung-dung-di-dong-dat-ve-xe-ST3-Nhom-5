@@ -210,4 +210,17 @@ class BookingService {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  Future<Map<String, dynamic>> getLiveBusTracking(int bookingId) async {
+    try {
+      final response = await _apiClient.get('/bookings/$bookingId/live-bus');
+      if (response.data['success'] == true && response.data['data'] != null) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      debugPrint('Lỗi getLiveBusTracking: $e');
+      return {};
+    }
+  }
 }
