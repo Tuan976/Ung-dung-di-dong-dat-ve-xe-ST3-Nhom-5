@@ -2,12 +2,6 @@ name: Build iOS IPA
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'mobile_app/**'
-      - '.github/workflows/build-ios.yml'
 
 permissions:
   contents: write
