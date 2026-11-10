@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_colors.dart';
 import '../../services/company_service.dart';
 import '../../services/auth_service.dart';
 
@@ -43,8 +44,7 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
   Map<String, dynamic>? _selectedPassenger;
   String _filterMode = 'ALL'; // ALL, SHARING, PENDING, BOARDED
 
-  static const Color brandOrange = Color(0xFFEF5222);
-  static const Color darkBlue = Color(0xFF0B192C);
+  static const Color brandOrange = AppColors.primary;
 
   @override
   void initState() {
@@ -244,7 +244,16 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
 
     if (!hasPermission) {
       return Scaffold(
-        appBar: AppBar(backgroundColor: darkBlue, title: const Text('Từ chối truy cập')),
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0.5,
+          iconTheme: const IconThemeData(color: AppColors.textPrimary),
+          title: const Text(
+            'Từ chối truy cập',
+            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          ),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -261,13 +270,16 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                 const Text(
                   'Chức năng Radar & Bản đồ đón khách trực diện chỉ dành riêng cho Tài xế, Phụ xe và Quản trị viên điều hành!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF64748B)),
+                  style: TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: darkBlue),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    elevation: 0,
+                  ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Quay lại', style: TextStyle(color: Colors.white)),
+                  child: const Text('Quay lại', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -286,8 +298,8 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
       markers.add(
         Marker(
           point: _driverPos!,
-          width: 80,
-          height: 80,
+          width: 120,
+          height: 95,
           alignment: Alignment.center,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -296,25 +308,35 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: brandOrange,
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2.5),
                   boxShadow: [
-                    BoxShadow(color: brandOrange.withOpacity(0.5), blurRadius: 10, spreadRadius: 2),
+                    BoxShadow(color: AppColors.primary.withOpacity(0.45), blurRadius: 10, spreadRadius: 2),
                   ],
                 ),
                 child: const Icon(Icons.directions_bus, color: Colors.white, size: 20),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: darkBlue,
+                  color: AppColors.secondary,
                   borderRadius: BorderRadius.circular(4),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 1)),
+                  ],
                 ),
                 child: const Text(
                   'XE CỦA BẠN',
-                  style: TextStyle(color: Colors.amberAccent, fontSize: 8.5, fontWeight: FontWeight.w900),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    color: Colors.amberAccent,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ),
             ],
@@ -335,18 +357,18 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
 
         Color markerColor;
         if (isBoarded) {
-          markerColor = Colors.grey;
+          markerColor = AppColors.textMuted;
         } else if (isSharing) {
-          markerColor = const Color(0xFF10B981); // Xanh lá cây nhấp nháy cho Live GPS
+          markerColor = AppColors.success; // Xanh lá cây nhấp nháy cho Live GPS
         } else {
-          markerColor = const Color(0xFF0284C7); // Xanh dương cho điểm đón cố định
+          markerColor = AppColors.info; // Xanh dương cho điểm đón cố định
         }
 
         markers.add(
           Marker(
             point: pos,
-            width: 85,
-            height: 85,
+            width: 120,
+            height: 95,
             alignment: Alignment.center,
             child: GestureDetector(
               onTap: () {
@@ -374,14 +396,17 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                       size: 18,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                     decoration: BoxDecoration(
-                      color: isBoarded ? Colors.grey.shade700 : (isSharing ? Colors.green.shade900 : darkBlue),
+                      color: isBoarded ? Colors.grey.shade700 : (isSharing ? const Color(0xFF0F766E) : AppColors.secondary),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       '${p['seat']} | ${p['name'].toString().split(' ').last}',
+                      maxLines: 1,
+                      softWrap: false,
                       style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -397,39 +422,55 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
     final initialCenter = _driverPos ?? const LatLng(10.7769, 106.7009); // HCM default
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: darkBlue,
-        elevation: 0,
+        backgroundColor: AppColors.surface,
+        elevation: 0.5,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.radar, color: Colors.greenAccent, size: 18),
-                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.radar, color: AppColors.primary, size: 16),
+                ),
+                const SizedBox(width: 8),
                 const Text(
                   'RADAR ĐÓN KHÁCH TRỰC DIỆN',
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.2,
+                  ),
                 ),
               ],
             ),
-            Text(
-              widget.tripRoute ?? (_trip?['route'] ?? 'Chuyến xe #${widget.tripId}'),
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
-              overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.only(left: 28),
+              child: Text(
+                widget.tripRoute ?? (_trip?['route'] ?? 'Chuyến xe #${widget.tripId}'),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
             tooltip: 'Làm mới vị trí',
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
             onPressed: () => _loadRadarData(),
           ),
           IconButton(
             tooltip: 'Định vị về xe của bạn',
-            icon: const Icon(Icons.my_location, color: Colors.amberAccent),
+            icon: const Icon(Icons.my_location, color: AppColors.primary),
             onPressed: () {
               if (_driverPos != null) {
                 _mapController.move(_driverPos!, 15.0);
@@ -670,7 +711,7 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
               children: [
                 Text(
                   '${pax['name']} (Ghế ${pax['seat']})',
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF0F172A)),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.textPrimary),
                 ),
                 Text(
                   'SĐT: ${pax['phone'] ?? "N/A"}',
@@ -738,18 +779,18 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+              border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.people, color: darkBlue, size: 18),
+                    const Icon(Icons.people, color: AppColors.primary, size: 18),
                     const SizedBox(width: 6),
                     Text(
                       'Khách: ${_passengers.length} (Đã đón: $boardedCount)',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: darkBlue),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.textPrimary),
                     ),
                   ],
                 ),
@@ -757,12 +798,12 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade100,
+                      color: AppColors.successBg,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       '🟢 $sharingCount khách bật GPS',
-                      style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.bold, fontSize: 11),
+                      style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
               ],
@@ -802,10 +843,10 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isBoarded ? const Color(0xFFF1F5F9) : Colors.white,
+                          color: isBoarded ? const Color(0xFFF1F5F9) : AppColors.surface,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: isSharing ? Colors.green.shade300 : const Color(0xFFE2E8F0),
+                            color: isSharing ? AppColors.success : AppColors.border,
                           ),
                         ),
                         child: Row(
@@ -814,7 +855,7 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: isBoarded ? Colors.green : (isSharing ? const Color(0xFF10B981) : darkBlue),
+                                color: isBoarded ? AppColors.success : (isSharing ? const Color(0xFF10B981) : AppColors.primary),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Center(
@@ -885,17 +926,21 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
       onTap: () => setState(() => _filterMode = code),
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? darkBlue : const Color(0xFFF1F5F9),
+          color: selected ? AppColors.primaryLight : AppColors.background,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 1.2 : 1,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF64748B),
+            color: selected ? AppColors.primaryDark : AppColors.textSecondary,
             fontSize: 11,
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: selected ? FontWeight.bold : FontWeight.w500,
           ),
         ),
       ),

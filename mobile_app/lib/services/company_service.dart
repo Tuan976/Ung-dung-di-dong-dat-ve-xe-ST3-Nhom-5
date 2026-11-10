@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../core/network/api_client.dart';
 
@@ -374,6 +375,24 @@ class CompanyService extends ChangeNotifier {
       };
     } catch (e) {
       return {'success': false, 'message': 'Lỗi đón khách: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> scanTicketCode(String ticketCode) async {
+    try {
+      final res = await _apiClient.post(
+        '/admin/ticket/scan',
+        data: {'ticket_code': ticketCode.trim()},
+      );
+      if (res.data != null && res.data is Map<String, dynamic>) {
+        return Map<String, dynamic>.from(res.data);
+      }
+      return {'success': false, 'message': 'Phản hồi từ máy chủ không hợp lệ'};
+    } catch (e) {
+      if (e is DioException && e.response?.data != null && e.response!.data is Map) {
+        return Map<String, dynamic>.from(e.response!.data);
+      }
+      return {'success': false, 'message': 'Lỗi quét vé: $e'};
     }
   }
 }

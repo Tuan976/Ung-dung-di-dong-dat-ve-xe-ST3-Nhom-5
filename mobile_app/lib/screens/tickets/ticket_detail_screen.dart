@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 import '../../services/smart_boarding_service.dart';
@@ -196,19 +197,50 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: ShapeDecoration(
                     color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.qr_code_2, size: 120, color: Colors.black87),
+                      QrImageView(
+                        data: booking.ticketCode,
+                        version: QrVersions.auto,
+                        size: 160.0,
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Color(0xFF202938),
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Color(0xFF202938),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF0E6),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFF26A21).withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          'MÃ VÉ: ${booking.ticketCode}',
+                          style: const TextStyle(
+                            color: Color(0xFFE65B16),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Quét mã khi lên xe để soát vé nhanh chóng',
+                        'Đưa mã này cho tài xế hoặc phụ xe quét khi lên xe',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF475569), fontSize: 12),
+                        style: TextStyle(color: Color(0xFF687386), fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),

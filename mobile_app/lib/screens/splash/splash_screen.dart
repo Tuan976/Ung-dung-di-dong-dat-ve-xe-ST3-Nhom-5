@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,25 +12,42 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _scaleAnim;
+
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _scaleAnim = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOutBack),
+    );
+
+    _fadeController.forward();
     _checkAuth();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkAuth() async {
     try {
-      // Artificial delay for splash screen feel
-      await Future.delayed(const Duration(seconds: 2));
-      
+      await Future.delayed(const Duration(milliseconds: 1800));
       if (!mounted) return;
-      
+
       final authService = context.read<AuthService>();
       final isAuthenticated = await authService.checkAuthStatus();
-      
       if (!mounted) return;
-      
+
       if (isAuthenticated) {
         context.go('/home');
       } else {
@@ -37,104 +55,141 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       debugPrint('Lỗi ở màn hình Splash: $e');
-      if (mounted) {
-        context.go('/login');
-      }
+      if (mounted) context.go('/login');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF111827), // Dark blue background
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo and App Name
-                  Row(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: ScaleTransition(
+            scale: _scaleAnim,
+            child: Stack(
+              children: [
+                // Background subtle decorative pattern
+                Positioned(
+                  top: -80,
+                  right: -80,
+                  child: Container(
+                    width: 240,
+                    height: 240,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primaryLight.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -100,
+                  left: -80,
+                  child: Container(
+                    width: 280,
+                    height: 280,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.surfaceSecondary,
+                    ),
+                  ),
+                ),
+
+                Center(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Brand Icon Container
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        width: 90,
+                        height: 90,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(26),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                        child: const Icon(
-                          Icons.directions_bus,
-                          size: 32,
-                          color: Colors.white,
+                        child: const Center(
+                          child: Icon(
+                            Icons.directions_bus_rounded,
+                            size: 48,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'VéXe',
-                        style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
+                      const SizedBox(height: 24),
+
+                      // Brand Title
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'TRIP',
+                            style: AppTextStyles.h1.copyWith(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.secondary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            'LY',
+                            style: AppTextStyles.h1.copyWith(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      Text(
+                        'Nền tảng đặt vé xe & vận tải thông minh',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+
+                      // Elegant Loader
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Đặt vé xe khách dễ dàng',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFFD1D5DB),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
+                ),
 
-                  // Center Illustration
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    height: 280,
-                    width: double.infinity,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+                // Footer
+                Positioned(
+                  bottom: 24,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Text(
+                      'Phiên bản 3.5.0 • Powered by Triply Mobility',
+                      style: AppTextStyles.tiny.copyWith(
+                        color: AppColors.textMuted,
+                      ),
                     ),
-                    child: Image.asset(
-                      'assets/images/splash_illustration.jpg',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Footer Text
-            const Positioned(
-              bottom: 24,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Text(
-                  'Phiên bản 3.4.0 • Phát triển bởi Nhóm 5',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9CA3AF),
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

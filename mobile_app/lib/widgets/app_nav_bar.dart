@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:ui';
+import '../core/constants/app_colors.dart';
 
 class AppNavBar extends StatelessWidget {
   final int currentIndex;
@@ -28,7 +28,14 @@ class AppNavBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
+        border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -83,12 +90,12 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
       vsync: this,
       value: widget.isActive ? 1.0 : 0.0,
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _scaleAnim = Tween<double>(begin: 1.0, end: 1.12).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _pillWidthAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
@@ -129,15 +136,15 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Animated pill background
+                  // Animated pill background in soft orange
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      width: 60 * _pillWidthAnim.value,
-                      height: 32,
+                      width: 54 * _pillWidthAnim.value,
+                      height: 28,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00639B).withValues(alpha: 0.12 * _pillWidthAnim.value),
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.primaryLight.withValues(alpha: _pillWidthAnim.value),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
@@ -146,25 +153,24 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
                     scale: _scaleAnim.value,
                     child: Icon(
                       widget.isActive ? widget.activeIcon : widget.icon,
-                      size: 24,
+                      size: 23,
                       color: widget.isActive
-                          ? const Color(0xFF00639B)
-                          : const Color(0xFF94A3B8),
+                          ? AppColors.primary
+                          : AppColors.textMuted,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               // Label
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
                   color: widget.isActive
-                      ? const Color(0xFF00639B)
-                      : const Color(0xFF94A3B8),
-                  fontSize: 10,
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  fontSize: 10.5,
                   fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.w500,
-                  fontFamily: 'Inter',
                 ),
                 child: Text(widget.label),
               ),

@@ -23,10 +23,22 @@ class _OperatorMainScreenState extends State<OperatorMainScreen> {
   );
   final DateFormat _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
 
-  // Colors
-  static const Color brandOrange = Color(0xFFEF5222);
-  static const Color darkBlue = Color(0xFF0B192C);
-  static const Color slateBg = Color(0xFFF8FAFC);
+  // Design System — Light Orange & White Transportation App
+  static const Color brandOrange = Color(0xFFF26A21); // Cam thương hiệu #F26A21
+  static const Color brandOrangeDark = Color(0xFFE65B16); // Cam đậm #E65B16
+  static const Color brandOrangeLight = Color(0xFFFFF0E6); // Cam nhạt #FFF0E6
+  static const Color surfaceWhite = Color(0xFFFFFFFF); // Trắng #FFFFFF
+  static const Color bgOverall = Color(0xFFF8F9FB); // Nền tổng thể #F8F9FB
+  static const Color textMain = Color(0xFF263244); // Chữ chính #263244
+  static const Color textSub = Color(0xFF778397); // Chữ phụ #778397
+  static const Color borderSubtle = Color(0xFFE7EAF0); // Đường viền #E7EAF0
+  static const Color successGreen = Color(0xFF16A36A);
+  static const Color successGreenLight = Color(0xFFE9F8F0);
+  static const Color warningOrange = Color(0xFFE99A22);
+  static const Color warningOrangeLight = Color(0xFFFFF5E5);
+  static const Color alertSoftRed = Color(0xFFFFF5F3);
+  static const Color alertBorderRed = Color(0xFFFCA5A5);
+  static const Color alertTextRed = Color(0xFFDC2626);
 
   @override
   Widget build(BuildContext context) {
@@ -34,21 +46,29 @@ class _OperatorMainScreenState extends State<OperatorMainScreen> {
     final user = authService.currentUser;
 
     return Scaffold(
-      backgroundColor: slateBg,
+      backgroundColor: bgOverall,
       appBar: AppBar(
-        backgroundColor: darkBlue,
+        backgroundColor: surfaceWhite,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: borderSubtle, width: 1),
+        ),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: brandOrange,
-                borderRadius: BorderRadius.circular(8),
+                color: brandOrangeLight,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: brandOrange.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
               child: const Icon(
                 Icons.directions_bus,
-                color: Colors.white,
+                color: brandOrange,
                 size: 20,
               ),
             ),
@@ -63,29 +83,36 @@ class _OperatorMainScreenState extends State<OperatorMainScreen> {
                             ? user!.name
                             : 'Nhà xe HUTECH BUS'),
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: textMain,
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
+                          horizontal: 7,
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(4),
+                          color: brandOrangeLight,
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(
+                            color: brandOrange.withOpacity(0.3),
+                            width: 0.8,
+                          ),
                         ),
                         child: Text(
                           user?.roleDisplayName ?? 'NHÂN VIÊN VẬN HÀNH',
                           style: const TextStyle(
-                            color: Colors.amberAccent,
+                            color: brandOrangeDark,
                             fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
                           ),
                         ),
                       ),
@@ -99,42 +126,57 @@ class _OperatorMainScreenState extends State<OperatorMainScreen> {
         actions: [
           IconButton(
             tooltip: 'Trung tâm Xử lý Sự cố',
-            icon: const Icon(Icons.emergency, color: Colors.amberAccent),
+            icon: const Icon(Icons.emergency_outlined, color: warningOrange),
             onPressed: () {
               _showIncidentCenterDialog(context);
             },
           ),
           IconButton(
             tooltip: 'Chuyển sang giao diện Khách',
-            icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            icon: const Icon(Icons.swap_horiz, color: textSub),
             onPressed: () {
               context.go('/home');
             },
           ),
           IconButton(
             tooltip: 'Đăng xuất',
-            icon: const Icon(Icons.logout, color: Colors.white70),
+            icon: const Icon(Icons.logout, color: textSub),
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text('Đăng xuất'),
+                  backgroundColor: surfaceWhite,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text(
+                    'Đăng xuất',
+                    style: TextStyle(
+                      color: textMain,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   content: const Text(
                     'Bạn có chắc muốn đăng xuất khỏi tài khoản nhà xe?',
+                    style: TextStyle(color: textSub),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Hủy'),
+                      child: const Text('Hủy', style: TextStyle(color: textSub)),
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: alertTextRed,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: const Text(
                         'Đăng xuất',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -159,56 +201,55 @@ class _OperatorMainScreenState extends State<OperatorMainScreen> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, -3),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          color: surfaceWhite,
+          border: Border(
+            top: BorderSide(color: borderSubtle, width: 1),
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentTabIndex.clamp(0, (user?.canManageFleet == true ? 5 : 4) - 1),
-          onTap: (index) => setState(() => _currentTabIndex = index),
-          selectedItemColor: brandOrange,
-          unselectedItemColor: const Color(0xFF64748B),
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedFontSize: 12,
-          unselectedFontSize: 11,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.dashboard_outlined),
-              activeIcon: const Icon(Icons.dashboard),
-              label: user?.isDriver == true ? 'Ca trực' : 'Tổng quan',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.alt_route_outlined),
-              activeIcon: const Icon(Icons.alt_route),
-              label: user?.isDriver == true ? 'Lịch chạy' : 'Chuyến xe',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.people_outline),
-              activeIcon: Icon(Icons.people),
-              label: 'Phơi khách',
-            ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.inventory_2_outlined),
-              activeIcon: Icon(Icons.inventory_2),
-              label: 'Phơi hàng',
-            ),
-            if (user?.canManageFleet == true)
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.directions_bus_outlined),
-                activeIcon: Icon(Icons.directions_bus),
-                label: 'Xe & Tài xế',
+        child: SafeArea(
+          child: BottomNavigationBar(
+            currentIndex: _currentTabIndex.clamp(0, (user?.canManageFleet == true ? 5 : 4) - 1),
+            onTap: (index) => setState(() => _currentTabIndex = index),
+            selectedItemColor: brandOrange,
+            unselectedItemColor: textSub,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: surfaceWhite,
+            elevation: 0,
+            selectedFontSize: 12,
+            unselectedFontSize: 11,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.dashboard_outlined),
+                activeIcon: const Icon(Icons.dashboard),
+                label: user?.isDriver == true ? 'Ca trực' : 'Tổng quan',
               ),
-          ],
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.alt_route_outlined),
+                activeIcon: const Icon(Icons.alt_route),
+                label: user?.isDriver == true ? 'Lịch chạy' : 'Chuyến xe',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.people_outline),
+                activeIcon: Icon(Icons.people),
+                label: 'Phơi khách',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.inventory_2_outlined),
+                activeIcon: Icon(Icons.inventory_2),
+                label: 'Phơi hàng',
+              ),
+              if (user?.canManageFleet == true)
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.directions_bus_outlined),
+                  activeIcon: Icon(Icons.directions_bus),
+                  label: 'Xe & Tài xế',
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -283,17 +324,17 @@ class _DashboardTabState extends State<_DashboardTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0B192C), Color(0xFF1E293B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _OperatorMainScreenState.surfaceWhite,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _OperatorMainScreenState.borderSubtle,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0B192C).withOpacity(0.2),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: Colors.black.withOpacity(0.025),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -306,10 +347,10 @@ class _DashboardTabState extends State<_DashboardTab> {
                         const Text(
                           'TỔNG DOANH THU NHÀ XE',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: _OperatorMainScreenState.textSub,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 1,
+                            letterSpacing: 0.8,
                           ),
                         ),
                         Container(
@@ -318,13 +359,17 @@ class _DashboardTabState extends State<_DashboardTab> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            color: _OperatorMainScreenState.successGreenLight,
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _OperatorMainScreenState.successGreen.withOpacity(0.2),
+                              width: 0.8,
+                            ),
                           ),
                           child: const Text(
                             'Trực tuyến',
                             style: TextStyle(
-                              color: Colors.greenAccent,
+                              color: _OperatorMainScreenState.successGreen,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -336,13 +381,14 @@ class _DashboardTabState extends State<_DashboardTab> {
                     Text(
                       _fmt.format(totalRev),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: _OperatorMainScreenState.textMain,
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Divider(color: Colors.white24, height: 1),
+                    const Divider(color: _OperatorMainScreenState.borderSubtle, height: 1),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -353,23 +399,24 @@ class _DashboardTabState extends State<_DashboardTab> {
                               const Text(
                                 'Vé hành khách',
                                 style: TextStyle(
-                                  color: Colors.white60,
+                                  color: _OperatorMainScreenState.textSub,
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 _fmt.format(revTickets),
                                 style: const TextStyle(
-                                  color: Colors.amberAccent,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                                  color: _OperatorMainScreenState.brandOrange,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Container(width: 1, height: 30, color: Colors.white24),
+                        Container(width: 1, height: 30, color: _OperatorMainScreenState.borderSubtle),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -378,17 +425,18 @@ class _DashboardTabState extends State<_DashboardTab> {
                               const Text(
                                 'Ký gửi hàng hóa',
                                 style: TextStyle(
-                                  color: Colors.white60,
+                                  color: _OperatorMainScreenState.textSub,
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 _fmt.format(revCargo),
                                 style: const TextStyle(
-                                  color: Colors.lightBlueAccent,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2878D0),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ],
@@ -404,17 +452,17 @@ class _DashboardTabState extends State<_DashboardTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _OperatorMainScreenState.surfaceWhite,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _OperatorMainScreenState.borderSubtle,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withOpacity(0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: Colors.black.withOpacity(0.025),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -427,22 +475,26 @@ class _DashboardTabState extends State<_DashboardTab> {
                         const Text(
                           'CA TRỰC VẬN HÀNH',
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: _OperatorMainScreenState.textSub,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 1,
+                            letterSpacing: 0.8,
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            color: _OperatorMainScreenState.successGreenLight,
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _OperatorMainScreenState.successGreen.withOpacity(0.2),
+                              width: 0.8,
+                            ),
                           ),
                           child: const Text(
                             'Sẵn sàng làm việc',
                             style: TextStyle(
-                              color: Colors.greenAccent,
+                              color: _OperatorMainScreenState.successGreen,
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -454,31 +506,50 @@ class _DashboardTabState extends State<_DashboardTab> {
                     Text(
                       user?.name ?? 'Tài xế',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: _OperatorMainScreenState.textMain,
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Vai trò: ${user?.roleDisplayName ?? "TÀI XẾ"}',
-                      style: const TextStyle(
-                        color: Colors.amberAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: _OperatorMainScreenState.brandOrangeLight,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            'Vai trò: ${user?.roleDisplayName ?? "TÀI XẾ"}',
+                            style: const TextStyle(
+                              color: _OperatorMainScreenState.brandOrangeDark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
-                    const Divider(color: Colors.white24, height: 1),
+                    const Divider(color: _OperatorMainScreenState.borderSubtle, height: 1),
                     const SizedBox(height: 12),
                     const Row(
                       children: [
-                        Icon(Icons.verified_user, color: Colors.greenAccent, size: 16),
+                        Icon(Icons.shield_outlined, color: _OperatorMainScreenState.successGreen, size: 16),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Quyền hạn ca trực: Xem phơi khách, phơi hàng, soát vé QR & báo sự cố.',
-                            style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                            style: TextStyle(
+                              color: _OperatorMainScreenState.textSub,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -497,7 +568,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                     title: 'Chuyến đang chạy',
                     value: '$activeTrips chuyến',
                     icon: Icons.directions_bus,
-                    color: const Color(0xFFEF5222),
+                    color: _OperatorMainScreenState.brandOrange,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -506,7 +577,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                     title: 'Đơn hàng ký gửi',
                     value: '$cargoCount kiện',
                     icon: Icons.local_shipping,
-                    color: const Color(0xFF0284C7),
+                    color: const Color(0xFF2878D0),
                   ),
                 ),
               ],
@@ -518,10 +589,10 @@ class _DashboardTabState extends State<_DashboardTab> {
             const Text(
               'TÁC VỤ NHANH',
               style: TextStyle(
-                color: Color(0xFF0F172A),
+                color: _OperatorMainScreenState.textMain,
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
+                letterSpacing: 0.3,
               ),
             ),
             const SizedBox(height: 12),
@@ -529,15 +600,15 @@ class _DashboardTabState extends State<_DashboardTab> {
               children: [
                 if (user?.canCreateTrip == true)
                   _buildActionButton(
-                    icon: Icons.add_circle,
-                    color: const Color(0xFFEF5222),
+                    icon: Icons.add_circle_outline,
+                    color: _OperatorMainScreenState.brandOrange,
                     label: 'Tạo chuyến',
                     onTap: () => _showCreateTripDialog(context),
                   )
                 else
                   _buildActionButton(
                     icon: Icons.alt_route,
-                    color: const Color(0xFFEF5222),
+                    color: _OperatorMainScreenState.brandOrange,
                     label: 'Lịch chạy',
                     onTap: () {
                       final mainState = context.findAncestorStateOfType<_OperatorMainScreenState>();
@@ -547,7 +618,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                 const SizedBox(width: 10),
                 _buildActionButton(
                   icon: Icons.post_add,
-                  color: const Color(0xFF0284C7),
+                  color: _OperatorMainScreenState.brandOrange,
                   label: user?.isDriver == true ? 'Phơi hàng' : 'Gửi hàng',
                   onTap: () {
                     if (user?.isDriver == true) {
@@ -561,9 +632,9 @@ class _DashboardTabState extends State<_DashboardTab> {
                 const SizedBox(width: 10),
                 _buildActionButton(
                   icon: Icons.qr_code_scanner,
-                  color: const Color(0xFF059669),
+                  color: _OperatorMainScreenState.brandOrange,
                   label: 'Soát vé QR',
-                  onTap: () => context.push('/vision'),
+                  onTap: () => context.push('/operator/qr-scan'),
                 ),
               ],
             ),
@@ -575,17 +646,22 @@ class _DashboardTabState extends State<_DashboardTab> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFDC2626), Color(0xFF991B1B)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: _OperatorMainScreenState.alertSoftRed,
                 borderRadius: BorderRadius.circular(16),
+                border: const Border(
+                  left: BorderSide(
+                    color: _OperatorMainScreenState.brandOrange,
+                    width: 4,
+                  ),
+                  top: BorderSide(color: _OperatorMainScreenState.borderSubtle),
+                  right: BorderSide(color: _OperatorMainScreenState.borderSubtle),
+                  bottom: BorderSide(color: _OperatorMainScreenState.borderSubtle),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.red.withOpacity(0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -597,10 +673,17 @@ class _DashboardTabState extends State<_DashboardTab> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: _OperatorMainScreenState.surfaceWhite,
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                          ),
                         ),
-                        child: const Icon(Icons.emergency, color: Colors.white, size: 22),
+                        child: const Icon(
+                          Icons.warning_amber_rounded,
+                          color: _OperatorMainScreenState.brandOrangeDark,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       const Expanded(
@@ -609,11 +692,19 @@ class _DashboardTabState extends State<_DashboardTab> {
                           children: [
                             Text(
                               'XỬ LÝ SỰ CỐ & CỨU VIỆN',
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                              style: TextStyle(
+                                color: _OperatorMainScreenState.textMain,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.3,
+                              ),
                             ),
                             Text(
-                              'Hỏng xe, tắc đường, cứu hộ & đổi chuyến',
-                              style: TextStyle(color: Colors.white70, fontSize: 11),
+                              'Hệ thống ổn định • Sẵn sàng điều xe & sang khách',
+                              style: TextStyle(
+                                color: _OperatorMainScreenState.textSub,
+                                fontSize: 11,
+                              ),
                             ),
                           ],
                         ),
@@ -621,13 +712,22 @@ class _DashboardTabState extends State<_DashboardTab> {
                       if (user?.canDispatchRescue == true)
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFFDC2626),
+                            backgroundColor: _OperatorMainScreenState.surfaceWhite,
+                            foregroundColor: _OperatorMainScreenState.brandOrangeDark,
+                            elevation: 0,
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: BorderSide(
+                              color: _OperatorMainScreenState.brandOrange.withOpacity(0.4),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           onPressed: () => _showIncidentCenterDialog(context),
-                          child: const Text('TRUNG TÂM', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
+                          child: const Text(
+                            'TRUNG TÂM',
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11),
+                          ),
                         ),
                     ],
                   ),
@@ -637,19 +737,33 @@ class _DashboardTabState extends State<_DashboardTab> {
                       Expanded(
                         child: InkWell(
                           onTap: () => _showReportIncidentDialog(context),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
+                              color: _OperatorMainScreenState.surfaceWhite,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _OperatorMainScreenState.borderSubtle,
+                              ),
                             ),
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.report_problem, color: Colors.white, size: 15),
+                                Icon(
+                                  Icons.report_problem_outlined,
+                                  color: _OperatorMainScreenState.alertTextRed,
+                                  size: 15,
+                                ),
                                 SizedBox(width: 6),
-                                Text('Báo sự cố', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                Text(
+                                  'Báo sự cố',
+                                  style: TextStyle(
+                                    color: _OperatorMainScreenState.textMain,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -659,19 +773,33 @@ class _DashboardTabState extends State<_DashboardTab> {
                       Expanded(
                         child: InkWell(
                           onTap: () => _showIncidentCenterDialog(context),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 9),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
+                              color: _OperatorMainScreenState.surfaceWhite,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _OperatorMainScreenState.borderSubtle,
+                              ),
                             ),
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.car_crash, color: Colors.white, size: 15),
+                                Icon(
+                                  Icons.car_crash_outlined,
+                                  color: _OperatorMainScreenState.brandOrangeDark,
+                                  size: 15,
+                                ),
                                 SizedBox(width: 6),
-                                Text('Cứu viện / Sang xe', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                Text(
+                                  'Cứu viện / Sang xe',
+                                  style: TextStyle(
+                                    color: _OperatorMainScreenState.textMain,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -692,10 +820,10 @@ class _DashboardTabState extends State<_DashboardTab> {
                 const Text(
                   'CHUYẾN XE HÔM NAY',
                   style: TextStyle(
-                    color: Color(0xFF0F172A),
+                    color: _OperatorMainScreenState.textMain,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 TextButton(
@@ -708,7 +836,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                   child: const Text(
                     'Xem tất cả',
                     style: TextStyle(
-                      color: Color(0xFFEF5222),
+                      color: _OperatorMainScreenState.brandOrange,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -722,13 +850,14 @@ class _DashboardTabState extends State<_DashboardTab> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: _OperatorMainScreenState.surfaceWhite,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _OperatorMainScreenState.borderSubtle),
                 ),
                 child: const Center(
                   child: Text(
                     'Chưa có chuyến xe nào được tạo.',
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: _OperatorMainScreenState.textSub),
                   ),
                 ),
               )
@@ -749,9 +878,9 @@ class _DashboardTabState extends State<_DashboardTab> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: _OperatorMainScreenState.borderSubtle),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -765,10 +894,12 @@ class _DashboardTabState extends State<_DashboardTab> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color == _OperatorMainScreenState.brandOrange
+                  ? _OperatorMainScreenState.brandOrangeLight
+                  : const Color(0xFFEAF3FF),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -778,7 +909,7 @@ class _DashboardTabState extends State<_DashboardTab> {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF64748B),
+                    color: _OperatorMainScreenState.textSub,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -787,9 +918,9 @@ class _DashboardTabState extends State<_DashboardTab> {
                 Text(
                   value,
                   style: const TextStyle(
-                    color: Color(0xFF0F172A),
+                    color: _OperatorMainScreenState.textMain,
                     fontSize: 16,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
@@ -813,25 +944,36 @@ class _DashboardTabState extends State<_DashboardTab> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _OperatorMainScreenState.surfaceWhite,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: _OperatorMainScreenState.borderSubtle),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.015),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                decoration: const BoxDecoration(
+                  color: _OperatorMainScreenState.brandOrangeLight,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(
+                  icon,
+                  color: _OperatorMainScreenState.brandOrange,
+                  size: 22,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 label,
                 style: const TextStyle(
-                  color: Color(0xFF0F172A),
+                  color: _OperatorMainScreenState.textMain,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -855,16 +997,20 @@ class _DashboardTabState extends State<_DashboardTab> {
         : 'N/A';
     final occupancy = trip['occupancy'] ?? '0/0';
 
-    Color statusColor = Colors.blue;
+    Color statusBg = const Color(0xFFEAF3FF);
+    Color statusText = const Color(0xFF2878D0);
     String statusLabel = 'Đã lên lịch';
     if (status == 'Running') {
-      statusColor = Colors.green;
+      statusBg = _OperatorMainScreenState.successGreenLight;
+      statusText = _OperatorMainScreenState.successGreen;
       statusLabel = 'Đang chạy';
     } else if (status == 'Completed') {
-      statusColor = const Color(0xFF64748B);
+      statusBg = const Color(0xFFF1F3F7);
+      statusText = _OperatorMainScreenState.textSub;
       statusLabel = 'Hoàn thành';
     } else if (status == 'Cancelled') {
-      statusColor = Colors.red;
+      statusBg = _OperatorMainScreenState.alertSoftRed;
+      statusText = _OperatorMainScreenState.alertTextRed;
       statusLabel = 'Đã hủy';
     }
 
@@ -872,9 +1018,16 @@ class _DashboardTabState extends State<_DashboardTab> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: _OperatorMainScreenState.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,20 +1041,20 @@ class _DashboardTabState extends State<_DashboardTab> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: _OperatorMainScreenState.textMain,
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   statusLabel,
                   style: TextStyle(
-                    color: statusColor,
+                    color: statusText,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -912,13 +1065,17 @@ class _DashboardTabState extends State<_DashboardTab> {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.access_time, size: 14, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.access_time,
+                size: 14,
+                color: _OperatorMainScreenState.textSub,
+              ),
               const SizedBox(width: 4),
               Text(
                 timeStr,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF475569),
+                  color: _OperatorMainScreenState.textMain,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -926,38 +1083,49 @@ class _DashboardTabState extends State<_DashboardTab> {
               const Icon(
                 Icons.directions_bus,
                 size: 14,
-                color: Color(0xFF64748B),
+                color: _OperatorMainScreenState.textSub,
               ),
               const SizedBox(width: 4),
               Text(
                 trip['bus'] ?? 'N/A',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF475569),
+                  color: _OperatorMainScreenState.textMain,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Ghế: $occupancy',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFEF5222),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _OperatorMainScreenState.brandOrangeLight,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: _OperatorMainScreenState.brandOrange.withOpacity(0.2),
+                  ),
+                ),
+                child: Text(
+                  'Ghế: $occupancy',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: _OperatorMainScreenState.brandOrangeDark,
+                  ),
                 ),
               ),
               Row(
                 children: [
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
+                      backgroundColor: _OperatorMainScreenState.brandOrange,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     icon: const Icon(Icons.radar, size: 13),
@@ -978,11 +1146,15 @@ class _DashboardTabState extends State<_DashboardTab> {
                   const SizedBox(width: 6),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0B192C),
-                      foregroundColor: Colors.white,
+                      backgroundColor: _OperatorMainScreenState.brandOrangeLight,
+                      foregroundColor: _OperatorMainScreenState.brandOrangeDark,
+                      elevation: 0,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: 10,
                         vertical: 6,
+                      ),
+                      side: BorderSide(
+                        color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -1072,11 +1244,12 @@ class _TripsTabState extends State<_TripsTab> {
                 .toList());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: _OperatorMainScreenState.bgOverall,
       floatingActionButton: user?.canCreateTrip == true
           ? FloatingActionButton.extended(
-              backgroundColor: const Color(0xFFEF5222),
+              backgroundColor: _OperatorMainScreenState.brandOrange,
               foregroundColor: Colors.white,
+              elevation: 2,
               icon: const Icon(Icons.add),
               label: const Text(
                 'Tạo chuyến mới',
@@ -1092,8 +1265,13 @@ class _TripsTabState extends State<_TripsTab> {
         children: [
           // Filter Chips
           Container(
-            color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: const BoxDecoration(
+              color: _OperatorMainScreenState.surfaceWhite,
+              border: Border(
+                bottom: BorderSide(color: _OperatorMainScreenState.borderSubtle),
+              ),
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -1116,16 +1294,16 @@ class _TripsTabState extends State<_TripsTab> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFEF5222)),
+                    child: CircularProgressIndicator(color: _OperatorMainScreenState.brandOrange),
                   )
                 : RefreshIndicator(
                     onRefresh: _loadTrips,
-                    color: const Color(0xFFEF5222),
+                    color: _OperatorMainScreenState.brandOrange,
                     child: filtered.isEmpty
                         ? const Center(
                             child: Text(
                               'Không có chuyến xe nào',
-                              style: TextStyle(color: Colors.black54),
+                              style: TextStyle(color: _OperatorMainScreenState.textSub),
                             ),
                           )
                         : ListView.builder(
@@ -1147,11 +1325,19 @@ class _TripsTabState extends State<_TripsTab> {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => setState(() => _filterStatus = value),
-      selectedColor: const Color(0xFF0B192C),
-      backgroundColor: const Color(0xFFF1F5F9),
+      selectedColor: _OperatorMainScreenState.brandOrangeLight,
+      backgroundColor: _OperatorMainScreenState.bgOverall,
+      side: BorderSide(
+        color: isSelected
+            ? _OperatorMainScreenState.brandOrange
+            : _OperatorMainScreenState.borderSubtle,
+        width: isSelected ? 1.2 : 1,
+      ),
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : const Color(0xFF475569),
-        fontWeight: FontWeight.bold,
+        color: isSelected
+            ? _OperatorMainScreenState.brandOrangeDark
+            : _OperatorMainScreenState.textSub,
+        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
         fontSize: 12,
       ),
     );
@@ -1169,16 +1355,20 @@ class _TripsTabState extends State<_TripsTab> {
         : 'N/A';
     final occupancy = trip['occupancy'] ?? '0/0';
 
-    Color statusColor = Colors.blue;
+    Color statusBg = const Color(0xFFEAF3FF);
+    Color statusText = const Color(0xFF2878D0);
     String statusLabel = 'Đã lên lịch';
     if (status == 'Running') {
-      statusColor = Colors.green;
+      statusBg = _OperatorMainScreenState.successGreenLight;
+      statusText = _OperatorMainScreenState.successGreen;
       statusLabel = 'Đang chạy';
     } else if (status == 'Completed') {
-      statusColor = Colors.grey;
+      statusBg = const Color(0xFFF1F3F7);
+      statusText = _OperatorMainScreenState.textSub;
       statusLabel = 'Hoàn thành';
     } else if (status == 'Cancelled') {
-      statusColor = Colors.red;
+      statusBg = _OperatorMainScreenState.alertSoftRed;
+      statusText = _OperatorMainScreenState.alertTextRed;
       statusLabel = 'Đã hủy';
     }
 
@@ -1186,12 +1376,12 @@ class _TripsTabState extends State<_TripsTab> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: _OperatorMainScreenState.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withOpacity(0.015),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1209,20 +1399,20 @@ class _TripsTabState extends State<_TripsTab> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: _OperatorMainScreenState.textMain,
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   statusLabel,
                   style: TextStyle(
-                    color: statusColor,
+                    color: statusText,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1236,14 +1426,14 @@ class _TripsTabState extends State<_TripsTab> {
               const Icon(
                 Icons.calendar_today,
                 size: 14,
-                color: Color(0xFF64748B),
+                color: _OperatorMainScreenState.textSub,
               ),
               const SizedBox(width: 6),
               Text(
                 timeStr,
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF334155),
+                  color: _OperatorMainScreenState.textMain,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1255,14 +1445,14 @@ class _TripsTabState extends State<_TripsTab> {
               const Icon(
                 Icons.directions_bus,
                 size: 14,
-                color: Color(0xFF64748B),
+                color: _OperatorMainScreenState.textSub,
               ),
               const SizedBox(width: 6),
               Text(
                 'Biển số: ${trip['bus'] ?? "Chưa gán"}',
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF334155),
+                  color: _OperatorMainScreenState.textMain,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1278,37 +1468,81 @@ class _TripsTabState extends State<_TripsTab> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF5222).withOpacity(0.08),
+                  color: _OperatorMainScreenState.brandOrangeLight,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _OperatorMainScreenState.brandOrange.withOpacity(0.2),
+                  ),
                 ),
                 child: Text(
                   'Ghế: $occupancy',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFFEF5222),
+                    color: _OperatorMainScreenState.brandOrangeDark,
                   ),
                 ),
               ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B192C),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _OperatorMainScreenState.brandOrange,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.radar, size: 14),
+                    label: const Text(
+                      'Bản đồ đón',
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LivePassengerRadarScreen(
+                            tripId: trip['id'],
+                            tripRoute: trip['route'],
+                            busPlate: trip['bus'],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-                icon: const Icon(Icons.groups, size: 16),
-                label: const Text(
-                  'Xem phơi khách',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                onPressed: () {
-                  _selectedTripIdForManifest = trip['id'];
-                  final mainState = context
-                      .findAncestorStateOfType<_OperatorMainScreenState>();
-                  mainState?.setState(() => mainState._currentTabIndex = 2);
-                },
+                  const SizedBox(width: 6),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _OperatorMainScreenState.brandOrangeLight,
+                      foregroundColor: _OperatorMainScreenState.brandOrangeDark,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      side: BorderSide(
+                        color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.groups, size: 16),
+                    label: const Text(
+                      'Phơi khách',
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      _selectedTripIdForManifest = trip['id'];
+                      final mainState = context
+                          .findAncestorStateOfType<_OperatorMainScreenState>();
+                      mainState?.setState(() => mainState._currentTabIndex = 2);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -1398,8 +1632,13 @@ class _ManifestTabState extends State<_ManifestTab> {
       children: [
         // Controls: Trip Picker & Search
         Container(
-          color: Colors.white,
           padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: _OperatorMainScreenState.surfaceWhite,
+            border: Border(
+              bottom: BorderSide(color: _OperatorMainScreenState.borderSubtle),
+            ),
+          ),
           child: Column(
             children: [
               // Nút mở Radar đón khách trực diện cho Tài xế
@@ -1409,7 +1648,7 @@ class _ManifestTabState extends State<_ManifestTab> {
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
+                      backgroundColor: _OperatorMainScreenState.brandOrange,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1443,9 +1682,9 @@ class _ManifestTabState extends State<_ManifestTab> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: _OperatorMainScreenState.bgOverall,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: _OperatorMainScreenState.borderSubtle),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
@@ -1463,6 +1702,7 @@ class _ManifestTabState extends State<_ManifestTab> {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
+                              color: _OperatorMainScreenState.textMain,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1479,35 +1719,74 @@ class _ManifestTabState extends State<_ManifestTab> {
                   ),
                 ),
               const SizedBox(height: 10),
-              // Search field
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Tìm khách theo tên, SĐT hoặc ghế...',
-                  hintStyle: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF94A3B8),
+              // Search field with QR scanner button
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Tìm khách theo tên, SĐT hoặc ghế...',
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          color: _OperatorMainScreenState.textSub,
+                        ),
+                        prefixIcon: const Icon(Icons.search, size: 20, color: _OperatorMainScreenState.textSub),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  if (_selectedTripId != null)
+                                    _loadPassengers(_selectedTripId!);
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: _OperatorMainScreenState.bgOverall,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: _OperatorMainScreenState.borderSubtle),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: _OperatorMainScreenState.borderSubtle),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: _OperatorMainScreenState.brandOrange, width: 1.5),
+                        ),
+                      ),
+                      onSubmitted: _searchPassengers,
+                    ),
                   ),
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            if (_selectedTripId != null)
-                              _loadPassengers(_selectedTripId!);
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  border: OutlineInputBorder(
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () async {
+                      await context.push('/operator/qr-scan');
+                      if (_selectedTripId != null) {
+                        _loadPassengers(_selectedTripId!);
+                      }
+                    },
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+                    child: Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(
+                        color: _OperatorMainScreenState.brandOrangeLight,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.qr_code_scanner,
+                        color: _OperatorMainScreenState.brandOrange,
+                        size: 22,
+                      ),
+                    ),
                   ),
-                ),
-                onSubmitted: _searchPassengers,
+                ],
               ),
               const SizedBox(height: 10),
               // Boarding stat row
@@ -1519,7 +1798,7 @@ class _ManifestTabState extends State<_ManifestTab> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: _OperatorMainScreenState.textMain,
                     ),
                   ),
                   Text(
@@ -1527,7 +1806,7 @@ class _ManifestTabState extends State<_ManifestTab> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: _OperatorMainScreenState.successGreen,
                     ),
                   ),
                 ],
@@ -1540,13 +1819,13 @@ class _ManifestTabState extends State<_ManifestTab> {
         Expanded(
           child: _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFFEF5222)),
+                  child: CircularProgressIndicator(color: _OperatorMainScreenState.brandOrange),
                 )
               : _passengers.isEmpty
               ? const Center(
                   child: Text(
                     'Chưa có hành khách nào trên chuyến.',
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: _OperatorMainScreenState.textSub),
                   ),
                 )
               : ListView.builder(
@@ -1568,14 +1847,14 @@ class _ManifestTabState extends State<_ManifestTab> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isBoarded ? Colors.green.shade200 : const Color(0xFFE2E8F0),
+          color: isBoarded ? _OperatorMainScreenState.successGreen.withOpacity(0.4) : _OperatorMainScreenState.borderSubtle,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withOpacity(0.015),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1592,14 +1871,23 @@ class _ManifestTabState extends State<_ManifestTab> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isBoarded ? Colors.green : const Color(0xFFF1F5F9),
+                  color: isBoarded
+                      ? _OperatorMainScreenState.successGreenLight
+                      : _OperatorMainScreenState.brandOrangeLight,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isBoarded
+                        ? _OperatorMainScreenState.successGreen.withOpacity(0.3)
+                        : _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     pax['seat'] ?? '?',
                     style: TextStyle(
-                      color: isBoarded ? Colors.white : const Color(0xFF0F172A),
+                      color: isBoarded
+                          ? _OperatorMainScreenState.successGreen
+                          : _OperatorMainScreenState.brandOrangeDark,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
@@ -1617,7 +1905,7 @@ class _ManifestTabState extends State<_ManifestTab> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: _OperatorMainScreenState.textMain,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1626,14 +1914,14 @@ class _ManifestTabState extends State<_ManifestTab> {
                         const Icon(
                           Icons.phone,
                           size: 14,
-                          color: Color(0xFF64748B),
+                          color: _OperatorMainScreenState.textSub,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           pax['phone'] ?? 'N/A',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF475569),
+                            color: _OperatorMainScreenState.textSub,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1647,10 +1935,10 @@ class _ManifestTabState extends State<_ManifestTab> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isBoarded
-                      ? Colors.green.shade50
+                      ? _OperatorMainScreenState.successGreenLight
                       : (pax['is_sharing_location'] == true
                           ? const Color(0xFFD1FAE5)
-                          : Colors.amber.shade50),
+                          : _OperatorMainScreenState.warningOrangeLight),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -1661,10 +1949,10 @@ class _ManifestTabState extends State<_ManifestTab> {
                           : 'CHỜ ĐÓN'),
                   style: TextStyle(
                     color: isBoarded
-                        ? Colors.green.shade700
+                        ? _OperatorMainScreenState.successGreen
                         : (pax['is_sharing_location'] == true
                             ? const Color(0xFF065F46)
-                            : Colors.amber.shade800),
+                            : _OperatorMainScreenState.warningOrange),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1676,7 +1964,7 @@ class _ManifestTabState extends State<_ManifestTab> {
           // Pickup info
           Row(
             children: [
-              const Icon(Icons.location_on, size: 16, color: Color(0xFFEF5222)),
+              const Icon(Icons.location_on, size: 16, color: _OperatorMainScreenState.brandOrange),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -1685,7 +1973,7 @@ class _ManifestTabState extends State<_ManifestTab> {
                       'Điểm đón mặc định',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF334155),
+                    color: _OperatorMainScreenState.textMain,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1754,9 +2042,10 @@ class _ManifestTabState extends State<_ManifestTab> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isBoarded
-                        ? Colors.green.shade600
-                        : const Color(0xFFEF5222),
+                        ? _OperatorMainScreenState.successGreen
+                        : _OperatorMainScreenState.brandOrange,
                     foregroundColor: Colors.white,
+                    elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1838,10 +2127,11 @@ class _CargoTabState extends State<_CargoTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: _OperatorMainScreenState.bgOverall,
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF0284C7),
+        backgroundColor: _OperatorMainScreenState.brandOrange,
         foregroundColor: Colors.white,
+        elevation: 2,
         icon: const Icon(Icons.add_box),
         label: const Text(
           'Gửi hàng mới',
@@ -1854,16 +2144,16 @@ class _CargoTabState extends State<_CargoTab> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0284C7)),
+              child: CircularProgressIndicator(color: _OperatorMainScreenState.brandOrange),
             )
           : RefreshIndicator(
               onRefresh: _loadCargos,
-              color: const Color(0xFF0284C7),
+              color: _OperatorMainScreenState.brandOrange,
               child: _cargos.isEmpty
                   ? const Center(
                       child: Text(
                         'Chưa có kiện hàng ký gửi nào.',
-                        style: TextStyle(color: Colors.black54),
+                        style: TextStyle(color: _OperatorMainScreenState.textSub),
                       ),
                     )
                   : ListView.builder(
@@ -1880,16 +2170,20 @@ class _CargoTabState extends State<_CargoTab> {
     final cost = cargo['cost'] ?? 0;
     final cod = cargo['cod_amount'] ?? 0;
 
-    Color statusColor = Colors.amber;
+    Color statusBg = _OperatorMainScreenState.warningOrangeLight;
+    Color statusText = _OperatorMainScreenState.warningOrange;
     String statusLabel = 'Đã nhận tại kho';
     if (status == 'LOADED') {
-      statusColor = Colors.blue;
+      statusBg = const Color(0xFFEAF3FF);
+      statusText = const Color(0xFF2878D0);
       statusLabel = 'Đã xếp lên xe';
     } else if (status == 'IN_TRANSIT') {
-      statusColor = Colors.orange;
+      statusBg = _OperatorMainScreenState.brandOrangeLight;
+      statusText = _OperatorMainScreenState.brandOrangeDark;
       statusLabel = 'Đang vận chuyển';
     } else if (status == 'DELIVERED') {
-      statusColor = Colors.green;
+      statusBg = _OperatorMainScreenState.successGreenLight;
+      statusText = _OperatorMainScreenState.successGreen;
       statusLabel = 'Đã giao cho khách';
     }
 
@@ -1897,12 +2191,12 @@ class _CargoTabState extends State<_CargoTab> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: _OperatorMainScreenState.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withOpacity(0.015),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1916,18 +2210,25 @@ class _CargoTabState extends State<_CargoTab> {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.inventory_2,
-                    size: 18,
-                    color: Color(0xFF0284C7),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: _OperatorMainScreenState.brandOrangeLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.inventory_2,
+                      size: 18,
+                      color: _OperatorMainScreenState.brandOrange,
+                    ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
                     cargo['tracking_number'] ?? 'MÃ KIỆN',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
+                      color: _OperatorMainScreenState.textMain,
                     ),
                   ),
                 ],
@@ -1935,13 +2236,13 @@ class _CargoTabState extends State<_CargoTab> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   statusLabel,
                   style: TextStyle(
-                    color: statusColor,
+                    color: statusText,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1959,20 +2260,20 @@ class _CargoTabState extends State<_CargoTab> {
                   children: [
                     const Text(
                       'Người gửi',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 11, color: _OperatorMainScreenState.textSub),
                     ),
                     Text(
                       '${cargo['sender_name']} (${cargo['sender_phone']})',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: _OperatorMainScreenState.textMain,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
+              const Icon(Icons.arrow_forward, size: 16, color: _OperatorMainScreenState.textSub),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -1980,14 +2281,14 @@ class _CargoTabState extends State<_CargoTab> {
                   children: [
                     const Text(
                       'Người nhận',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 11, color: _OperatorMainScreenState.textSub),
                     ),
                     Text(
                       '${cargo['receiver_name']} (${cargo['receiver_phone']})',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: _OperatorMainScreenState.textMain,
                       ),
                     ),
                   ],
@@ -1999,10 +2300,10 @@ class _CargoTabState extends State<_CargoTab> {
           // Description & Weight
           Text(
             'Hàng: ${cargo['description'] ?? "Hàng hóa"} • ${cargo['weight']} kg',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+            style: const TextStyle(fontSize: 12, color: _OperatorMainScreenState.textSub),
           ),
           const SizedBox(height: 8),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const Divider(height: 1, color: _OperatorMainScreenState.borderSubtle),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2013,9 +2314,9 @@ class _CargoTabState extends State<_CargoTab> {
                   Text(
                     'Cước: ${_fmt.format(cost)}',
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0284C7),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: _OperatorMainScreenState.brandOrange,
                     ),
                   ),
                   if (cod > 0)
@@ -2024,13 +2325,13 @@ class _CargoTabState extends State<_CargoTab> {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: _OperatorMainScreenState.successGreen,
                       ),
                     ),
                 ],
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20),
+                icon: const Icon(Icons.more_vert, size: 20, color: _OperatorMainScreenState.textSub),
                 onSelected: (newStatus) async {
                   final cargoId = cargo['id'];
                   final ok = await context
@@ -2107,12 +2408,13 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
     return Column(
       children: [
         Container(
-          color: Colors.white,
+          color: _OperatorMainScreenState.surfaceWhite,
           child: TabBar(
             controller: _tabController,
-            indicatorColor: const Color(0xFFEF5222),
-            labelColor: const Color(0xFF0F172A),
-            unselectedLabelColor: const Color(0xFF64748B),
+            indicatorColor: _OperatorMainScreenState.brandOrange,
+            indicatorWeight: 3,
+            labelColor: _OperatorMainScreenState.brandOrangeDark,
+            unselectedLabelColor: _OperatorMainScreenState.textSub,
             labelStyle: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
@@ -2126,18 +2428,19 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
         Expanded(
           child: _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFFEF5222)),
+                  child: CircularProgressIndicator(color: _OperatorMainScreenState.brandOrange),
                 )
               : TabBarView(
                   controller: _tabController,
                   children: [
                     // Sub Tab 1: Buses
                     Scaffold(
-                      backgroundColor: const Color(0xFFF8FAFC),
+                      backgroundColor: _OperatorMainScreenState.bgOverall,
                       floatingActionButton: user?.canManageFleet == true
                           ? FloatingActionButton.extended(
-                              backgroundColor: const Color(0xFF0B192C),
+                              backgroundColor: _OperatorMainScreenState.brandOrange,
                               foregroundColor: Colors.white,
+                              elevation: 2,
                               icon: const Icon(Icons.add),
                               label: const Text(
                                 'Thêm xe mới',
@@ -2151,7 +2454,10 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                           : null,
                       body: _buses.isEmpty
                           ? const Center(
-                              child: Text('Chưa có thông tin xe khách nào.'),
+                              child: Text(
+                                'Chưa có thông tin xe khách nào.',
+                                style: TextStyle(color: _OperatorMainScreenState.textSub),
+                              ),
                             )
                           : ListView.builder(
                               padding: const EdgeInsets.all(16),
@@ -2162,11 +2468,12 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                     ),
                     // Sub Tab 2: Drivers & Assistants
                     Scaffold(
-                      backgroundColor: const Color(0xFFF8FAFC),
+                      backgroundColor: _OperatorMainScreenState.bgOverall,
                       floatingActionButton: user?.canManageStaff == true
                           ? FloatingActionButton.extended(
-                              backgroundColor: const Color(0xFFEF5222),
+                              backgroundColor: _OperatorMainScreenState.brandOrange,
                               foregroundColor: Colors.white,
+                              elevation: 2,
                               icon: const Icon(Icons.person_add),
                               label: const Text(
                                 'Thêm tài xế',
@@ -2186,15 +2493,24 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF0F172A),
+                              color: _OperatorMainScreenState.textMain,
+                              letterSpacing: 0.3,
                             ),
                           ),
                           const SizedBox(height: 8),
                           if (_drivers.isEmpty)
-                            const Text('Chưa có tài xế nào.')
+                            const Text(
+                              'Chưa có tài xế nào.',
+                              style: TextStyle(color: _OperatorMainScreenState.textSub),
+                            )
                           else
                             ..._drivers.map(
-                              (d) => _buildStaffCard(d, 'Tài xế', Colors.blue),
+                              (d) => _buildStaffCard(
+                                d,
+                                'Tài xế',
+                                _OperatorMainScreenState.brandOrange,
+                                _OperatorMainScreenState.brandOrangeLight,
+                              ),
                             ),
                           const SizedBox(height: 20),
                           const Text(
@@ -2202,16 +2518,24 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF0F172A),
+                              color: _OperatorMainScreenState.textMain,
+                              letterSpacing: 0.3,
                             ),
                           ),
                           const SizedBox(height: 8),
                           if (_assistants.isEmpty)
-                            const Text('Chưa có phụ xe nào.')
+                            const Text(
+                              'Chưa có phụ xe nào.',
+                              style: TextStyle(color: _OperatorMainScreenState.textSub),
+                            )
                           else
                             ..._assistants.map(
-                              (a) =>
-                                  _buildStaffCard(a, 'Phụ xe', Colors.orange),
+                              (a) => _buildStaffCard(
+                                a,
+                                'Phụ xe',
+                                const Color(0xFF2878D0),
+                                const Color(0xFFEAF3FF),
+                              ),
                             ),
                         ],
                       ),
@@ -2228,22 +2552,29 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: _OperatorMainScreenState.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF0B192C).withOpacity(0.08),
+              color: _OperatorMainScreenState.brandOrangeLight,
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.directions_bus,
-              color: Color(0xFF0B192C),
-              size: 28,
+              color: _OperatorMainScreenState.brandOrange,
+              size: 26,
             ),
           ),
           const SizedBox(width: 14),
@@ -2256,7 +2587,7 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
+                    color: _OperatorMainScreenState.textMain,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -2264,8 +2595,8 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                   '${bus['bus_type'] ?? "Xe khách"} • ${bus['total_seats']} chỗ',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
+                    color: _OperatorMainScreenState.textSub,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -2280,19 +2611,27 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
     Map<String, dynamic> staff,
     String roleLabel,
     Color color,
+    Color bgLight,
   ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _OperatorMainScreenState.surfaceWhite,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: _OperatorMainScreenState.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: color.withOpacity(0.12),
+            backgroundColor: bgLight,
             child: Icon(Icons.person, color: color, size: 20),
           ),
           const SizedBox(width: 12),
@@ -2305,7 +2644,7 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: _OperatorMainScreenState.textMain,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -2313,7 +2652,7 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
                   'SĐT: ${staff['phone'] ?? "N/A"}${staff['license_number'] != null ? " • Bằng: ${staff['license_number']}" : ""}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF64748B),
+                    color: _OperatorMainScreenState.textSub,
                   ),
                 ),
               ],
@@ -2322,8 +2661,9 @@ class _FleetStaffTabState extends State<_FleetStaffTab>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: bgLight,
               borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: color.withOpacity(0.3)),
             ),
             child: Text(
               roleLabel,
@@ -2399,7 +2739,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
+                          color: _OperatorMainScreenState.textMain,
                         ),
                       ),
                       IconButton(
@@ -2415,7 +2755,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF64748B),
+                      color: _OperatorMainScreenState.textSub,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -2423,7 +2763,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     value: selectedRouteId,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: _OperatorMainScreenState.bgOverall,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -2453,7 +2793,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF64748B),
+                      color: _OperatorMainScreenState.textSub,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -2461,7 +2801,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     value: selectedBusId,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: _OperatorMainScreenState.bgOverall,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -2488,7 +2828,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF64748B),
+                      color: _OperatorMainScreenState.textSub,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -2496,7 +2836,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     value: selectedDriverId,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: _OperatorMainScreenState.bgOverall,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -2529,7 +2869,7 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF64748B),
+                      color: _OperatorMainScreenState.textSub,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -2580,8 +2920,9 @@ Future<bool?> _showCreateTripDialog(BuildContext context) async {
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF5222),
+                        backgroundColor: _OperatorMainScreenState.brandOrange,
                         foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2692,7 +3033,7 @@ Future<bool?> _showCreateCargoDialog(BuildContext context) async {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
+                      color: _OperatorMainScreenState.textMain,
                     ),
                   ),
                   IconButton(
@@ -2802,8 +3143,9 @@ Future<bool?> _showCreateCargoDialog(BuildContext context) async {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0284C7),
+                    backgroundColor: _OperatorMainScreenState.brandOrange,
                     foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -2902,9 +3244,15 @@ Future<bool?> _showAddBusDialog(BuildContext context) async {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Hủy'),
+          child: const Text('Hủy', style: TextStyle(color: _OperatorMainScreenState.textSub)),
         ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _OperatorMainScreenState.brandOrange,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
           onPressed: () async {
             if (plateCtl.text.isEmpty) return;
             final res = await cs.createBus({
@@ -2914,7 +3262,7 @@ Future<bool?> _showAddBusDialog(BuildContext context) async {
             });
             if (ctx.mounted) Navigator.pop(ctx, res['success']);
           },
-          child: const Text('Thêm'),
+          child: const Text('Thêm', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     ),
@@ -2968,9 +3316,15 @@ Future<bool?> _showAddStaffDialog(BuildContext context) async {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: const Text('Hủy'),
+          child: const Text('Hủy', style: TextStyle(color: _OperatorMainScreenState.textSub)),
         ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _OperatorMainScreenState.brandOrange,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
           onPressed: () async {
             if (nameCtl.text.isEmpty) return;
             final res = await cs.createStaff({
@@ -2982,7 +3336,7 @@ Future<bool?> _showAddStaffDialog(BuildContext context) async {
             });
             if (ctx.mounted) Navigator.pop(ctx, res['success']);
           },
-          child: const Text('Thêm'),
+          child: const Text('Thêm', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     ),
@@ -3047,7 +3401,7 @@ Future<void> _showReportIncidentDialog(BuildContext context) async {
                           const SizedBox(width: 8),
                           const Text(
                             'Báo Cáo Sự Cố Chuyến Xe',
-                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: _OperatorMainScreenState.textMain),
                           ),
                         ],
                       ),
@@ -3055,14 +3409,14 @@ Future<void> _showReportIncidentDialog(BuildContext context) async {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text('Chọn chuyến xe gặp sự cố:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                  const Text('Chọn chuyến xe gặp sự cố:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _OperatorMainScreenState.textSub)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     value: selectedTripId,
                     isExpanded: true,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: _OperatorMainScreenState.bgOverall,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
@@ -3079,14 +3433,14 @@ Future<void> _showReportIncidentDialog(BuildContext context) async {
                     onChanged: (v) => setMState(() => selectedTripId = v),
                   ),
                   const SizedBox(height: 12),
-                  const Text('Loại sự cố:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                  const Text('Loại sự cố:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _OperatorMainScreenState.textSub)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     value: selectedType,
                     isExpanded: true,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
+                      fillColor: _OperatorMainScreenState.bgOverall,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
@@ -3125,7 +3479,7 @@ Future<void> _showReportIncidentDialog(BuildContext context) async {
                     title: const Text('Gửi thông báo tự động cho hành khách', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     subtitle: const Text('Hệ thống sẽ gửi thông báo khẩn để hành khách yên tâm', style: TextStyle(fontSize: 11)),
                     value: notifyPax,
-                    activeColor: Colors.red,
+                    activeColor: _OperatorMainScreenState.brandOrange,
                     onChanged: (v) => setMState(() => notifyPax = v),
                   ),
                   const SizedBox(height: 16),
@@ -3134,8 +3488,9 @@ Future<void> _showReportIncidentDialog(BuildContext context) async {
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade700,
+                        backgroundColor: _OperatorMainScreenState.brandOrange,
                         foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () async {
@@ -3213,20 +3568,43 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                         children: [
                           Container(
                             padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(color: Colors.red.shade100, shape: BoxShape.circle),
-                            child: const Icon(Icons.emergency, color: Colors.red, size: 22),
+                            decoration: BoxDecoration(
+                              color: _OperatorMainScreenState.brandOrangeLight,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.warning_amber_rounded,
+                              color: _OperatorMainScreenState.brandOrangeDark,
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Trung Tâm Xử Lý Sự Cố', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                              Text('Điều xe dự phòng & Sang khách khẩn cấp', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                              Text(
+                                'Trung Tâm Xử Lý Sự Cố',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: _OperatorMainScreenState.textMain,
+                                ),
+                              ),
+                              Text(
+                                'Điều xe dự phòng & Sang khách khẩn cấp',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: _OperatorMainScreenState.textSub,
+                                ),
+                              ),
                             ],
                           ),
                         ],
                       ),
-                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: _OperatorMainScreenState.textSub),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -3235,8 +3613,10 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                       Expanded(
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade600,
+                            backgroundColor: _OperatorMainScreenState.brandOrange,
                             foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           icon: const Icon(Icons.add_alert, size: 16),
@@ -3250,21 +3630,21 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text('SỰ CỐ ĐANG GHI NHẬN:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF64748B), letterSpacing: 0.5)),
+                  const Text('SỰ CỐ ĐANG GHI NHẬN:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: _OperatorMainScreenState.textSub, letterSpacing: 0.5)),
                   const SizedBox(height: 8),
                   Expanded(
                     child: isLoading
-                        ? const Center(child: CircularProgressIndicator(color: Colors.red))
+                        ? const Center(child: CircularProgressIndicator(color: _OperatorMainScreenState.brandOrange))
                         : incidents.isEmpty
                             ? Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle_outline, color: Colors.green.shade400, size: 56),
+                                    Icon(Icons.check_circle_outline, color: _OperatorMainScreenState.successGreen, size: 56),
                                     const SizedBox(height: 12),
-                                    const Text('Tất cả chuyến xe đều đang chạy an toàn!', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                                    const Text('Tất cả chuyến xe đều đang chạy an toàn!', style: TextStyle(fontWeight: FontWeight.bold, color: _OperatorMainScreenState.textMain)),
                                     const SizedBox(height: 4),
-                                    const Text('Chưa có sự cố nào cần xử lý cứu hộ.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                                    const Text('Chưa có sự cố nào cần xử lý cứu hộ.', style: TextStyle(fontSize: 12, color: _OperatorMainScreenState.textSub)),
                                   ],
                                 ),
                               )
@@ -3277,9 +3657,11 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                                     margin: const EdgeInsets.only(bottom: 12),
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: isResolved ? const Color(0xFFF8FAFC) : Colors.red.shade50,
+                                      color: isResolved ? _OperatorMainScreenState.bgOverall : _OperatorMainScreenState.alertSoftRed,
                                       borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: isResolved ? const Color(0xFFE2E8F0) : Colors.red.shade200),
+                                      border: Border.all(
+                                        color: isResolved ? _OperatorMainScreenState.borderSubtle : _OperatorMainScreenState.alertBorderRed,
+                                      ),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3290,19 +3672,27 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                                             Expanded(
                                               child: Text(
                                                 '#${inc['trip_id']} | ${inc['route']} (${inc['bus']})',
-                                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF0F172A)),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 14,
+                                                  color: _OperatorMainScreenState.textMain,
+                                                ),
                                               ),
                                             ),
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                               decoration: BoxDecoration(
-                                                color: isResolved ? Colors.green.shade100 : Colors.red.shade100,
+                                                color: isResolved
+                                                    ? _OperatorMainScreenState.successGreenLight
+                                                    : _OperatorMainScreenState.alertSoftRed,
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               child: Text(
                                                 isResolved ? 'ĐÃ GIẢI QUYẾT' : '🚨 CẦN CỨU HỘ',
                                                 style: TextStyle(
-                                                  color: isResolved ? Colors.green.shade800 : Colors.red.shade800,
+                                                  color: isResolved
+                                                      ? _OperatorMainScreenState.successGreen
+                                                      : _OperatorMainScreenState.alertTextRed,
                                                   fontWeight: FontWeight.w800,
                                                   fontSize: 10,
                                                 ),
@@ -3311,17 +3701,17 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                                           ],
                                         ),
                                         const SizedBox(height: 6),
-                                        Text('Sự cố: ${inc['description']}', style: const TextStyle(fontSize: 12, color: Color(0xFF334155), fontWeight: FontWeight.bold)),
+                                        Text('Sự cố: ${inc['description']}', style: const TextStyle(fontSize: 12, color: _OperatorMainScreenState.textMain, fontWeight: FontWeight.bold)),
                                         const SizedBox(height: 4),
                                         Row(
                                           children: [
-                                            const Icon(Icons.location_on, size: 14, color: Colors.red),
+                                            const Icon(Icons.location_on, size: 14, color: _OperatorMainScreenState.alertTextRed),
                                             const SizedBox(width: 4),
-                                            Text(inc['location'] ?? 'Chưa rõ', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                            Text(inc['location'] ?? 'Chưa rõ', style: const TextStyle(fontSize: 11, color: _OperatorMainScreenState.textSub)),
                                             const SizedBox(width: 12),
-                                            const Icon(Icons.people, size: 14, color: Colors.blue),
+                                            const Icon(Icons.people, size: 14, color: Color(0xFF2878D0)),
                                             const SizedBox(width: 4),
-                                            Text('${inc['pax_count']} khách trên xe', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue)),
+                                            Text('${inc['pax_count']} khách trên xe', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2878D0))),
                                           ],
                                         ),
                                         const SizedBox(height: 10),
@@ -3330,8 +3720,9 @@ Future<void> _showIncidentCenterDialog(BuildContext context) async {
                                             width: double.infinity,
                                             child: ElevatedButton.icon(
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(0xFF0B192C),
+                                                backgroundColor: _OperatorMainScreenState.brandOrange,
                                                 foregroundColor: Colors.white,
+                                                elevation: 0,
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                               ),
                                               icon: const Icon(Icons.car_crash, size: 15),
@@ -3427,17 +3818,37 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Cứu Hộ & Điều Xe Khẩn Cấp', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                                Text('Chuyến #${tripInfo['id']}: ${tripInfo['route']}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                                const Text(
+                                  'Cứu Hộ & Điều Xe Khẩn Cấp',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: _OperatorMainScreenState.textMain,
+                                  ),
+                                ),
+                                Text(
+                                  'Chuyến #${tripInfo['id']}: ${tripInfo['route']}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: _OperatorMainScreenState.textSub,
+                                  ),
+                                ),
                               ],
                             ),
-                            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: _OperatorMainScreenState.textSub),
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
+                          decoration: BoxDecoration(
+                            color: _OperatorMainScreenState.bgOverall,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: _OperatorMainScreenState.borderSubtle),
+                          ),
                           child: Row(
                             children: [
                               Expanded(
@@ -3446,9 +3857,15 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: selectedModeTab == 0 ? Colors.white : Colors.transparent,
+                                      color: selectedModeTab == 0
+                                          ? _OperatorMainScreenState.brandOrangeLight
+                                          : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
-                                      boxShadow: selectedModeTab == 0 ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)] : null,
+                                      border: selectedModeTab == 0
+                                          ? Border.all(
+                                              color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                                            )
+                                          : null,
                                     ),
                                     child: Center(
                                       child: Text(
@@ -3456,7 +3873,9 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
-                                          color: selectedModeTab == 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                                          color: selectedModeTab == 0
+                                              ? _OperatorMainScreenState.brandOrangeDark
+                                              : _OperatorMainScreenState.textSub,
                                         ),
                                       ),
                                     ),
@@ -3469,9 +3888,15 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: selectedModeTab == 1 ? Colors.white : Colors.transparent,
+                                      color: selectedModeTab == 1
+                                          ? _OperatorMainScreenState.brandOrangeLight
+                                          : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
-                                      boxShadow: selectedModeTab == 1 ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)] : null,
+                                      border: selectedModeTab == 1
+                                          ? Border.all(
+                                              color: _OperatorMainScreenState.brandOrange.withOpacity(0.3),
+                                            )
+                                          : null,
                                     ),
                                     child: Center(
                                       child: Text(
@@ -3479,7 +3904,9 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
-                                          color: selectedModeTab == 1 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                                          color: selectedModeTab == 1
+                                              ? _OperatorMainScreenState.brandOrangeDark
+                                              : _OperatorMainScreenState.textSub,
                                         ),
                                       ),
                                     ),
@@ -3492,7 +3919,7 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                         const SizedBox(height: 16),
 
                         if (selectedModeTab == 0) ...[
-                          const Text('CHỌN XE DỰ PHÒNG (ĐANG RẢNH):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                          const Text('CHỌN XE DỰ PHÒNG (ĐANG RẢNH):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _OperatorMainScreenState.textSub)),
                           const SizedBox(height: 6),
                           if (availableBuses.isEmpty)
                             Container(
@@ -3506,7 +3933,7 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                               isExpanded: true,
                               decoration: InputDecoration(
                                 filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
+                                fillColor: _OperatorMainScreenState.bgOverall,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               items: availableBuses.map((b) {
@@ -3522,14 +3949,14 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                               onChanged: (v) => setRState(() => selectedBusId = v),
                             ),
                           const SizedBox(height: 14),
-                          const Text('CHỌN TÀI XẾ DỰ PHÒNG (NẾU CẦN THAY):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                          const Text('CHỌN TÀI XẾ DỰ PHÒNG (NẾU CẦN THAY):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _OperatorMainScreenState.textSub)),
                           const SizedBox(height: 6),
                           DropdownButtonFormField<int>(
                             value: selectedDriverId,
                             isExpanded: true,
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: const Color(0xFFF8FAFC),
+                              fillColor: _OperatorMainScreenState.bgOverall,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             items: [
@@ -3566,8 +3993,9 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                             height: 48,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green.shade700,
+                                backgroundColor: _OperatorMainScreenState.brandOrange,
                                 foregroundColor: Colors.white,
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: selectedBusId == null
@@ -3585,7 +4013,7 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
                                             content: Text(res['message']),
-                                            backgroundColor: res['success'] ? Colors.green : Colors.red,
+                                            backgroundColor: res['success'] ? _OperatorMainScreenState.successGreen : _OperatorMainScreenState.alertTextRed,
                                           ),
                                         );
                                       }
@@ -3594,7 +4022,7 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                             ),
                           ),
                         ] else ...[
-                          const Text('CHỌN CHUYẾN XE CÙNG TUYẾN ĐỂ SANG KHÁCH:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                          const Text('CHỌN CHUYẾN XE CÙNG TUYẾN ĐỂ SANG KHÁCH:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _OperatorMainScreenState.textSub)),
                           const SizedBox(height: 6),
                           if (candidateTrips.isEmpty)
                             Container(
@@ -3608,7 +4036,7 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                               isExpanded: true,
                               decoration: InputDecoration(
                                 filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
+                                fillColor: _OperatorMainScreenState.bgOverall,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               items: candidateTrips.map((ct) {
@@ -3646,8 +4074,9 @@ Future<void> _showResolveIncidentDialog(BuildContext context, int tripId, int? i
                             height: 48,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFEF5222),
+                                backgroundColor: _OperatorMainScreenState.brandOrange,
                                 foregroundColor: Colors.white,
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: selectedTargetTripId == null

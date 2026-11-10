@@ -218,8 +218,8 @@ class _PassengerLiveTrackingScreenState extends State<PassengerLiveTrackingScree
       markers.add(
         Marker(
           point: _busPos!,
-          width: 90,
-          height: 90,
+          width: 120,
+          height: 95,
           alignment: Alignment.center,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -238,6 +238,8 @@ class _PassengerLiveTrackingScreenState extends State<PassengerLiveTrackingScree
                 ),
                 child: Text(
                   licensePlate,
+                  maxLines: 1,
+                  softWrap: false,
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 9.5,
@@ -278,8 +280,8 @@ class _PassengerLiveTrackingScreenState extends State<PassengerLiveTrackingScree
       markers.add(
         Marker(
           point: _passengerPos!,
-          width: 85,
-          height: 85,
+          width: 120,
+          height: 95,
           alignment: Alignment.center,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -293,6 +295,8 @@ class _PassengerLiveTrackingScreenState extends State<PassengerLiveTrackingScree
                 ),
                 child: Text(
                   _isSharingLocation ? 'VỊ TRÍ CỦA BẠN' : 'ĐIỂM ĐÓN CỦA BẠN',
+                  maxLines: 1,
+                  softWrap: false,
                   style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
                 ),
               ),

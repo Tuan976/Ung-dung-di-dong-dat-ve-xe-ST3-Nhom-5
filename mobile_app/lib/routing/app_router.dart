@@ -21,6 +21,7 @@ import '../screens/sos/sos_screen.dart';
 import '../screens/vision/vision_assistant_screen.dart';
 import '../screens/map_booking/map_booking_screen.dart';
 import '../screens/operator/operator_main_screen.dart';
+import '../screens/operator/ticket_qr_scanner_screen.dart';
 import '../models/trip.dart';
 import '../models/booking.dart';
 import '../models/map_station.dart';
@@ -39,6 +40,7 @@ class AppRouter {
           ),
           GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
           GoRoute(path: '/operator', builder: (context, state) => const OperatorMainScreen()),
+          GoRoute(path: '/operator/qr-scan', builder: (context, state) => const TicketQrScannerScreen()),
           GoRoute(
             path: '/sos',
             builder: (context, state) => SosScreen(autoStart: state.uri.queryParameters['auto'] == '1'),

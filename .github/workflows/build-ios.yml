@@ -58,7 +58,12 @@ jobs:
           name: "Bản Cài Đặt iOS (IPA) Mới Nhất"
           body: |
             ### 📱 File cài đặt ứng dụng iOS (WebDatVeXe.ipa)
-            - **Cập nhật mới nhất:** Quản lý nhà xe, Radar GPS đón khách trực diện cho Tài xế, Bản đồ Google Maps.
+            - **Cập nhật mới nhất:**
+              + Redesign giao diện Modern Orange & White toàn diện.
+              + Tính năng Soát vé QR bằng cảm biến camera chuyên dụng cho Tài xế / Phụ xe.
+              + Tự động sinh mã QR vé động chuẩn cho Hành khách trên vé điện tử.
+              + Bản đồ Radar đón khách trực diện Google Maps (khắc phục lỗi bản đồ và tràn viền).
+              + Quản lý nhà xe, phơi khách, điều xe cứu viện sự cố.
             - **Cách cài đặt trên iPhone:** Tải file `WebDatVeXe.ipa` và cài đặt qua **TrollStore**, **AltStore**, **Sideloadly**, hoặc **Scarlet**.
           files: mobile_app/build/ios/iphoneos/WebDatVeXe.ipa
         env:

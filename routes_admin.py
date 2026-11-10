@@ -1778,6 +1778,94 @@ def register_admin_routes(app):
             'boarding_status': booking.boarding_status
         })
 
+    def admin_scan_ticket_code():
+        company_id = session.get('company_id')
+        if not company_id:
+            return jsonify({'success': False, 'message': 'Chưa đăng nhập tài khoản nhà xe!'}), 401
+
+        user_role = session.get('role')
+        staff_role = (session.get('staff_role') or '').upper()
+        if user_role != 'ADMIN' and staff_role not in ('DRIVER', 'ASSISTANT', 'STATION_STAFF'):
+            return jsonify({'success': False, 'message': 'Chỉ nhân viên nhà xe, tài xế và phụ xe mới có quyền soát vé!'}), 403
+
+        data = request.get_json(silent=True) or request.form or {}
+        raw_code = (data.get('ticket_code') or data.get('code') or '').strip()
+        if not raw_code:
+            return jsonify({'success': False, 'message': 'Vui lòng cung cấp mã vé!'}), 400
+
+        code = raw_code.upper()
+        if 'CODE=' in code:
+            code = code.split('CODE=')[-1].split('&')[0].strip()
+        elif ':' in code:
+            code = code.split(':')[-1].strip()
+
+        booking = Booking.query.filter_by(ticket_code=code).first()
+        if not booking and code.isdigit():
+            booking = Booking.query.get(int(code))
+
+        if not booking:
+            return jsonify({'success': False, 'message': f'Không tìm thấy vé hợp lệ với mã: {raw_code}'}), 404
+
+        if booking.trip.route.company_id != company_id:
+            return jsonify({'success': False, 'message': 'Vé này thuộc nhà xe khác, không thể soát vé tại đây!'}), 403
+
+        if booking.status == 'CANCELLED':
+            return jsonify({
+                'success': False,
+                'message': 'CẢNH BÁO: Vé này đã bị HỦY trước đó!',
+                'ticket': {
+                    'id': booking.id,
+                    'ticket_code': booking.ticket_code,
+                    'passenger_name': booking.passenger_name,
+                    'passenger_phone': booking.passenger_phone,
+                    'seat_number': booking.seat_number,
+                    'status': booking.status,
+                    'boarding_status': booking.boarding_status,
+                }
+            }), 400
+
+        already_boarded = (booking.boarding_status == 'BOARDED')
+
+        if not already_boarded:
+            booking.boarding_status = 'BOARDED'
+            booking.check_in_time = datetime.utcnow()
+            booking.is_sharing_location = False
+            staff_id = session.get('staff_id')
+            if staff_id:
+                booking.checked_in_by_id = staff_id
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'success': False, 'message': f'Lỗi lưu dữ liệu: {e}'}), 500
+
+        trip = booking.trip
+        route = trip.route if trip else None
+        bus = trip.bus if trip else None
+
+        return jsonify({
+            'success': True,
+            'already_boarded': already_boarded,
+            'message': 'Khách đã check-in trước đó' if already_boarded else 'Soát vé thành công - Đã đón khách lên xe!',
+            'ticket': {
+                'id': booking.id,
+                'ticket_code': booking.ticket_code,
+                'passenger_name': booking.passenger_name,
+                'passenger_phone': booking.passenger_phone,
+                'seat_number': booking.seat_number,
+                'route': f"{route.start_point} → {route.end_point}" if route else '',
+                'departure_time': trip.departure_time.strftime('%H:%M %d/%m/%Y') if trip and trip.departure_time else '',
+                'license_plate': bus.license_plate if bus else 'Chưa gán xe',
+                'pickup_point': booking.pickup_point or 'Tại bến xe',
+                'dropoff_point': booking.dropoff_point or 'Tại bến xe',
+                'ticket_price': booking.ticket_price or 0,
+                'payment_status': booking.payment_status or 'Paid',
+                'status': booking.status,
+                'boarding_status': booking.boarding_status,
+                'check_in_time': booking.check_in_time.strftime('%H:%M %d/%m/%Y') if booking.check_in_time else None
+            }
+        })
+
     def add_bus():
         company_id = session['company_id']
         license_plate = request.form.get('license_plate')
@@ -2538,6 +2626,7 @@ def register_admin_routes(app):
         ('/trip/<int:trip_id>/live-radar', admin_trip_live_radar, ['GET'], 'admin_trip_live_radar'),
         ('/driver/update-location', admin_driver_update_location, ['POST'], 'admin_driver_update_location'),
         ('/booking/<int:booking_id>/board', admin_driver_mark_boarded, ['POST'], 'admin_driver_mark_boarded'),
+        ('/ticket/scan', admin_scan_ticket_code, ['POST'], 'admin_scan_ticket_code'),
     ]
 
     for prefix in ['/api/admin', '/api/v1/admin']:

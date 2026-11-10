@@ -6,6 +6,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../services/auth_service.dart';
 import '../../core/config/api_config.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../widgets/shared_components.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   String _selectedRole = 'passenger'; // 'passenger' or 'company'
+  bool _isGoogleLoading = false;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -43,13 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(authService.error ?? 'Đăng nhập thất bại'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
   }
-
-  bool _isGoogleLoading = false;
 
   Future<void> _googleLogin() async {
     setState(() => _isGoogleLoading = true);
@@ -64,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Send to our backend
       final res = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/auth/google'),
         headers: {'Content-Type': 'application/json'},
@@ -88,13 +90,21 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) context.go('/home');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Đăng nhập Google thất bại'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(data['message'] ?? 'Đăng nhập Google thất bại'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -114,467 +124,331 @@ class _LoginScreenState extends State<LoginScreen> {
     final authService = context.watch<AuthService>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Form(
+            key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 12),
+
+                // Header Brand Logo
+                Row(
                   children: [
-                    // Header with logo
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
-                      child: Row(
-                        spacing: 12,
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: ShapeDecoration(
-                              color: const Color(0xFF0B192C),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.directions_bus, color: Colors.white, size: 24),
-                            ),
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'VéXe',
-                                style: const TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontSize: 24,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                'Hệ thống đặt vé xe khách liên tỉnh',
-                                style: const TextStyle(
-                                  color: Color(0xFF475569),
-                                  fontSize: 12,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.28),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
+                      child: const Center(
+                        child: Icon(Icons.directions_bus_rounded, color: Colors.white, size: 24),
+                      ),
                     ),
-
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 24,
-                        children: [
-                          // Role Switcher Tabs (Hành khách vs Đối tác Nhà xe)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'TRIP',
+                              style: AppTextStyles.h2.copyWith(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.secondary,
+                              ),
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => setState(() => _selectedRole = 'passenger'),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: _selectedRole == 'passenger' ? Colors.white : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(9),
-                                        boxShadow: _selectedRole == 'passenger'
-                                            ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))]
-                                            : null,
-                                      ),
-                                      child: Center(
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.person_outline,
-                                              size: 16,
-                                              color: _selectedRole == 'passenger' ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              'Hành khách',
-                                              style: TextStyle(
-                                                color: _selectedRole == 'passenger' ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => setState(() => _selectedRole = 'company'),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      decoration: BoxDecoration(
-                                        color: _selectedRole == 'company' ? const Color(0xFFEF5222) : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(9),
-                                        boxShadow: _selectedRole == 'company'
-                                            ? [BoxShadow(color: const Color(0xFFEF5222).withOpacity(0.25), blurRadius: 4, offset: const Offset(0, 2))]
-                                            : null,
-                                      ),
-                                      child: Center(
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.business,
-                                              size: 16,
-                                              color: _selectedRole == 'company' ? Colors.white : const Color(0xFF64748B),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              'Đối tác Nhà xe',
-                                              style: TextStyle(
-                                                color: _selectedRole == 'company' ? Colors.white : const Color(0xFF64748B),
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'LY',
+                              style: AppTextStyles.h2.copyWith(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.primary,
+                              ),
                             ),
-                          ),
+                          ],
+                        ),
+                        Text(
+                          'Hệ thống vé xe khách cao cấp',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-                          // Title
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 8,
-                            children: [
-                              Text(
-                                _selectedRole == 'company' ? 'Cổng Quản Trị Nhà Xe' : 'Đăng nhập',
-                                style: const TextStyle(
-                                  color: Color(0xFF0F172A),
-                                  fontSize: 26,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                _selectedRole == 'company'
-                                    ? 'Dành cho chủ nhà xe, quản lý bến bãi, phơi xe & tài xế.'
-                                    : 'Vui lòng đăng nhập để bắt đầu hành trình của bạn.',
-                                style: const TextStyle(
-                                  color: Color(0xFF475569),
-                                  fontSize: 14,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Form fields
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 16,
-                            children: [
-                              // Phone field
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: 6,
-                                children: [
-                                  const Text(
-                                    'Số điện thoại hoặc Email',
-                                    style: TextStyle(
-                                      color: Color(0xFF0F172A),
-                                      fontSize: 14,
-                                      fontFamily: 'Inter',
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                // Main Content Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border, width: 1),
+                    boxShadow: AppColors.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Role Switcher Tabs (Hành khách vs Đối tác Nhà xe)
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedRole = 'passenger'),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedRole == 'passenger' ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: _selectedRole == 'passenger'
+                                        ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
+                                        : null,
                                   ),
-                                  TextFormField(
-                                    controller: _phoneController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    validator: (value) =>
-                                        value == null || value.isEmpty ? 'Vui lòng nhập thông tin' : null,
-                                    decoration: InputDecoration(
-                                      hintText: 'Nhập số điện thoại hoặc email',
-                                      hintStyle: const TextStyle(
-                                        color: Color(0xFF94A3B8),
-                                        fontSize: 15,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.person_rounded,
+                                        size: 16,
+                                        color: _selectedRole == 'passenger' ? AppColors.primary : AppColors.textSecondary,
                                       ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Color(0xFF0B192C), width: 1.5),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // Password field
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: 6,
-                                children: [
-                                  const Text(
-                                    'Mật khẩu',
-                                    style: TextStyle(
-                                      color: Color(0xFF0F172A),
-                                      fontSize: 14,
-                                      fontFamily: 'Inter',
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  TextFormField(
-                                    controller: _passwordController,
-                                    obscureText: _obscurePassword,
-                                    validator: (value) =>
-                                        value == null || value.isEmpty ? 'Vui lòng nhập mật khẩu' : null,
-                                    decoration: InputDecoration(
-                                      hintText: '••••••••',
-                                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
-                                      prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF94A3B8), size: 20),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                          color: const Color(0xFF94A3B8),
-                                          size: 20,
-                                        ),
-                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Color(0xFF0B192C), width: 1.5),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // Forgot password
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: GestureDetector(
-                                  onTap: () => context.push('/forgot_password'),
-                                  child: const Text(
-                                    'Quên mật khẩu?',
-                                    style: TextStyle(
-                                      color: Color(0xFF00639B),
-                                      fontSize: 14,
-                                      fontFamily: 'Inter',
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Login button & register
-                          Column(
-                            spacing: 16,
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 48,
-                                child: ElevatedButton(
-                                  onPressed: authService.isLoading ? null : _login,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _selectedRole == 'company'
-                                        ? const Color(0xFFEF5222)
-                                        : const Color(0xFF0B192C),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: authService.isLoading
-                                      ? const SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                          ),
-                                        )
-                                      : Text(
-                                          _selectedRole == 'company' ? 'Đăng nhập Cổng Nhà Xe' : 'Đăng nhập',
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontFamily: 'Inter',
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                              if (_selectedRole == 'passenger')
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  spacing: 6,
-                                  children: [
-                                    const Text(
-                                      'Chưa có tài khoản?',
-                                      style: TextStyle(
-                                        color: Color(0xFF475569),
-                                        fontSize: 14,
-                                        fontFamily: 'Inter',
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => context.push('/register'),
-                                      child: const Text(
-                                        'Đăng ký ngay',
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Hành khách',
                                         style: TextStyle(
-                                          color: Color(0xFF00639B),
-                                          fontSize: 14,
-                                          fontFamily: 'Inter',
+                                          color: _selectedRole == 'passenger' ? AppColors.primary : AppColors.textSecondary,
                                           fontWeight: FontWeight.w700,
+                                          fontSize: 13,
                                         ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedRole = 'company'),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedRole == 'company' ? AppColors.primary : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: _selectedRole == 'company'
+                                        ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 2))]
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.business_rounded,
+                                        size: 16,
+                                        color: _selectedRole == 'company' ? Colors.white : AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Đối tác Nhà xe',
+                                        style: TextStyle(
+                                          color: _selectedRole == 'company' ? Colors.white : AppColors.textSecondary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Title
+                      Text(
+                        _selectedRole == 'company' ? 'Cổng Nhà Xe & Vận Hành' : 'Chào mừng bạn trở lại',
+                        style: AppTextStyles.h2.copyWith(fontSize: 22),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _selectedRole == 'company'
+                            ? 'Dành cho nhà xe, nhân viên điều hành, phụ xe và tài xế.'
+                            : 'Đăng nhập để đặt vé xe và quản lý chuyến đi dễ dàng.',
+                        style: AppTextStyles.bodyMedium,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Phone or Email Field
+                      Text(
+                        'Số điện thoại hoặc Email',
+                        style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Vui lòng nhập số điện thoại hoặc email' : null,
+                        decoration: const InputDecoration(
+                          hintText: 'VD: 0912345678 hoặc email@domain.com',
+                          prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Password Field
+                      Text(
+                        'Mật khẩu',
+                        style: AppTextStyles.captionBold.copyWith(color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Vui lòng nhập mật khẩu' : null,
+                        decoration: InputDecoration(
+                          hintText: 'Nhập mật khẩu của bạn',
+                          prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              size: 20,
+                              color: AppColors.textMuted,
+                            ),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Forgot password
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => context.push('/forgot_password'),
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            'Quên mật khẩu?',
+                            style: AppTextStyles.captionBold.copyWith(color: AppColors.primary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Login Button
+                      PrimaryButton(
+                        text: _selectedRole == 'company' ? 'Đăng nhập Cổng Nhà Xe' : 'Đăng nhập',
+                        isLoading: authService.isLoading,
+                        onPressed: _login,
+                        icon: Icons.login_rounded,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Register link (for passenger)
+                      if (_selectedRole == 'passenger')
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Chưa có tài khoản? ', style: AppTextStyles.bodyMedium),
+                            GestureDetector(
+                              onTap: () => context.push('/register'),
+                              child: Text(
+                                'Đăng ký ngay',
+                                style: AppTextStyles.bodyBold.copyWith(color: AppColors.primary),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Center(
+                          child: Text(
+                            'Liên hệ quản trị viên hãng xe để được cấp tài khoản.',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                          ),
+                        ),
+
+                      if (_selectedRole == 'passenger') ...[
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text('Hoặc đăng nhập bằng', style: AppTextStyles.tiny),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Social Button
+                        OutlinedButton(
+                          onPressed: (_isGoogleLoading || authService.isLoading) ? null : _googleLogin,
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: AppColors.border),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          child: _isGoogleLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CustomPaint(painter: _GoogleLogoPainter()),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Tiếp tục với Google',
+                                      style: AppTextStyles.buttonSecondary.copyWith(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ],
-                                )
-                              else
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 4),
-                                  child: Text(
-                                    'Liên hệ quản trị viên hãng xe để được cấp hoặc reset tài khoản nhân sự.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                                  ),
                                 ),
-                            ],
-                          ),
-
-                          if (_selectedRole == 'passenger') ...[
-                            // Divider
-                            Row(
-                              spacing: 12,
-                              children: [
-                                const Expanded(
-                                  child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
-                                ),
-                                const Text(
-                                  'Hoặc tiếp tục bằng',
-                                  style: TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 13,
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                const Expanded(
-                                  child: Divider(color: Color(0xFFE2E8F0), thickness: 1),
-                                ),
-                              ],
-                            ),
-
-                            // Social buttons
-                            Row(
-                              spacing: 12,
-                              children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: (_isGoogleLoading || authService.isLoading) ? null : _googleLogin,
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                                    minimumSize: const Size(0, 44),
-                                    backgroundColor: Colors.white,
-                                  ),
-                                  child: _isGoogleLoading
-                                      ? const SizedBox(width: 18, height: 18,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0B192C)))
-                                      : Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            // Google color logo
-                                            Container(
-                                              width: 18, height: 18,
-                                              child: CustomPaint(painter: _GoogleLogoPainter()),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            const Text('Google',
-                                                style: TextStyle(
-                                                  color: Color(0xFF0F172A),
-                                                  fontSize: 14,
-                                                  fontFamily: 'Inter',
-                                                  fontWeight: FontWeight.w600,
-                                                )),
-                                          ],
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ],
-                    ),
-                  ),
-                ],
-              ),
-
-                // Bottom bar
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Center(
-                    child: Container(
-                      width: 140,
-                      height: 5,
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF94A3B8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -584,7 +458,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Google "G" logo painter with correct colors
+/// Google "G" logo painter with clean colors
 class _GoogleLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
