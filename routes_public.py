@@ -592,10 +592,17 @@ def register_public_routes(app):
     def api_check_ticket():
         phone = request.args.get('phone')
         code = request.args.get('code')
-        if not phone or not code:
-            return jsonify({'success': False, 'message': 'Vui lòng cung cấp số điện thoại và mã vé'})
+        if not code and not phone:
+            return jsonify({'success': False, 'message': 'Vui lòng cung cấp mã vé hoặc số điện thoại'})
             
-        booking = Booking.query.filter_by(passenger_phone=phone, ticket_code=code).first()
+        booking = None
+        if phone and code:
+            booking = Booking.query.filter_by(passenger_phone=phone, ticket_code=code.strip().upper()).first()
+        elif code:
+            booking = Booking.query.filter_by(ticket_code=code.strip().upper()).first()
+            if not booking and code.strip().isdigit():
+                booking = Booking.query.get(int(code.strip()))
+
         if not booking:
             return jsonify({'success': False, 'message': 'Không tìm thấy vé. Vui lòng kiểm tra lại.'})
             

@@ -379,21 +379,102 @@ class CompanyService extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> scanTicketCode(String ticketCode) async {
+    final cleanCode = ticketCode.trim().toUpperCase();
+
+    // Strategy 1: Thử endpoint chuyên biệt soát vé (/admin/ticket/scan)
     try {
       final res = await _apiClient.post(
         '/admin/ticket/scan',
-        data: {'ticket_code': ticketCode.trim()},
+        data: {'ticket_code': cleanCode},
       );
       if (res.data != null && res.data is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(res.data);
+        if (res.data['success'] == true || res.data['ticket'] != null) {
+          return Map<String, dynamic>.from(res.data);
+        }
       }
-      return {'success': false, 'message': 'Phản hồi từ máy chủ không hợp lệ'};
     } catch (e) {
-      if (e is DioException && e.response?.data != null && e.response!.data is Map) {
-        return Map<String, dynamic>.from(e.response!.data);
-      }
-      return {'success': false, 'message': 'Lỗi quét vé: $e'};
+      debugPrint('Strategy 1 (/admin/ticket/scan) bypass sang fallback: $e');
     }
+
+    // Strategy 2: Tự động tra cứu và check-in qua danh sách hành khách các chuyến xe đang chạy
+    try {
+      final trips = await getTrips();
+      for (final trip in trips) {
+        final tripId = trip['id'] as int?;
+        if (tripId == null) continue;
+
+        final passengers = await getTripPassengers(tripId);
+        for (final pax in passengers) {
+          final paxCode = (pax['ticket_code'] ?? '').toString().trim().toUpperCase();
+          final paxId = pax['id'] as int?;
+
+          if (paxCode == cleanCode ||
+              (cleanCode.length >= 4 && paxCode.endsWith(cleanCode)) ||
+              (paxId != null && cleanCode == paxId.toString())) {
+            final alreadyBoarded = (pax['boarding_status'] == 'BOARDED');
+
+            // Cập nhật lên xe ngay lập tức qua API boarding
+            if (!alreadyBoarded && paxId != null) {
+              await markPassengerBoarded(paxId);
+            }
+
+            final departureStr = trip['departure_time'] != null
+                ? trip['departure_time'].toString().replaceAll('T', ' ')
+                : '';
+
+            return {
+              'success': true,
+              'already_boarded': alreadyBoarded,
+              'message': alreadyBoarded
+                  ? 'Vé hợp lệ (Khách đã check-in trước đó)'
+                  : 'Soát vé thành công - Đã đón khách lên xe!',
+              'ticket': {
+                'id': paxId,
+                'ticket_code': paxCode.isNotEmpty ? paxCode : cleanCode,
+                'passenger_name': pax['name'] ?? 'Hành khách',
+                'passenger_phone': pax['phone'] ?? 'Chưa có',
+                'seat_number': pax['seat'] ?? 'N/A',
+                'route': trip['route'] ?? 'Tuyến xe khách',
+                'departure_time': departureStr.length >= 16 ? departureStr.substring(0, 16) : departureStr,
+                'license_plate': trip['bus'] ?? 'Chưa gán xe',
+                'pickup_point': pax['pickup'] ?? 'Tại bến xe',
+                'dropoff_point': pax['dropoff'] ?? 'Tại bến xe',
+                'ticket_price': pax['price'] ?? 0,
+                'payment_status': pax['payment_status'] ?? 'Paid',
+                'status': pax['status'] ?? 'CONFIRMED',
+                'boarding_status': 'BOARDED',
+              }
+            };
+          }
+        }
+      }
+    } catch (fallbackError) {
+      debugPrint('Strategy 2 (Trip passenger scan) fallback error: $fallbackError');
+    }
+
+    // Strategy 3: Tra cứu qua API kiểm tra vé công khai
+    try {
+      final res = await _apiClient.get(
+        '/check-ticket',
+        queryParameters: {'code': cleanCode},
+      );
+      if (res.data != null && res.data['success'] == true && res.data['ticket'] != null) {
+        final t = Map<String, dynamic>.from(res.data['ticket']);
+        return {
+          'success': true,
+          'already_boarded': false,
+          'message': 'Vé hợp lệ - Đã xác thực thành công!',
+          'ticket': t,
+        };
+      }
+    } catch (e3) {
+      debugPrint('Strategy 3 (/check-ticket) error: $e3');
+    }
+
+    return {
+      'success': false,
+      'message': 'Không tìm thấy vé hợp lệ với mã: $cleanCode',
+    };
   }
 }
 

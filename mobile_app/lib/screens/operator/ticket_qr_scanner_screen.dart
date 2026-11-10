@@ -42,11 +42,22 @@ class _TicketQrScannerScreenState extends State<TicketQrScannerScreen> {
     setState(() => _isProcessing = true);
     HapticFeedback.mediumImpact();
 
-    // Sanitize ticket code
-    String code = rawCode.trim().toUpperCase();
+    // Sanitize ticket code (handles raw string, JSON, URL, prefixes)
+    String code = rawCode.trim();
+    if (code.startsWith('"') && code.endsWith('"')) {
+      code = code.substring(1, code.length - 1).trim();
+    }
+    if (code.contains('"ticket_code":')) {
+      final match = RegExp(r'"ticket_code"\s*:\s*"([^"]+)"').firstMatch(code);
+      if (match != null) code = match.group(1)!;
+    } else if (code.contains('"code":')) {
+      final match = RegExp(r'"code"\s*:\s*"([^"]+)"').firstMatch(code);
+      if (match != null) code = match.group(1)!;
+    }
+    code = code.toUpperCase();
     if (code.contains('CODE=')) {
       code = code.split('CODE=').last.split('&').first.trim();
-    } else if (code.contains(':')) {
+    } else if (code.contains(':') && !code.startsWith('HTTP')) {
       code = code.split(':').last.trim();
     }
 
