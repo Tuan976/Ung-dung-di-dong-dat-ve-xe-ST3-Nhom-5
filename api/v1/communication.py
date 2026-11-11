@@ -9,6 +9,15 @@ communication_bp = Blueprint('communication', __name__)
 _active_signals = {}  # {booking_id: {'signals': [], 'status': 'IDLE', 'updated_at': datetime}}
 
 
+def _booking_of(call):
+    """CallSession không có relationship tới Booking nên tra cứu thủ công."""
+    return db.session.get(Booking, call.booking_id)
+
+
+def _digits(s):
+    return ''.join(ch for ch in (s or '') if ch.isdigit())[-9:]
+
+
 def _get_call_room(booking_id):
     return f"booking_{booking_id}"
 
@@ -133,7 +142,7 @@ def check_incoming_call():
 
         for c in calls:
             if (now - c.created_at).total_seconds() < 45:
-                if trip_id and c.booking and c.booking.trip_id != trip_id:
+                if trip_id and (_booking_of(c) is None or _booking_of(c).trip_id != trip_id):
                     continue
                 return jsonify({
                     'has_incoming': True,
@@ -149,11 +158,11 @@ def check_incoming_call():
 
         for c in calls:
             if (now - c.created_at).total_seconds() < 45:
-                b = c.booking
+                b = _booking_of(c)
                 if b:
                     if user_id and b.user_id == user_id:
                         return jsonify({'has_incoming': True, 'call': c.to_dict()})
-                    if phone and b.passenger_phone and (phone in b.passenger_phone or b.passenger_phone in phone):
+                    if _digits(phone) and _digits(phone) == _digits(b.passenger_phone):
                         return jsonify({'has_incoming': True, 'call': c.to_dict()})
                 # Nếu không truyền user_id/phone cụ thể, kiểm tra session
                 if session.get('user_id') and b and b.user_id == session.get('user_id'):
@@ -305,7 +314,7 @@ def call_action():
             log_msg = f"📞 Cuộc gọi thoại ({duration // 60:02d}:{duration % 60:02d})" if duration > 0 else ("📞 Cuộc gọi bị từ chối" if new_status == 'REJECTED' else "📞 Cuộc gọi nhỡ")
             chat_log = ChatMessage(
                 booking_id=booking_id,
-                trip_id=last_call.booking.trip_id if last_call.booking else None,
+                trip_id=(_booking_of(last_call).trip_id if _booking_of(last_call) else None),
                 sender_role=last_call.caller_role,
                 sender_name=last_call.caller_name,
                 message=log_msg,

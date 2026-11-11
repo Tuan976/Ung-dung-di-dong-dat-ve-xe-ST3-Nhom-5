@@ -27,7 +27,7 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
 
     if (auth.isAuthenticated) {
       final user = auth.currentUser;
-      final role = (user != null && (user.isDriver || user.isStaff))
+      final role = (user != null && user.isOperator)
           ? 'OPERATOR'
           : 'PASSENGER';
 
@@ -67,7 +67,7 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
             }
 
             final user = context.read<AuthService>().currentUser;
-            final myRole = (user != null && (user.isDriver || user.isStaff))
+            final myRole = (user != null && user.isOperator)
                 ? 'OPERATOR'
                 : 'PASSENGER';
 
@@ -256,3 +256,4 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
     return widget.child;
   }
 }
+

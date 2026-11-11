@@ -1,10 +1,19 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+
 import '../core/network/api_client.dart';
 
-enum CallStatus { idle, outgoingRinging, incomingRinging, connected, ended, rejected }
+enum CallStatus {
+  idle,
+  outgoingRinging,
+  incomingRinging,
+  connected,
+  ended,
+  rejected,
+}
 
 class CommunicationService extends ChangeNotifier {
   final ApiClient _apiClient;
@@ -161,7 +170,9 @@ class CommunicationService extends ChangeNotifier {
   }) async {
     _activeBookingId = bookingId;
     _counterpartName = receiverName;
-    _counterpartRole = callerRole == 'PASSENGER' ? 'Tài xế / Nhà xe' : 'Hành khách';
+    _counterpartRole = callerRole == 'PASSENGER'
+        ? 'Tài xế / Nhà xe'
+        : 'Hành khách';
     _callStatus = CallStatus.outgoingRinging;
     _callDurationSeconds = 0;
     _isMuted = false;
@@ -206,7 +217,10 @@ class CommunicationService extends ChangeNotifier {
   }
 
   /// Chấp nhận nghe máy khi có cuộc gọi đến
-  Future<void> answerCall({required int bookingId, required String role}) async {
+  Future<void> answerCall({
+    required int bookingId,
+    required String role,
+  }) async {
     FlutterRingtonePlayer().stop();
     _callStatus = CallStatus.connected;
     _activeBookingId = bookingId;
@@ -215,10 +229,7 @@ class CommunicationService extends ChangeNotifier {
     try {
       await _apiClient.post(
         '/communication/call/action',
-        data: {
-          'booking_id': bookingId,
-          'action': 'ACCEPT',
-        },
+        data: {'booking_id': bookingId, 'action': 'ACCEPT'},
       );
     } catch (_) {}
 
@@ -264,10 +275,7 @@ class CommunicationService extends ChangeNotifier {
     try {
       await _apiClient.post(
         '/communication/call/action',
-        data: {
-          'booking_id': bookingId,
-          'action': 'REJECT',
-        },
+        data: {'booking_id': bookingId, 'action': 'REJECT'},
       );
     } catch (_) {}
 
@@ -328,12 +336,11 @@ class CommunicationService extends ChangeNotifier {
 
       _peerConnection = await createPeerConnection(configuration);
 
-      final mediaConstraints = <String, dynamic>{
-        'audio': true,
-        'video': false,
-      };
+      final mediaConstraints = <String, dynamic>{'audio': true, 'video': false};
 
-      _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      _localStream = await navigator.mediaDevices.getUserMedia(
+        mediaConstraints,
+      );
       for (final track in _localStream!.getTracks()) {
         await _peerConnection!.addTrack(track, _localStream!);
       }
@@ -358,9 +365,16 @@ class CommunicationService extends ChangeNotifier {
   Future<void> _createOffer(int bookingId, String role) async {
     if (_peerConnection == null) return;
     try {
-      final description = await _peerConnection!.createOffer({'offerToReceiveAudio': 1});
+      final description = await _peerConnection!.createOffer({
+        'offerToReceiveAudio': 1,
+      });
       await _peerConnection!.setLocalDescription(description);
-      await _sendSignal(bookingId, 'offer', description.toMap(), senderRole: role);
+      await _sendSignal(
+        bookingId,
+        'offer',
+        description.toMap(),
+        senderRole: role,
+      );
     } catch (e) {
       debugPrint('Error createOffer: $e');
     }
@@ -388,7 +402,9 @@ class CommunicationService extends ChangeNotifier {
   void _startCallStatusPolling(int bookingId, String role) {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-      if (_callStatus == CallStatus.ended || _callStatus == CallStatus.rejected || _callStatus == CallStatus.idle) {
+      if (_callStatus == CallStatus.ended ||
+          _callStatus == CallStatus.rejected ||
+          _callStatus == CallStatus.idle) {
         timer.cancel();
         return;
       }
@@ -411,7 +427,9 @@ class CommunicationService extends ChangeNotifier {
           } else if (status == 'REJECTED' || status == 'ENDED') {
             timer.cancel();
             FlutterRingtonePlayer().stop();
-            _callStatus = (status == 'REJECTED') ? CallStatus.rejected : CallStatus.ended;
+            _callStatus = (status == 'REJECTED')
+                ? CallStatus.rejected
+                : CallStatus.ended;
             notifyListeners();
             _cleanUpCall();
             return;
@@ -424,7 +442,10 @@ class CommunicationService extends ChangeNotifier {
               final type = s['signal_type'];
               final payload = s['payload'];
               if (type == 'answer' && _peerConnection != null) {
-                final desc = RTCSessionDescription(payload['sdp'], payload['type']);
+                final desc = RTCSessionDescription(
+                  payload['sdp'],
+                  payload['type'],
+                );
                 await _peerConnection!.setRemoteDescription(desc);
               } else if (type == 'offer' && _peerConnection != null) {
                 final desc = RTCSessionDescription(payload['sdp'], payload['type']);
@@ -433,7 +454,11 @@ class CommunicationService extends ChangeNotifier {
                 await _peerConnection!.setLocalDescription(answer);
                 await _sendSignal(bookingId, 'answer', answer.toMap(), senderRole: role);
               } else if (type == 'candidate' && _peerConnection != null) {
-                final cand = RTCIceCandidate(payload['candidate'], payload['sdpMid'], payload['sdpMLineIndex']);
+                final cand = RTCIceCandidate(
+                  payload['candidate'],
+                  payload['sdpMid'],
+                  payload['sdpMLineIndex'],
+                );
                 await _peerConnection!.addCandidate(cand);
               }
             }
