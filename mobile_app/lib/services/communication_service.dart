@@ -19,6 +19,7 @@ class CommunicationService extends ChangeNotifier {
   int _callDurationSeconds = 0;
   Timer? _durationTimer;
   Timer? _pollTimer;
+  Timer? _incomingCheckTimer;
 
   bool _isMuted = false;
   bool _isSpeakerOn = true;
@@ -86,6 +87,72 @@ class CommunicationService extends ChangeNotifier {
 
   // --- 2. IN-APP VOIP AUDIO CALLING ---
 
+  /// Bắt đầu lắng nghe cuộc gọi đến chạy nền trên toàn ứng dụng
+  void startIncomingCallMonitoring({
+    required String role,
+    int? userId,
+    String? phone,
+    int? tripId,
+  }) {
+    _incomingCheckTimer?.cancel();
+    _incomingCheckTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      // Chỉ kiểm tra khi không trong cuộc gọi
+      if (_callStatus != CallStatus.idle) return;
+
+      try {
+        final query = <String, dynamic>{
+          'role': role,
+        };
+        if (userId != null) query['user_id'] = userId;
+        if (phone != null && phone.isNotEmpty) query['phone'] = phone;
+        if (tripId != null) query['trip_id'] = tripId;
+        if (_activeBookingId != null) query['booking_id'] = _activeBookingId;
+
+        final res = await _apiClient.get(
+          '/communication/check-incoming',
+          queryParameters: query,
+        );
+
+        if (res.statusCode == 200 && res.data is Map) {
+          final data = res.data;
+          if (data['has_incoming'] == true && data['call'] is Map) {
+            final call = Map<String, dynamic>.from(data['call']);
+            _onIncomingCallDetected(call);
+          }
+        }
+      } catch (_) {}
+    });
+  }
+
+  void _onIncomingCallDetected(Map<String, dynamic> call) {
+    if (_callStatus != CallStatus.idle) return;
+
+    _activeBookingId = call['booking_id'];
+    _counterpartName = call['caller_name'] ?? 'Đối phương';
+    _counterpartRole = call['caller_role'] == 'PASSENGER' ? 'Hành khách' : 'Tài xế / Nhà xe';
+    _callStatus = CallStatus.incomingRinging;
+    _callDurationSeconds = 0;
+    _isMuted = false;
+    _isSpeakerOn = true;
+    notifyListeners();
+
+    // Phát chuông gọi đến
+    try {
+      FlutterRingtonePlayer().play(
+        fromAsset: null,
+        android: AndroidSounds.ringtone,
+        ios: IosSounds.glass,
+        looping: true,
+        volume: 1.0,
+      );
+    } catch (_) {}
+
+    // Lắng nghe xem người gọi có dập máy giữa chừng không
+    final myRole = call['caller_role'] == 'PASSENGER' ? 'OPERATOR' : 'PASSENGER';
+    _startCallStatusPolling(_activeBookingId!, myRole);
+  }
+
+  /// Khởi tạo cuộc gọi đi từ thiết bị hiện tại
   Future<bool> initiateCall({
     required int bookingId,
     required String callerRole,
@@ -138,9 +205,11 @@ class CommunicationService extends ChangeNotifier {
     return true;
   }
 
+  /// Chấp nhận nghe máy khi có cuộc gọi đến
   Future<void> answerCall({required int bookingId, required String role}) async {
     FlutterRingtonePlayer().stop();
     _callStatus = CallStatus.connected;
+    _activeBookingId = bookingId;
     notifyListeners();
 
     try {
@@ -155,6 +224,36 @@ class CommunicationService extends ChangeNotifier {
 
     await _initWebRTC();
     _startDurationTimer();
+
+    // Lấy SDP Offer từ người gọi và tạo SDP Answer
+    try {
+      final res = await _apiClient.get(
+        '/communication/$bookingId/call-status',
+        queryParameters: {'role': role},
+      );
+      if (res.statusCode == 200 && res.data is Map) {
+        final signals = res.data['signals'] as List?;
+        if (signals != null) {
+          for (final s in signals) {
+            if (s['signal_type'] == 'offer' && _peerConnection != null) {
+              final payload = s['payload'];
+              final desc = RTCSessionDescription(payload['sdp'], payload['type']);
+              await _peerConnection!.setRemoteDescription(desc);
+
+              final answer = await _peerConnection!.createAnswer({'offerToReceiveAudio': 1});
+              await _peerConnection!.setLocalDescription(answer);
+
+              await _sendSignal(bookingId, 'answer', answer.toMap(), senderRole: role);
+              break;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error answering offer: $e');
+    }
+
+    _startCallStatusPolling(bookingId, role);
   }
 
   Future<void> rejectCall({required int bookingId}) async {
@@ -218,18 +317,17 @@ class CommunicationService extends ChangeNotifier {
 
   Future<void> _initWebRTC() async {
     try {
-      // Cấu hình Google STUN public servers
       final configuration = <String, dynamic>{
         'iceServers': [
           {'urls': 'stun:stun.l.google.com:19302'},
           {'urls': 'stun:stun1.l.google.com:19302'},
+          {'urls': 'stun:stun2.l.google.com:19302'},
         ],
         'sdpSemantics': 'unified-plan',
       };
 
       _peerConnection = await createPeerConnection(configuration);
 
-      // Yêu cầu quyền Micro và lấy luồng âm thanh
       final mediaConstraints = <String, dynamic>{
         'audio': true,
         'video': false,
@@ -240,7 +338,6 @@ class CommunicationService extends ChangeNotifier {
         await _peerConnection!.addTrack(track, _localStream!);
       }
 
-      // Xử lý luồng âm thanh đối phương gửi về
       _peerConnection!.onTrack = (RTCTrackEvent event) {
         if (event.streams.isNotEmpty) {
           _remoteStream = event.streams[0];
@@ -248,7 +345,6 @@ class CommunicationService extends ChangeNotifier {
         }
       };
 
-      // Xử lý ICE Candidate
       _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
         if (_activeBookingId != null) {
           _sendSignal(_activeBookingId!, 'candidate', candidate.toMap());
@@ -318,9 +414,10 @@ class CommunicationService extends ChangeNotifier {
             _callStatus = (status == 'REJECTED') ? CallStatus.rejected : CallStatus.ended;
             notifyListeners();
             _cleanUpCall();
+            return;
           }
 
-          // Xử lý signals (answer / candidate)
+          // Xử lý signals (offer / answer / candidate)
           final signals = data['signals'] as List?;
           if (signals != null) {
             for (final s in signals) {
@@ -329,6 +426,12 @@ class CommunicationService extends ChangeNotifier {
               if (type == 'answer' && _peerConnection != null) {
                 final desc = RTCSessionDescription(payload['sdp'], payload['type']);
                 await _peerConnection!.setRemoteDescription(desc);
+              } else if (type == 'offer' && _peerConnection != null) {
+                final desc = RTCSessionDescription(payload['sdp'], payload['type']);
+                await _peerConnection!.setRemoteDescription(desc);
+                final answer = await _peerConnection!.createAnswer({'offerToReceiveAudio': 1});
+                await _peerConnection!.setLocalDescription(answer);
+                await _sendSignal(bookingId, 'answer', answer.toMap(), senderRole: role);
               } else if (type == 'candidate' && _peerConnection != null) {
                 final cand = RTCIceCandidate(payload['candidate'], payload['sdpMid'], payload['sdpMLineIndex']);
                 await _peerConnection!.addCandidate(cand);
@@ -374,6 +477,7 @@ class CommunicationService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _incomingCheckTimer?.cancel();
     _cleanUpCall();
     super.dispose();
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shake/shake.dart';
 import 'sos_alert_host.dart';
+import 'incoming_call_host.dart';
 
 /// Lắc điện thoại mở màn hình SOS với bước xác nhận có đếm ngược 5 giây (tránh gửi nhầm khi vô tình lắc).
 /// Đồng thời bao toàn bộ app bằng [SosAlertHost] để hiện cảnh báo SOS ở gần trên mọi màn hình.
@@ -51,5 +52,7 @@ class _GlobalShakeListenerState extends State<GlobalShakeListener> {
   }
 
   @override
-  Widget build(BuildContext context) => SosAlertHost(child: widget.child);
+  Widget build(BuildContext context) => IncomingCallHost(
+        child: SosAlertHost(child: widget.child),
+      );
 }

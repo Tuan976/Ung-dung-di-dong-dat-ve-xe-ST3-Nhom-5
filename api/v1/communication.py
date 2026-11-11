@@ -99,6 +99,69 @@ def send_chat_message(booking_id):
 
 # --- IN-APP CALLING SIGNALING & CONTROL ---
 
+@communication_bp.route('/check-incoming', methods=['GET'])
+def check_incoming_call():
+    """Kiểm tra xem thiết bị hiện tại có cuộc gọi thoại đến nào đang đổ chuông không."""
+    role = (request.args.get('role') or session.get('role', 'PASSENGER')).upper()
+    user_id = request.args.get('user_id', type=int) or session.get('user_id')
+    phone = (request.args.get('phone') or session.get('phone') or '').strip()
+    trip_id = request.args.get('trip_id', type=int)
+    booking_id = request.args.get('booking_id', type=int)
+
+    now = datetime.utcnow()
+
+    # 1. Nếu có booking_id cụ thể (đang mở vé hoặc chat)
+    if booking_id:
+        active_call = CallSession.query.filter(
+            CallSession.booking_id == booking_id,
+            CallSession.status == 'RINGING',
+            CallSession.caller_role != role
+        ).order_by(CallSession.id.desc()).first()
+
+        if active_call and (now - active_call.created_at).total_seconds() < 45:
+            return jsonify({
+                'has_incoming': True,
+                'call': active_call.to_dict()
+            })
+
+    # 2. Nếu là Tài xế / Nhà xe (OPERATOR, DRIVER, STAFF)
+    if role in ('OPERATOR', 'DRIVER', 'STAFF'):
+        calls = CallSession.query.filter(
+            CallSession.status == 'RINGING',
+            CallSession.caller_role == 'PASSENGER'
+        ).order_by(CallSession.id.desc()).limit(15).all()
+
+        for c in calls:
+            if (now - c.created_at).total_seconds() < 45:
+                if trip_id and c.booking and c.booking.trip_id != trip_id:
+                    continue
+                return jsonify({
+                    'has_incoming': True,
+                    'call': c.to_dict()
+                })
+
+    # 3. Nếu là Hành khách (PASSENGER)
+    else:
+        calls = CallSession.query.filter(
+            CallSession.status == 'RINGING',
+            CallSession.caller_role == 'OPERATOR'
+        ).order_by(CallSession.id.desc()).limit(15).all()
+
+        for c in calls:
+            if (now - c.created_at).total_seconds() < 45:
+                b = c.booking
+                if b:
+                    if user_id and b.user_id == user_id:
+                        return jsonify({'has_incoming': True, 'call': c.to_dict()})
+                    if phone and b.passenger_phone and (phone in b.passenger_phone or b.passenger_phone in phone):
+                        return jsonify({'has_incoming': True, 'call': c.to_dict()})
+                # Nếu không truyền user_id/phone cụ thể, kiểm tra session
+                if session.get('user_id') and b and b.user_id == session.get('user_id'):
+                    return jsonify({'has_incoming': True, 'call': c.to_dict()})
+
+    return jsonify({'has_incoming': False})
+
+
 @communication_bp.route('/call/start', methods=['POST'])
 def start_call():
     data = request.get_json(silent=True) or request.form or {}
@@ -268,3 +331,4 @@ def call_action():
         'action': action,
         'status': new_status
     })
+

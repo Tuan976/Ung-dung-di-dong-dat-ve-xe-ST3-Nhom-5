@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/communication_service.dart';
 import 'in_app_call_screen.dart';
@@ -362,7 +363,7 @@ class _TripChatScreenState extends State<TripChatScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               itemCount: _quickReplies.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final reply = _quickReplies[i];
                 return ActionChip(
@@ -433,3 +434,4 @@ class _TripChatScreenState extends State<TripChatScreen> {
     );
   }
 }
+
