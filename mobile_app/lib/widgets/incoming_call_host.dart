@@ -14,6 +14,7 @@ class IncomingCallHost extends StatefulWidget {
 
 class _IncomingCallHostState extends State<IncomingCallHost> {
   bool _isShowingDialog = false;
+  bool _dialogClosed = false;
 
   @override
   void didChangeDependencies() {
@@ -50,6 +51,8 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
 
   void _showIncomingDialog(CommunicationService commService) {
     if (!mounted) return;
+    _dialogClosed = false;
+    final hostContext = context;
 
     showDialog(
       context: context,
@@ -58,7 +61,8 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
         return Consumer<CommunicationService>(
           builder: (context, cs, _) {
             // Nếu người gọi dập máy giữa chừng, tự động đóng hộp thoại
-            if (cs.callStatus != CallStatus.incomingRinging) {
+            if (cs.callStatus != CallStatus.incomingRinging && !_dialogClosed) {
+              _dialogClosed = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (Navigator.canPop(ctx)) {
                   Navigator.pop(ctx);
@@ -160,6 +164,7 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
                           children: [
                             GestureDetector(
                               onTap: () {
+                                _dialogClosed = true;
                                 if (cs.activeBookingId != null) {
                                   cs.rejectCall(bookingId: cs.activeBookingId!);
                                 }
@@ -197,22 +202,27 @@ class _IncomingCallHostState extends State<IncomingCallHost> {
                                 final cName = cs.counterpartName;
                                 final cRole = cs.counterpartRole;
 
+                                // Đóng hộp thoại trước, tránh bị đóng lặp khi trạng thái đổi
+                                _dialogClosed = true;
+                                Navigator.pop(ctx);
+
+                                // Mở màn hình cuộc gọi bằng context của Host (vẫn còn sống)
+                                if (mounted) {
+                                  Navigator.of(hostContext).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => InAppCallScreen(
+                                        bookingId: bId ?? 0,
+                                        counterpartName: cName,
+                                        counterpartRole: cRole,
+                                        isIncoming: true,
+                                      ),
+                                    ),
+                                  );
+                                }
+
                                 if (bId != null) {
                                   cs.answerCall(bookingId: bId, role: myRole);
                                 }
-                                Navigator.pop(ctx);
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => InAppCallScreen(
-                                      bookingId: bId ?? 0,
-                                      counterpartName: cName,
-                                      counterpartRole: cRole,
-                                      isIncoming: true,
-                                    ),
-                                  ),
-                                );
                               },
                               child: Container(
                                 width: 56,

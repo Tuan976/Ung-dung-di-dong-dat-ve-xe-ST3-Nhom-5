@@ -29,6 +29,8 @@ class CommunicationService extends ChangeNotifier {
   Timer? _durationTimer;
   Timer? _pollTimer;
   Timer? _incomingCheckTimer;
+  final Set<String> _seenSignals = {};
+  bool _remoteDescSet = false;
 
   bool _isMuted = false;
   bool _isSpeakerOn = true;
@@ -136,6 +138,8 @@ class CommunicationService extends ChangeNotifier {
   void _onIncomingCallDetected(Map<String, dynamic> call) {
     if (_callStatus != CallStatus.idle) return;
 
+    _seenSignals.clear();
+    _remoteDescSet = false;
     _activeBookingId = call['booking_id'];
     _counterpartName = call['caller_name'] ?? 'Đối phương';
     _counterpartRole = call['caller_role'] == 'PASSENGER' ? 'Hành khách' : 'Tài xế / Nhà xe';
@@ -168,6 +172,8 @@ class CommunicationService extends ChangeNotifier {
     required String callerName,
     required String receiverName,
   }) async {
+    _seenSignals.clear();
+    _remoteDescSet = false;
     _activeBookingId = bookingId;
     _counterpartName = receiverName;
     _counterpartRole = callerRole == 'PASSENGER'
@@ -247,9 +253,11 @@ class CommunicationService extends ChangeNotifier {
         if (signals != null) {
           for (final s in signals) {
             if (s['signal_type'] == 'offer' && _peerConnection != null) {
+              _seenSignals.add('${s['timestamp']}|offer');
               final payload = s['payload'];
               final desc = RTCSessionDescription(payload['sdp'], payload['type']);
               await _peerConnection!.setRemoteDescription(desc);
+              _remoteDescSet = true;
 
               final answer = await _peerConnection!.createAnswer({'offerToReceiveAudio': 1});
               await _peerConnection!.setLocalDescription(answer);
@@ -435,31 +443,40 @@ class CommunicationService extends ChangeNotifier {
             return;
           }
 
-          // Xử lý signals (offer / answer / candidate)
+          // Process signals (offer / answer / candidate), skipping already-handled ones
           final signals = data['signals'] as List?;
           if (signals != null) {
             for (final s in signals) {
               final type = s['signal_type'];
               final payload = s['payload'];
-              if (type == 'answer' && _peerConnection != null) {
-                final desc = RTCSessionDescription(
-                  payload['sdp'],
-                  payload['type'],
-                );
-                await _peerConnection!.setRemoteDescription(desc);
-              } else if (type == 'offer' && _peerConnection != null) {
-                final desc = RTCSessionDescription(payload['sdp'], payload['type']);
-                await _peerConnection!.setRemoteDescription(desc);
-                final answer = await _peerConnection!.createAnswer({'offerToReceiveAudio': 1});
-                await _peerConnection!.setLocalDescription(answer);
-                await _sendSignal(bookingId, 'answer', answer.toMap(), senderRole: role);
-              } else if (type == 'candidate' && _peerConnection != null) {
-                final cand = RTCIceCandidate(
-                  payload['candidate'],
-                  payload['sdpMid'],
-                  payload['sdpMLineIndex'],
-                );
-                await _peerConnection!.addCandidate(cand);
+              final key = '${s['timestamp']}|$type';
+              if (_seenSignals.contains(key)) continue;
+              if (_peerConnection == null || payload == null) continue;
+              try {
+                if (type == 'answer') {
+                  _seenSignals.add(key);
+                  await _peerConnection!.setRemoteDescription(
+                    RTCSessionDescription(payload['sdp'], payload['type']),
+                  );
+                  _remoteDescSet = true;
+                } else if (type == 'offer') {
+                  _seenSignals.add(key);
+                  await _peerConnection!.setRemoteDescription(
+                    RTCSessionDescription(payload['sdp'], payload['type']),
+                  );
+                  _remoteDescSet = true;
+                  final answer = await _peerConnection!.createAnswer({'offerToReceiveAudio': 1});
+                  await _peerConnection!.setLocalDescription(answer);
+                  await _sendSignal(bookingId, 'answer', answer.toMap(), senderRole: role);
+                } else if (type == 'candidate') {
+                  if (!_remoteDescSet) continue;
+                  _seenSignals.add(key);
+                  await _peerConnection!.addCandidate(
+                    RTCIceCandidate(payload['candidate'], payload['sdpMid'], payload['sdpMLineIndex']),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Signal $type error: $e');
               }
             }
           }

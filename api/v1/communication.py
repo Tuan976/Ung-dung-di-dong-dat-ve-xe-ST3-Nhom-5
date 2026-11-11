@@ -1,3 +1,4 @@
+import json, os, tempfile
 from datetime import datetime
 from flask import Blueprint, jsonify, request, session
 from extensions import db, socketio
@@ -7,6 +8,29 @@ communication_bp = Blueprint('communication', __name__)
 
 # Bộ nhớ đệm tạm thời cho tín hiệu WebRTC signaling (cho phép polling nếu socket gián đoạn)
 _active_signals = {}  # {booking_id: {'signals': [], 'status': 'IDLE', 'updated_at': datetime}}
+
+_SIG_DIR = tempfile.gettempdir()
+
+
+def _sig_path(booking_id):
+    return os.path.join(_SIG_DIR, f'vexe_call_signals_{int(booking_id)}.json')
+
+
+def _sig_load(booking_id):
+    """Đọc tín hiệu WebRTC từ file (dùng chung cho nhiều worker của host)."""
+    try:
+        with open(_sig_path(booking_id), 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def _sig_save(booking_id, signals):
+    try:
+        with open(_sig_path(booking_id), 'w', encoding='utf-8') as f:
+            json.dump(signals, f)
+    except Exception:
+        pass
 
 
 def _booking_of(call):
@@ -194,6 +218,7 @@ def start_call():
     db.session.commit()
 
     # Reset cache tín hiệu
+    _sig_save(booking_id, [])
     _active_signals[booking_id] = {
         'call_id': call.id,
         'status': 'RINGING',
@@ -238,13 +263,9 @@ def post_signal():
         'timestamp': datetime.utcnow().isoformat()
     }
 
-    if booking_id not in _active_signals:
-        _active_signals[booking_id] = {'signals': [], 'status': 'CONNECTED'}
-
-    _active_signals[booking_id]['signals'].append(signal_obj)
-    # Giới hạn bộ đệm
-    if len(_active_signals[booking_id]['signals']) > 50:
-        _active_signals[booking_id]['signals'] = _active_signals[booking_id]['signals'][-30:]
+    sigs = _sig_load(booking_id)
+    sigs.append(signal_obj)
+    _sig_save(booking_id, sigs[-60:])
 
     # Bắn tín hiệu tức thời qua SocketIO
     try:
@@ -258,35 +279,28 @@ def post_signal():
 
 @communication_bp.route('/<int:booking_id>/call-status', methods=['GET'])
 def get_call_status(booking_id):
-    """Kiểm tra trạng thái cuộc gọi & nhận tín hiệu WebRTC (hỗ trợ cả REST polling)."""
-    call_info = _active_signals.get(booking_id, {'status': 'IDLE', 'signals': []})
-
-    # Lấy tín hiệu cho vai trò gọi tới
+    """Trạng thái cuộc gọi (lấy từ DB) và tín hiệu WebRTC (lấy từ file dùng chung)."""
     role = request.args.get('role', '')
-    unread_signals = [s for s in call_info.get('signals', []) if s.get('sender_role') != role]
+    last_call = CallSession.query.filter_by(booking_id=booking_id).order_by(CallSession.id.desc()).first()
 
-    # Kiểm tra trong DB nếu cache chưa có
-    if call_info.get('status') == 'IDLE':
-        last_call = CallSession.query.filter_by(booking_id=booking_id).order_by(CallSession.id.desc()).first()
-        if last_call and (datetime.utcnow() - last_call.created_at).total_seconds() < 45 and last_call.status == 'RINGING':
-            call_info = {
-                'call_id': last_call.id,
-                'status': last_call.status,
-                'caller_role': last_call.caller_role,
-                'caller_name': last_call.caller_name,
-                'receiver_name': last_call.receiver_name,
-                'signals': []
-            }
+    status = 'IDLE'
+    if last_call:
+        status = last_call.status
+        # Cuộc gọi đổ chuông quá 45 giây coi như nhỡ
+        if status == 'RINGING' and (datetime.utcnow() - last_call.created_at).total_seconds() > 45:
+            status = 'IDLE'
+
+    unread_signals = [s for s in _sig_load(booking_id) if s.get('sender_role') != role]
 
     return jsonify({
         'success': True,
         'booking_id': booking_id,
-        'status': call_info.get('status', 'IDLE'),
-        'call_id': call_info.get('call_id'),
-        'caller_role': call_info.get('caller_role'),
-        'caller_name': call_info.get('caller_name'),
-        'receiver_name': call_info.get('receiver_name'),
-        'signals': unread_signals
+        'status': status,
+        'call_id': last_call.id if last_call else None,
+        'caller_role': last_call.caller_role if last_call else None,
+        'caller_name': last_call.caller_name if last_call else None,
+        'receiver_name': last_call.receiver_name if last_call else None,
+        'signals': unread_signals,
     })
 
 
