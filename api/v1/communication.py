@@ -251,21 +251,24 @@ def post_signal():
     booking_id = int(data.get('booking_id', 0))
     signal_type = data.get('signal_type')  # 'offer', 'answer', 'candidate'
     payload = data.get('payload')
-    sender_role = data.get('sender_role')
+    sender_role = data.get('sender_role') or 'CALLER'
+    client_id = data.get('client_id') or sender_role
 
-    if not booking_id or not signal_type:
+    if not booking_id or not signal_type or payload is None:
         return jsonify({'success': False, 'message': 'Thiếu tham số'}), 400
 
     signal_obj = {
         'signal_type': signal_type,
         'payload': payload,
         'sender_role': sender_role,
+        'client_id': client_id,
         'timestamp': datetime.utcnow().isoformat()
     }
 
     sigs = _sig_load(booking_id)
     sigs.append(signal_obj)
-    _sig_save(booking_id, sigs[-60:])
+    # Giữ tối đa 120 tín hiệu gần nhất (đủ cho toàn bộ quá trình đàm phán ICE)
+    _sig_save(booking_id, sigs[-120:])
 
     # Bắn tín hiệu tức thời qua SocketIO
     try:
@@ -281,6 +284,7 @@ def post_signal():
 def get_call_status(booking_id):
     """Trạng thái cuộc gọi (lấy từ DB) và tín hiệu WebRTC (lấy từ file dùng chung)."""
     role = request.args.get('role', '')
+    client_id = request.args.get('client_id', '')
     last_call = CallSession.query.filter_by(booking_id=booking_id).order_by(CallSession.id.desc()).first()
 
     status = 'IDLE'
@@ -290,7 +294,19 @@ def get_call_status(booking_id):
         if status == 'RINGING' and (datetime.utcnow() - last_call.created_at).total_seconds() > 45:
             status = 'IDLE'
 
-    unread_signals = [s for s in _sig_load(booking_id) if s.get('sender_role') != role]
+    all_signals = _sig_load(booking_id)
+    unread_signals = []
+    for s in all_signals:
+        # 1. Ưu tiên lọc theo client_id: thiết bị không bao giờ nhận lại tín hiệu của chính mình
+        if client_id and s.get('client_id'):
+            if s.get('client_id') != client_id:
+                unread_signals.append(s)
+        # 2. Hoặc lọc theo role: không nhận lại tín hiệu có cùng vai trò
+        elif role and s.get('sender_role'):
+            if s.get('sender_role') != role:
+                unread_signals.append(s)
+        else:
+            unread_signals.append(s)
 
     return jsonify({
         'success': True,
@@ -301,6 +317,20 @@ def get_call_status(booking_id):
         'caller_name': last_call.caller_name if last_call else None,
         'receiver_name': last_call.receiver_name if last_call else None,
         'signals': unread_signals,
+    })
+
+
+@communication_bp.route('/<int:booking_id>/debug-signals', methods=['GET'])
+def debug_signals(booking_id):
+    """Endpoint kiểm tra chẩn đoán toàn bộ tín hiệu WebRTC đang lưu trong bộ đệm."""
+    sigs = _sig_load(booking_id)
+    last_call = CallSession.query.filter_by(booking_id=booking_id).order_by(CallSession.id.desc()).first()
+    return jsonify({
+        'booking_id': booking_id,
+        'call_status': last_call.status if last_call else 'IDLE',
+        'call_id': last_call.id if last_call else None,
+        'total_signals': len(sigs),
+        'signals': sigs
     })
 
 
