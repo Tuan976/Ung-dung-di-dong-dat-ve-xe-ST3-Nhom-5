@@ -6,6 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/booking_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/communication_service.dart';
+import '../communication/trip_chat_screen.dart';
+import '../communication/in_app_call_screen.dart';
 
 class PassengerLiveTrackingScreen extends StatefulWidget {
   final int bookingId;
@@ -519,6 +523,102 @@ class _PassengerLiveTrackingScreenState extends State<PassengerLiveTrackingScree
                                 'Tài xế: $driverName',
                                 style: const TextStyle(color: Colors.white70, fontSize: 11),
                               ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            // Chat button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => TripChatScreen(
+                                        bookingId: widget.bookingId,
+                                        counterpartName: driverName.isNotEmpty ? driverName : 'Bác tài',
+                                        counterpartRole: 'Tài xế xe $licensePlate',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF0E6),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFF26A21).withOpacity(0.4)),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFFF26A21), size: 14),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Nhắn tin',
+                                        style: TextStyle(
+                                          color: Color(0xFFF26A21),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // In-App Call button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  final user = context.read<AuthService>().currentUser;
+                                  final commService = context.read<CommunicationService>();
+                                  commService.initiateCall(
+                                    bookingId: widget.bookingId,
+                                    callerRole: 'PASSENGER',
+                                    callerName: user?.name ?? 'Hành khách',
+                                    receiverName: driverName.isNotEmpty ? driverName : 'Bác tài',
+                                  );
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => InAppCallScreen(
+                                        bookingId: widget.bookingId,
+                                        counterpartName: driverName.isNotEmpty ? driverName : 'Bác tài',
+                                        counterpartRole: 'Tài xế xe $licensePlate',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF26A21),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.phone_in_talk_rounded, color: Colors.white, size: 14),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Gọi qua app',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],

@@ -476,6 +476,59 @@ class SOSAuditLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_message'
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), nullable=False, index=True)
+    trip_id = db.Column(db.Integer, db.ForeignKey('trip.id'), nullable=True, index=True)
+    sender_role = db.Column(db.String(20), nullable=False)  # 'PASSENGER' hoặc 'OPERATOR' / 'DRIVER'
+    sender_name = db.Column(db.String(100), nullable=False)
+    sender_id = db.Column(db.Integer, nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(20), default='TEXT')  # 'TEXT', 'QUICK_REPLY', 'CALL_LOG'
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'booking_id': self.booking_id,
+            'trip_id': self.trip_id,
+            'sender_role': self.sender_role,
+            'sender_name': self.sender_name,
+            'message': self.message,
+            'message_type': self.message_type,
+            'is_read': self.is_read,
+            'created_at': self.created_at.strftime('%H:%M %d/%m/%Y'),
+            'timestamp': self.created_at.isoformat(),
+        }
+
+
+class CallSession(db.Model):
+    __tablename__ = 'call_session'
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), nullable=False, index=True)
+    caller_role = db.Column(db.String(20), nullable=False)  # 'PASSENGER' hoặc 'OPERATOR'
+    caller_name = db.Column(db.String(100), nullable=False)
+    receiver_name = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), default='RINGING')  # 'RINGING', 'CONNECTED', 'ENDED', 'MISSED', 'REJECTED'
+    duration_seconds = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ended_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'booking_id': self.booking_id,
+            'caller_role': self.caller_role,
+            'caller_name': self.caller_name,
+            'receiver_name': self.receiver_name,
+            'status': self.status,
+            'duration_seconds': self.duration_seconds,
+            'created_at': self.created_at.strftime('%H:%M %d/%m/%Y'),
+        }
+
+
 def _auto_patch_sqlite_schema():
     """Tự động thêm cột vào SQLite nếu DB trên host chưa có cột mới, tránh lỗi no such column."""
     import sqlite3
@@ -530,6 +583,35 @@ def _auto_patch_sqlite_schema():
                         c.execute("ALTER TABLE booking ADD COLUMN live_lng FLOAT")
                     if 'live_location_time' not in b_cols:
                         c.execute("ALTER TABLE booking ADD COLUMN live_location_time DATETIME")
+
+                c.execute("""
+                CREATE TABLE IF NOT EXISTS chat_message (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    booking_id INTEGER NOT NULL,
+                    trip_id INTEGER,
+                    sender_role VARCHAR(20) NOT NULL,
+                    sender_name VARCHAR(100) NOT NULL,
+                    sender_id INTEGER,
+                    message TEXT NOT NULL,
+                    message_type VARCHAR(20) DEFAULT 'TEXT',
+                    is_read BOOLEAN DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+                """)
+
+                c.execute("""
+                CREATE TABLE IF NOT EXISTS call_session (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    booking_id INTEGER NOT NULL,
+                    caller_role VARCHAR(20) NOT NULL,
+                    caller_name VARCHAR(100) NOT NULL,
+                    receiver_name VARCHAR(100) NOT NULL,
+                    status VARCHAR(20) DEFAULT 'RINGING',
+                    duration_seconds INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    ended_at DATETIME
+                )
+                """)
 
                 conn.commit()
                 conn.close()

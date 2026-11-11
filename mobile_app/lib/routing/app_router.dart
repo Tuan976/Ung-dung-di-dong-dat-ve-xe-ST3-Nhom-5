@@ -22,6 +22,8 @@ import '../screens/vision/vision_assistant_screen.dart';
 import '../screens/map_booking/map_booking_screen.dart';
 import '../screens/operator/operator_main_screen.dart';
 import '../screens/operator/ticket_qr_scanner_screen.dart';
+import '../screens/communication/trip_chat_screen.dart';
+import '../screens/communication/in_app_call_screen.dart';
 import '../models/trip.dart';
 import '../models/booking.dart';
 import '../models/map_station.dart';
@@ -205,6 +207,31 @@ class AppRouter {
               final booking = extra['booking'] as Booking;
               final trip = extra['trip'] as Trip;
               return PaymentScreen(booking: booking, trip: trip);
+            },
+          ),
+          GoRoute(
+            path: '/chat/:bookingId',
+            builder: (context, state) {
+              final bookingId = int.parse(state.pathParameters['bookingId']!);
+              final extra = state.extra as Map<String, dynamic>?;
+              return TripChatScreen(
+                bookingId: bookingId,
+                counterpartName: extra?['name'] as String?,
+                counterpartRole: extra?['role'] as String?,
+              );
+            },
+          ),
+          GoRoute(
+            path: '/call/:bookingId',
+            builder: (context, state) {
+              final bookingId = int.parse(state.pathParameters['bookingId']!);
+              final extra = state.extra as Map<String, dynamic>?;
+              return InAppCallScreen(
+                bookingId: bookingId,
+                counterpartName: extra?['name'] as String? ?? 'Đối phương',
+                counterpartRole: extra?['role'] as String? ?? '',
+                isIncoming: extra?['is_incoming'] as bool? ?? false,
+              );
             },
           ),
         ],

@@ -9,6 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/company_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/communication_service.dart';
+import '../communication/trip_chat_screen.dart';
+import '../communication/in_app_call_screen.dart';
 
 class LivePassengerRadarScreen extends StatefulWidget {
   final int tripId;
@@ -639,6 +642,73 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
             ],
           ),
           const SizedBox(height: 10),
+          // In-App Communication Row
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF0E6),
+                    foregroundColor: const Color(0xFFF26A21),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: const BorderSide(color: Color(0xFFFFD8BF)),
+                    ),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+                  label: const Text('Nhắn tin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TripChatScreen(
+                          bookingId: pax['id'],
+                          counterpartName: pax['name'] ?? 'Hành khách',
+                          counterpartRole: 'Hành khách • Ghế ${pax['seat_number'] ?? pax['seat'] ?? "N/A"}',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF26A21),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.phone_in_talk_rounded, size: 15),
+                  label: const Text('Gọi qua App', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  onPressed: () {
+                    final user = context.read<AuthService>().currentUser;
+                    final commService = context.read<CommunicationService>();
+                    commService.initiateCall(
+                      bookingId: pax['id'],
+                      callerRole: 'OPERATOR',
+                      callerName: user?.name ?? 'Tài xế',
+                      receiverName: pax['name'] ?? 'Hành khách',
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InAppCallScreen(
+                          bookingId: pax['id'],
+                          counterpartName: pax['name'] ?? 'Hành khách',
+                          counterpartRole: 'Hành khách • Ghế ${pax['seat_number'] ?? pax['seat'] ?? "N/A"}',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -650,7 +720,7 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   icon: const Icon(Icons.call, size: 16),
-                  label: const Text('Gọi khách', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  label: const Text('Gọi di động', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   onPressed: () => _makePhoneCall(pax['phone'] ?? ''),
                 ),
               ),
@@ -895,7 +965,49 @@ class _LivePassengerRadarScreenState extends State<LivePassengerRadarScreen>
                               ),
                             ),
                             IconButton(
+                              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18, color: Color(0xFFF26A21)),
+                              tooltip: 'Nhắn tin',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TripChatScreen(
+                                      bookingId: p['id'],
+                                      counterpartName: p['name'] ?? 'Hành khách',
+                                      counterpartRole: 'Hành khách • Ghế ${p['seat_number'] ?? p['seat'] ?? "N/A"}',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.phone_in_talk_rounded, size: 18, color: Color(0xFFF26A21)),
+                              tooltip: 'Gọi qua App',
+                              onPressed: () {
+                                final user = context.read<AuthService>().currentUser;
+                                final commService = context.read<CommunicationService>();
+                                commService.initiateCall(
+                                  bookingId: p['id'],
+                                  callerRole: 'OPERATOR',
+                                  callerName: user?.name ?? 'Tài xế',
+                                  receiverName: p['name'] ?? 'Hành khách',
+                                );
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => InAppCallScreen(
+                                      bookingId: p['id'],
+                                      counterpartName: p['name'] ?? 'Hành khách',
+                                      counterpartRole: 'Hành khách • Ghế ${p['seat_number'] ?? p['seat'] ?? "N/A"}',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
                               icon: const Icon(Icons.call, size: 18, color: Colors.blue),
+                              tooltip: 'Gọi di động',
                               onPressed: () => _makePhoneCall(p['phone'] ?? ''),
                             ),
                             if (!isBoarded)

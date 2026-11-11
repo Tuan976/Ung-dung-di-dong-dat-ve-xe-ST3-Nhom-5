@@ -6,6 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/company_service.dart';
+import '../../services/communication_service.dart';
+import '../communication/trip_chat_screen.dart';
+import '../communication/in_app_call_screen.dart';
 import 'live_passenger_radar_screen.dart';
 
 class OperatorMainScreen extends StatefulWidget {
@@ -1999,6 +2002,103 @@ class _ManifestTabState extends State<_ManifestTab> {
               ),
             ),
           ],
+          // Communication & Contact Row (Chat & In-app Call)
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              // Chat in-app
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TripChatScreen(
+                          bookingId: pax['id'],
+                          counterpartName: pax['name'] ?? 'Hành khách',
+                          counterpartRole: 'Hành khách • Ghế ${pax['seat_number'] ?? pax['seat'] ?? "N/A"}',
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0E6),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFFD8BF)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline_rounded, size: 14, color: _OperatorMainScreenState.brandOrange),
+                        SizedBox(width: 4),
+                        Text(
+                          'Nhắn tin',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _OperatorMainScreenState.brandOrange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Call in-app
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    final user = context.read<AuthService>().currentUser;
+                    final commService = context.read<CommunicationService>();
+                    commService.initiateCall(
+                      bookingId: pax['id'],
+                      callerRole: 'OPERATOR',
+                      callerName: user?.name ?? 'Tài xế',
+                      receiverName: pax['name'] ?? 'Hành khách',
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InAppCallScreen(
+                          bookingId: pax['id'],
+                          counterpartName: pax['name'] ?? 'Hành khách',
+                          counterpartRole: 'Hành khách • Ghế ${pax['seat_number'] ?? pax['seat'] ?? "N/A"}',
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _OperatorMainScreenState.brandOrange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.phone_in_talk_rounded, size: 14, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          'Gọi qua App',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           // Action Buttons: Dẫn đường & Check-in
           Row(

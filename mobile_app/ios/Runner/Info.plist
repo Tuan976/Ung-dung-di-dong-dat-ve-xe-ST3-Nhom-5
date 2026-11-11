@@ -45,6 +45,8 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Ứng dụng cần quyền sử dụng Camera để chụp vé xe và nhận diện điểm đón bằng AI.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần quyền sử dụng Micro để thực hiện cuộc gọi thoại trực tiếp giữa nhà xe và hành khách.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Ứng dụng cần quyền truy cập Thư viện ảnh để quét ảnh vé xe và địa danh.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

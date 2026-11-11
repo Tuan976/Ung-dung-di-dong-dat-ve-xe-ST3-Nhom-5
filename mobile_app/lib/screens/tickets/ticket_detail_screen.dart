@@ -7,6 +7,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/booking_service.dart';
 import '../../models/booking.dart';
 import '../../services/smart_boarding_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/communication_service.dart';
+import '../communication/trip_chat_screen.dart';
+import '../communication/in_app_call_screen.dart';
 import 'passenger_live_tracking_screen.dart';
 
 class TicketDetailScreen extends StatefulWidget {
@@ -292,6 +296,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           _buildLiveBusTrackingCard(booking),
           const SizedBox(height: 16),
 
+          // In-App Communication Card (Nhắn tin & Gọi điện trong app)
+          _buildCommunicationCard(booking),
+          const SizedBox(height: 16),
+
           // Passenger info
           Container(
             padding: const EdgeInsets.all(16),
@@ -465,6 +473,141 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         );
       }
     }
+  }
+
+  Widget _buildCommunicationCard(Booking booking) {
+    if (booking.isCancelled) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0E6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.support_agent_rounded, color: Color(0xFFF26A21), size: 22),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Liên hệ Nhà xe & Bác tài',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Nhắn tin hoặc gọi điện miễn phí trong ứng dụng',
+                      style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              // Chat Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF0E6),
+                    foregroundColor: const Color(0xFFF26A21),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Color(0xFFFFD8BF)),
+                    ),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text(
+                    'Nhắn tin',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TripChatScreen(
+                          bookingId: booking.id,
+                          counterpartName: 'Bác tài / Nhà xe',
+                          counterpartRole: 'Tài xế chuyến xe',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Call In-App Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF26A21),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.phone_in_talk_rounded, size: 18),
+                  label: const Text(
+                    'Gọi trong app',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                  ),
+                  onPressed: () {
+                    final user = context.read<AuthService>().currentUser;
+                    final commService = context.read<CommunicationService>();
+                    commService.initiateCall(
+                      bookingId: booking.id,
+                      callerRole: 'PASSENGER',
+                      callerName: user?.name ?? booking.passengerName,
+                      receiverName: 'Bác tài / Nhà xe',
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => InAppCallScreen(
+                          bookingId: booking.id,
+                          counterpartName: 'Bác tài / Nhà xe',
+                          counterpartRole: 'Tài xế chuyến đi',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildLiveBusTrackingCard(Booking booking) {

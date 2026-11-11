@@ -11,4 +11,7 @@ from . import errors
 from . import notifications
 from . import map_routes
 from . import sos
+from .communication import communication_bp
+
+api_v1_bp.register_blueprint(communication_bp, url_prefix='/communication')
 

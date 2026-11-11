@@ -10,6 +10,7 @@ import 'services/auth_service.dart';
 import 'services/booking_service.dart';
 import 'services/trip_service.dart';
 import 'services/company_service.dart';
+import 'services/communication_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/config/vision_config.dart';
@@ -76,6 +77,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<ApiClient, CompanyService>(
           create: (_) => CompanyService(ApiClient(secureStorage: SecureStorage())),
           update: (_, apiClient, previous) => previous ?? CompanyService(apiClient),
+        ),
+        ChangeNotifierProxyProvider<ApiClient, CommunicationService>(
+          create: (_) => CommunicationService(ApiClient(secureStorage: SecureStorage())),
+          update: (_, apiClient, previous) => previous ?? CommunicationService(apiClient),
         ),
       ],
       child: MaterialApp.router(
