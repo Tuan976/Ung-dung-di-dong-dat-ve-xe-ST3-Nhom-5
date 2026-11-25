@@ -28,18 +28,6 @@ def _default_ai_state():
     }
 
 
-def _get_ai_state():
-    state = session.get('ai_booking_state') or {}
-    base = _default_ai_state()
-    base.update({k: v for k, v in state.items() if k in base})
-    return base
-
-
-def _save_ai_state(state):
-    session['ai_booking_state'] = state
-    session.modified = True
-
-
 def _get_known_locations():
     values = set()
     for route in Route.query.all():
@@ -81,13 +69,24 @@ def _time_score(trip, time_pref):
     return abs(departure_minutes - target_minutes)
 
 
+def _in_time_window(trip, preference):
+    hour = trip.departure_time.hour
+    bounds = {'morning': (5, 12), 'noon': (11, 14), 'afternoon': (12, 18)}
+    bucket = preference.get('bucket')
+    if bucket == 'evening':
+        return hour >= 18 or hour < 5
+    if bucket in bounds:
+        start, end = bounds[bucket]
+        return start <= hour < end
+    return _time_score(trip, preference) == 0
+
+
 def _available_seats_for_trip(trip):
     confirmed_count = Booking.query.filter_by(trip_id=trip.id, status='CONFIRMED').count()
     hold_count = Booking.query.filter(
         Booking.trip_id == trip.id,
         Booking.status == 'HOLD',
-        Booking.expires_at.isnot(None),
-        Booking.expires_at > _now()
+        db.or_(Booking.expires_at.is_(None), Booking.expires_at > _now())
     ).count()
     return max(0, trip.bus.total_seats - confirmed_count - hold_count)
 
@@ -101,6 +100,9 @@ def _trip_to_option(trip):
     price_value = (trip.route.base_price or 0) * (trip.price_multiplier or 1)
     return {
         'trip_id': trip.id,
+        'start_point': trip.route.start_point,
+        'end_point': trip.route.end_point,
+        'company_name': trip.route.company.name if trip.route.company else 'HUTECH BUS',
         'route_text': f"{trip.route.start_point} → {trip.route.end_point}",
         'time_text': trip.departure_time.strftime('%H:%M %d/%m/%Y'),
         'available_seats': _available_seats_for_trip(trip),
@@ -119,9 +121,10 @@ def _search_trips(criteria, limit=5):
         return [], []
 
     matching_routes = []
+    cutoff = 1.0 if criteria.get('exact_route') else 0.7
     for route in Route.query.all():
         score = _route_match_score(route, criteria['from'], criteria['to'])
-        if score >= 0.7:
+        if score >= cutoff:
             matching_routes.append((score, route))
 
     matching_routes.sort(key=lambda item: item[0], reverse=True)
@@ -136,6 +139,8 @@ def _search_trips(criteria, limit=5):
         ).order_by(Trip.departure_time.asc()).all()
 
         for trip in trips:
+            if criteria.get('time_window') and not _in_time_window(trip, criteria['time_pref']):
+                continue
             if criteria.get('bus_type') and not _match_bus_type(criteria['bus_type'], trip.bus.bus_type):
                 continue
             available_seats = _available_seats_for_trip(trip)
@@ -197,79 +202,6 @@ def _resolve_trip_selection(selection, trip_options):
 
 
 def register_ai_routes(app):
-    def ai_chatbot():
-        data = request.json or {}
-        message = (data.get('message') or '').strip()
-        if not message:
-            return jsonify({'response': ai_service.default_message()})
-
-        state = _get_ai_state()
-        known_locations = _get_known_locations()
-        parsed = ai_service.parse_message(message, state, known_locations)
-
-        if parsed['reset']:
-            state = _default_ai_state()
-            _save_ai_state(state)
-            return jsonify({
-                'response': 'Dạ em đã xoá thông tin tìm chuyến trước đó. Mình nhập lại tuyến mới giúp em nhé.'
-            })
-
-        if parsed['show_tickets']:
-            return jsonify({'response': ai_service.my_tickets_message(bool(session.get('user_id')))})
-
-        if parsed['selection'] and state.get('trip_options'):
-            selected = _resolve_trip_selection(parsed['selection'], state['trip_options'])
-            if selected:
-                response = ai_service.format_booking_redirect(selected)
-                _save_ai_state(state)
-                return jsonify({
-                    'response': response,
-                    'action': {
-                        'type': 'open_booking',
-                        'trip_id': selected['trip_id']
-                    }
-                })
-            return jsonify({'response': ai_service.selection_error(len(state['trip_options']))})
-
-        state, _ = ai_service.merge_state(state, parsed['slots'])
-
-        if parsed['greeting'] and not ai_service.booking_ready(state):
-            _save_ai_state(state)
-            return jsonify({'response': ai_service.greeting_message()})
-
-        if not ai_service.detect_booking_interest(message, state) and not ai_service.booking_ready(state):
-            _save_ai_state(state)
-            return jsonify({'response': ai_service.default_message()})
-
-        if not ai_service.booking_ready(state):
-            _save_ai_state(state)
-            return jsonify({'response': ai_service.next_question(state)})
-
-        # Canonicalize again using DB values to avoid alias drift
-        state['from'] = ai_service.canonicalize_location(state['from'], known_locations)
-        state['to'] = ai_service.canonicalize_location(state['to'], known_locations)
-
-        options, alternative_dates = _search_trips(state, limit=5)
-        if not options:
-            state['trip_options'] = []
-            _save_ai_state(state)
-            return jsonify({'response': ai_service.format_no_trip_response(state, alternative_dates)})
-
-        state['trip_options'] = options
-        _save_ai_state(state)
-
-        if len(options) == 1:
-            selected = options[0]
-            return jsonify({
-                'response': ai_service.format_booking_redirect(selected),
-                'action': {
-                    'type': 'open_booking',
-                    'trip_id': selected['trip_id']
-                }
-            })
-
-        return jsonify({'response': ai_service.format_trip_options(state, options)})
-
     def search_trip():
         data = request.json or {}
         criteria = _default_ai_state()
@@ -357,7 +289,6 @@ def register_ai_routes(app):
         suggestions = ai_service.get_smart_suggestions(trips_data, user_history)
         return jsonify({'suggestions': suggestions})
 
-    app.add_url_rule('/api/ai/chatbot', endpoint='api_ai_chatbot_v2', view_func=ai_chatbot, methods=['GET', 'POST'])
     app.add_url_rule('/api/search-trip', view_func=search_trip, methods=['POST'])
     app.add_url_rule('/api/ai/admin-insights', view_func=company_login_required(ai_admin_insights), methods=['GET'])
     app.add_url_rule('/api/ai/suggestions', view_func=ai_suggestions_api, methods=['GET'])

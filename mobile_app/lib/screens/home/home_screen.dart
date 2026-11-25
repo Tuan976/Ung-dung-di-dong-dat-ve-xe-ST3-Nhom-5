@@ -356,6 +356,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        child: ListTile(
+                          leading: const Icon(Icons.forum_outlined, color: Color(0xFFB63A16)),
+                          title: const Text('Trợ lý Hutech', style: TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: const Text('Tìm chuyến, chọn ghế và tra vé'),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => context.push('/assistant'),
+                        ),
+                      ),
+                    ),
                     // Search card
                     Padding(
                       padding: const EdgeInsets.all(16),

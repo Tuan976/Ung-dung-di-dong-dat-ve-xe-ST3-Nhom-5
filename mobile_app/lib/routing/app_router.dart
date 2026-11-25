@@ -5,6 +5,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/assistant/assistant_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/trip_history_screen.dart';
 import '../screens/profile/terms_screen.dart';
@@ -78,6 +79,10 @@ class AppRouter {
             builder: (context, state) => const ForgotPasswordScreen(),
           ),
           GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+          GoRoute(
+            path: '/assistant',
+            builder: (context, state) => const AssistantScreen(),
+          ),
           GoRoute(
             path: '/profile',
             builder: (context, state) => const ProfileScreen(),

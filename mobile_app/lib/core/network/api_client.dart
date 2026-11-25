@@ -76,14 +76,19 @@ class ApiClient {
     }
   }
 
-  Future<Response> post(String path, {dynamic data, Map<String, String>? headers}) async {
+  Future<Response> post(
+    String path, {
+    dynamic data,
+    Map<String, String>? headers,
+    bool retryOnConnectionFailure = true,
+  }) async {
     Future<Response> run() => _dio.post(path,
         data: data,
         options: headers == null ? null : Options(headers: headers));
     try {
       return await run();
     } catch (e) {
-      if (!_isTransient(e)) rethrow;
+      if (!retryOnConnectionFailure || !_isTransient(e)) rethrow;
       await Future.delayed(const Duration(milliseconds: 800));
       return await run();
     }

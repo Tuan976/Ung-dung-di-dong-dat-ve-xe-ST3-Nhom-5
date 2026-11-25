@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, jsonify, request, session
+from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from extensions import db, mail, socketio, init_extensions
 from db_setup import init_database
@@ -73,27 +73,6 @@ except Exception as e:
 
 # React assets will be served via the 404 handler in routes_public.py
 
-@app.route('/api/ai/chatbot', methods=['GET', 'POST'])
-def ai_chatbot_direct():
-    if request.method == 'GET':
-        return jsonify({'status': 'API Chatbot is active'})
-    from ai_service import ai_service
-    from routes_ai import _get_ai_state, _get_known_locations, _resolve_trip_selection, _default_ai_state, _save_ai_state, _search_trips
-    data = request.json or {}
-    message = (data.get('message') or '').strip()
-    state = _get_ai_state()
-    known_locations = _get_known_locations()
-    parsed = ai_service.parse_message(message, state, known_locations)
-    if parsed['reset']:
-        state = _default_ai_state()
-        _save_ai_state(state)
-        return jsonify({'response': 'Dạ em đã xoá thông tin tìm chuyến trước đó.'})
-    state, _ = ai_service.merge_state(state, parsed['slots'])
-    if not ai_service.booking_ready(state):
-        return jsonify({'response': ai_service.next_question(state)})
-    options, alt = _search_trips(state, limit=5)
-    return jsonify({'response': ai_service.format_trip_options(state, options) if options else 'Không có chuyến'})
-
 # Đăng ký các Route khác
 from routes_public import register_public_routes
 from routes_auth import register_auth_routes
@@ -102,6 +81,7 @@ from routes_ops import register_ops_routes
 from routes_driver import register_driver_routes
 from routes_booking import register_booking_routes
 from routes_ai import register_ai_routes
+from chatbot import register_chatbot
 
 register_auth_routes(app)
 register_admin_routes(app)
@@ -110,6 +90,7 @@ register_driver_routes(app)
 register_booking_routes(app)
 register_ai_routes(app)
 register_public_routes(app)
+register_chatbot(app)
 
 # --- Register New Mobile API Blueprint ---
 from api.v1 import api_v1_bp

@@ -19,7 +19,7 @@ def jwt_required():
                 return api_error(message="Missing Authorization Header", error_code="MISSING_AUTH_HEADER", status=401)
             
             parts = auth_header.split()
-            if parts[0].lower() != 'bearer' or len(parts) != 2:
+            if len(parts) != 2 or parts[0].lower() != 'bearer':
                 return api_error(message="Invalid Authorization Header Format", error_code="INVALID_AUTH_HEADER", status=401)
             
             token = parts[1]

@@ -221,7 +221,7 @@ class AIService:
             return {"date": today, "label": "hôm nay"}
         if any(k in normalized for k in ["ngay mai", "ngày mai", "mai"]):
             return {"date": today + timedelta(days=1), "label": "ngày mai"}
-        if re.search(r"\b(?:mot|mốt)\b", normalized):
+        if re.search(r"\bmốt\b", raw, re.IGNORECASE) or re.search(r"\bngay mot\b", normalized):
             return {"date": today + timedelta(days=2), "label": "ngày mốt"}
         if re.search(r"\bcuoi\s+tuan\b", normalized):
             target = self._next_weekday(today, 5)

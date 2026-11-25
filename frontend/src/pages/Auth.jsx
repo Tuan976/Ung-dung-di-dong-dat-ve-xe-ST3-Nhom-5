@@ -3,9 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Building2, Mail, Lock, Phone, ArrowRight, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
+import { useSearchParams } from 'react-router-dom';
 
 const Auth = () => {
-  const [type, setType] = useState('login'); // login, register, forgot, otp, reset
+  const [searchParams] = useSearchParams();
+  const requestedMode = searchParams.get('mode');
+  const [modeOverride, setModeOverride] = useState(null);
+  const type = modeOverride?.requestedMode === requestedMode
+    ? modeOverride.type
+    : ['register', 'forgot'].includes(requestedMode) ? requestedMode : 'login';
+  const setType = type => setModeOverride({ requestedMode, type });
   const [role, setRole] = useState('passenger'); // passenger, company
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
