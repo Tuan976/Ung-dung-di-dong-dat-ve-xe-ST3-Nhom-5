@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../core/constants/app_colors.dart';
 import '../../services/booking_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/trip.dart';
 import '../../services/smart_boarding_service.dart';
+import '../../widgets/shared_components.dart';
 
 class PassengerInfoScreen extends StatefulWidget {
   final Trip trip;
@@ -38,8 +41,17 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
   String? _selectedPickup;
   String? _selectedDropoff;
 
-  final List<String> _pickups = ['Bến xe Gia Lâm', 'Bến xe Mỹ Đình', 'Bến xe Giáp Bát'];
-  final List<String> _dropoffs = ['Bến xe Cầu Rào', 'Bến xe Niệm Nghĩa', 'Bến xe Thượng Lý'];
+  late final List<String> _pickups = [
+    'Bến xe ${widget.trip.departureStation}',
+    'Văn phòng trung tâm ${widget.trip.departureStation}',
+    'Bến xe Gia Lâm',
+    'Bến xe Mỹ Đình',
+  ];
+  late final List<String> _dropoffs = [
+    'Bến xe ${widget.trip.arrivalStation}',
+    'Văn phòng trung tâm ${widget.trip.arrivalStation}',
+    'Bến xe Cầu Rào',
+  ];
 
   bool _isBooking = false;
 
@@ -82,7 +94,7 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
 
   Future<void> _createBooking() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isBooking = true);
 
     try {
@@ -114,174 +126,351 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Ghế đã được đặt', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Ghế vừa được đặt',
+            style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w800),
+          ),
           content: Text(e.message),
           actions: [
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(ctx); 
+                Navigator.pop(ctx);
                 context.pop(true);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0F172A)),
-              child: const Text('Chọn ghế khác', style: TextStyle(color: Colors.white)),
+              child: const Text('Chọn ghế khác'),
             ),
           ],
-        )
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
+      );
     } finally {
       if (mounted) setState(() => _isBooking = false);
     }
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool required = false, TextInputType type = TextInputType.text, int maxLines = 1, String? hint}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool required = false,
+    TextInputType type = TextInputType.text,
+    int maxLines = 1,
+    String? hint,
+    IconData? icon,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$label${required ? ' *' : ''}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-        const SizedBox(height: 6),
+        if (label.isNotEmpty) ...[
+          Text(
+            '$label${required ? ' *' : ''}',
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
         TextFormField(
           controller: controller,
           keyboardType: type,
           maxLines: maxLines,
-          style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.normal),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.5)),
+            prefixIcon: icon != null ? Icon(icon, size: 19, color: AppColors.textSecondary) : null,
           ),
-          validator: required ? (v) => v == null || v.isEmpty ? 'Vui lòng nhập $label' : null : null,
+          validator: required
+              ? (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập $label' : null
+              : null,
         ),
       ],
     );
   }
 
-  Widget _buildDropdown(String label, String? value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(
+    String label,
+    IconData icon,
+    String? value,
+    List<String> items,
+    ValueChanged<String?> onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$label *', style: const TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: value,
-              icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
-              style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w600),
-              onChanged: onChanged,
-              items: items.map<DropdownMenuItem<String>>((String val) {
-                return DropdownMenuItem<String>(
-                  value: val,
-                  child: Text(val),
-                );
-              }).toList(),
-            ),
+        Text(
+          '$label *',
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
           ),
         ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          isExpanded: true,
+          initialValue: items.contains(value) ? value : items.first,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, size: 19, color: AppColors.primary),
+          ),
+          onChanged: onChanged,
+          items: items.map<DropdownMenuItem<String>>((String val) {
+            return DropdownMenuItem<String>(
+              value: val,
+              child: Text(val, overflow: TextOverflow.ellipsis),
+            );
+          }).toList(),
+        ),
       ],
-    );
-  }
-
-  Widget _buildSection(String title, Widget child) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Thông tin hành khách', style: TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w800)),
-        actions: [
-          IconButton(icon: const Icon(Icons.more_vert, color: Color(0xFF0F172A)), onPressed: () {}),
-        ],
+        title: const Text(
+          'Thông tin hành khách',
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: Column(
           children: [
+            const BookingStepIndicator(currentStep: 3),
+            const Divider(height: 1, color: AppColors.border),
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildSection('Thông tin liên hệ', Column(
-                      children: [
-                        _buildTextField('Họ và tên', _nameController, required: true),
-                        const SizedBox(height: 16),
-                        _buildTextField('Số điện thoại', _phoneController, required: true, type: TextInputType.phone),
-                        const SizedBox(height: 16),
-                        _buildTextField('Email (Tùy chọn)', _emailController, type: TextInputType.emailAddress, hint: 'minh.nguyen@example.com'),
-                      ],
-                    )),
-                    
-                    _buildSection('Điểm đón / Điểm trả', Column(
-                      children: [
-                        _buildDropdown('Điểm đón', _selectedPickup, _pickups, (val) => setState(() => _selectedPickup = val)),
-                        const SizedBox(height: 16),
-                        _buildDropdown('Điểm trả', _selectedDropoff, _dropoffs, (val) => setState(() => _selectedDropoff = val)),
-                      ],
-                    )),
+                    // Booking Context Summary Banner
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceWarm,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.directions_bus_rounded, color: AppColors.primary, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${widget.trip.departureStation} → ${widget.trip.arrivalStation}',
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${widget.trip.companyName} • ${widget.trip.departureTime}',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          StatusBadge(
+                            label: 'Ghế ${widget.seat}',
+                            type: BadgeType.primary,
+                          ),
+                        ],
+                      ),
+                    ),
 
-                    _buildSection('Yêu cầu đặc biệt', _buildTextField('', _noteController, maxLines: 3, hint: 'Ví dụ: Say xe cần ngồi ghế đầu, mang theo vật nuôi...')),
+                    AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Thông tin liên hệ nhận vé',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildTextField(
+                            'Họ và tên hành khách',
+                            _nameController,
+                            required: true,
+                            hint: 'VD: Nguyễn Văn Minh',
+                            icon: Icons.person_outline_rounded,
+                          ),
+                          const SizedBox(height: 14),
+                          _buildTextField(
+                            'Số điện thoại',
+                            _phoneController,
+                            required: true,
+                            type: TextInputType.phone,
+                            hint: 'VD: 0912345678',
+                            icon: Icons.phone_outlined,
+                          ),
+                          const SizedBox(height: 14),
+                          _buildTextField(
+                            'Email nhận vé điện tử (Tùy chọn)',
+                            _emailController,
+                            type: TextInputType.emailAddress,
+                            hint: 'minh.nguyen@example.com',
+                            icon: Icons.mail_outline_rounded,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Điểm đón & Điểm trả',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildDropdown(
+                            'Điểm đón khách',
+                            Icons.trip_origin_rounded,
+                            _selectedPickup,
+                            _pickups,
+                            (val) => setState(() => _selectedPickup = val),
+                          ),
+                          const SizedBox(height: 14),
+                          _buildDropdown(
+                            'Điểm trả khách',
+                            Icons.location_on_rounded,
+                            _selectedDropoff,
+                            _dropoffs,
+                            (val) => setState(() => _selectedDropoff = val),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Ghi chú cho nhà xe',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTextField(
+                            '',
+                            _noteController,
+                            maxLines: 3,
+                            hint: 'Ví dụ: Cần hỗ trợ hành lý, đón đúng điểm hẹn...',
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
+
+            // Sticky Bottom CTA
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isBooking ? null : _createBooking,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    elevation: 0,
+                border: const Border(top: BorderSide(color: AppColors.border)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.textPrimary.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, -3),
                   ),
-                  child: _isBooking
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Tiếp tục thanh toán', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Tổng thanh toán',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            fmt.format(widget.trip.price),
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PrimaryButton(
+                      text: 'Tiếp tục thanh toán',
+                      isLoading: _isBooking,
+                      onPressed: _createBooking,
+                      width: 190,
+                      height: 48,
+                    ),
+                  ],
                 ),
               ),
             ),

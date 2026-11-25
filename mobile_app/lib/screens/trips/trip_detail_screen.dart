@@ -5,11 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
+import '../../core/constants/app_colors.dart';
 import '../../services/trip_service.dart';
 import '../../services/map_booking_service.dart';
-import '../../models/booking_strategy.dart';
 import '../../models/trip.dart';
 import '../../models/map_station.dart';
+import '../../widgets/shared_components.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final int tripId;
@@ -91,60 +92,46 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19, color: AppColors.textPrimary),
           onPressed: () => context.pop(),
         ),
         title: const Text(
-          'Chi tiết chuyến đi',
+          'Chi tiết chuyến xe',
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Color(0xFF0F172A)),
-            onPressed: () {},
-          ),
-        ],
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
+        ),
       ),
       body: FutureBuilder<Trip>(
         future: _futureTrip,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF0B192C)));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Color(0xFFDC2626)),
-                  const SizedBox(height: 16),
-                  const Text('Không tìm thấy chuyến xe',
-                      style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0B192C),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    ),
-                    child: const Text('Quay lại'),
-                  ),
-                ],
-              ),
+            return EmptyStateWidget(
+              icon: Icons.error_outline_rounded,
+              title: 'Không tìm thấy thông tin chuyến xe',
+              description: 'Chuyến xe này có thể đã ngừng nhận khách hoặc không tồn tại.',
+              buttonText: 'Quay lại',
+              onButtonPressed: () => context.pop(),
             );
           }
 
@@ -157,34 +144,29 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   child: Column(
                     children: [
                       // Company Info Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
+                      AppCard(
                         child: Row(
                           children: [
                             Container(
                               width: 48,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE0F2FE),
+                                color: AppColors.primaryLight,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                trip.companyName.isNotEmpty ? trip.companyName.substring(0, 2).toUpperCase() : 'HA',
+                                trip.companyName.isNotEmpty
+                                    ? trip.companyName.substring(0, math.min(2, trip.companyName.length)).toUpperCase()
+                                    : 'TR',
                                 style: const TextStyle(
-                                  color: Color(0xFF00639B),
+                                  color: AppColors.primary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,30 +174,31 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                   Text(
                                     trip.companyName,
                                     style: const TextStyle(
-                                      color: Color(0xFF0F172A),
+                                      color: AppColors.textPrimary,
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
-                                    children: const [
-                                      Icon(Icons.star, color: Color(0xFFF59E0B), size: 16),
-                                      SizedBox(width: 4),
-                                      Text(
+                                    children: [
+                                      const Icon(Icons.star_rounded, color: AppColors.warning, size: 16),
+                                      const SizedBox(width: 4),
+                                      const Text(
                                         '4.8',
                                         style: TextStyle(
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.textPrimary,
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                      SizedBox(width: 4),
+                                      const SizedBox(width: 6),
                                       Text(
-                                        '(320 đánh giá)',
-                                        style: TextStyle(
-                                          color: Color(0xFF64748B),
-                                          fontSize: 13,
+                                        '• ${trip.busType}',
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ],
@@ -223,43 +206,42 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                 ],
                               ),
                             ),
+                            StatusBadge(
+                              label: 'Còn ${trip.availableSeats} chỗ',
+                              type: trip.availableSeats <= 5 ? BadgeType.warning : BadgeType.success,
+                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      
-                      // Real Map (OpenStreetMap with real road polyline)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SizedBox(
-                          height: 190,
-                          child: _buildMap(trip),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
-                      // Card Chọn điểm đón & trả khách trên bản đồ
+                      // Map Preview
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        height: 185,
+                        child: _buildMap(trip),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Map stops selector
                       _buildMapStopsPickerCard(trip),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // Itinerary Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
+                      AppCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Hành trình',
+                              'Lộ trình di chuyển',
                               style: TextStyle(
-                                color: Color(0xFF0F172A),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -269,7 +251,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                               address: _pickupStop?.address ?? 'Bến xe ${trip.departureStation}',
                               isFirst: true,
                               isLast: false,
-                              color: const Color(0xFF0F172A),
+                              color: AppColors.primary,
                             ),
                             _buildTimelineStep(
                               time: trip.arrivalTime.isNotEmpty ? trip.arrivalTime : 'Dự kiến',
@@ -277,137 +259,131 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                               address: _dropoffStop?.address ?? 'Bến xe ${trip.arrivalStation}',
                               isFirst: false,
                               isLast: true,
-                              color: const Color(0xFF10B981),
+                              color: AppColors.success,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // Amenities Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
+                      AppCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Tiện ích chuyến xe',
+                              'Tiện ích trên xe',
                               style: TextStyle(
-                                color: Color(0xFF0F172A),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
-                                _buildAmenity(Icons.wifi, 'WiFi miễn phí'),
-                                _buildAmenity(Icons.ac_unit, 'Điều hòa'),
-                                _buildAmenity(Icons.water_drop_outlined, 'Nước uống'),
-                                _buildAmenity(Icons.cancel_presentation, 'Chăn gối'),
+                                _buildAmenity(Icons.wifi_rounded, 'WiFi tốc độ cao'),
+                                _buildAmenity(Icons.ac_unit_rounded, 'Điều hòa'),
+                                _buildAmenity(Icons.water_drop_outlined, 'Khăn & Nước'),
+                                _buildAmenity(Icons.usb_rounded, 'Cổng sạc USB'),
                               ],
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // Policies Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFF1F5F9)),
-                        ),
+                      AppCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Chính sách & Quy định',
+                              'Chính sách chuyến xe',
                               style: TextStyle(
-                                color: Color(0xFF0F172A),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            _buildPolicy(Icons.verified_user_outlined, 'Chính sách hủy vé: Miễn phí trước 24 giờ', const Color(0xFF10B981)),
-                            const SizedBox(height: 12),
-                            _buildPolicy(Icons.luggage_outlined, 'Hành lý tối đa: 20kg/khách', const Color(0xFF0F172A)),
+                            const SizedBox(height: 14),
+                            _buildPolicy(
+                              Icons.verified_user_outlined,
+                              'Hỗ trợ đổi / hủy vé linh hoạt trước giờ khởi hành',
+                              AppColors.success,
+                            ),
+                            const SizedBox(height: 10),
+                            _buildPolicy(
+                              Icons.luggage_outlined,
+                              'Miễn phí hành lý xách tay & ký gửi tối đa 20kg/khách',
+                              AppColors.primary,
+                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
               ),
 
-              // Bottom CTA
+              // Sticky Bottom Bar
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border(
-                    top: BorderSide(
-                      color: Color(0xFF3B82F6),
-                      width: 1,
-                      style: BorderStyle.solid,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Tổng cộng (1 vé)',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          fmt.format(trip.price),
-                          style: const TextStyle(
-                            color: Color(0xFF00639B),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () => context.push('/seat_selection', extra: {
-                        'trip': trip,
-                        'pickup': _pickupStop != null ? '${_pickupStop!.name} (${_pickupStop!.address})' : null,
-                        'dropoff': _dropoffStop != null ? '${_dropoffStop!.name} (${_dropoffStop!.address})' : null,
-                        'pickup_station_id': _pickupStop?.id,
-                        'dropoff_station_id': _dropoffStop?.id,
-                      }),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0B192C),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        elevation: 0,
-                      ),
-                      child: const Text('Chọn ghế',
-                          style: TextStyle(fontSize: 15, fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+                  border: const Border(top: BorderSide(color: AppColors.border)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.textPrimary.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, -3),
                     ),
                   ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Giá vé (1 hành khách)',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            fmt.format(trip.price),
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                      PrimaryButton(
+                        text: 'Chọn ghế',
+                        icon: Icons.event_seat_rounded,
+                        width: 160,
+                        height: 48,
+                        onPressed: () => context.push('/seat_selection', extra: {
+                          'trip': trip,
+                          'pickup': _pickupStop != null ? '${_pickupStop!.name} (${_pickupStop!.address})' : null,
+                          'dropoff': _dropoffStop != null ? '${_dropoffStop!.name} (${_dropoffStop!.address})' : null,
+                          'pickup_station_id': _pickupStop?.id,
+                          'dropoff_station_id': _dropoffStop?.id,
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -417,7 +393,6 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
   }
 
-  // Map coordinates for major Vietnamese cities
   static const Map<String, LatLng> _cityCoords = {
     'Hà Nội': LatLng(21.0285, 105.8542),
     'Hà nội': LatLng(21.0285, 105.8542),
@@ -444,14 +419,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         return entry.value;
       }
     }
-    return const LatLng(16.0, 106.0); // Default: center of Vietnam
+    return const LatLng(16.0, 106.0);
   }
 
   Widget _buildMap(Trip trip) {
     final depCoords = _pickupStop?.coordinates ?? _getCoords(trip.departureStation);
     final arrCoords = _dropoffStop?.coordinates ?? _getCoords(trip.arrivalStation);
 
-    // Dùng polyline thực tế từ _routeMapData nếu có, ngược lại dùng tọa độ trạm
     final polylinePoints = _routeMapData != null && _routeMapData!.polyline.isNotEmpty
         ? _routeMapData!.polyline
         : <LatLng>[depCoords, arrCoords];
@@ -496,63 +470,47 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               userAgentPackageName: 'com.nhom5.vexemobile',
               maxZoom: 20,
             ),
-            if (polylinePoints.length > 2)
-              PolylineLayer(
-                polylines: [
+            PolylineLayer(
+              polylines: [
+                if (polylinePoints.length > 2)
                   Polyline(
                     points: polylinePoints,
                     strokeWidth: 5.0,
-                    color: const Color(0xFFFF6B00).withValues(alpha: 0.35),
+                    color: AppColors.primary.withValues(alpha: 0.35),
                   ),
-                  Polyline(
-                    points: polylinePoints,
-                    strokeWidth: 3.5,
-                    color: const Color(0xFFFF6B00),
-                  ),
-                ],
-              )
-            else
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: polylinePoints,
-                    strokeWidth: 3.0,
-                    color: const Color(0xFFFF6B00),
-                  ),
-                ],
-              ),
+                Polyline(
+                  points: polylinePoints,
+                  strokeWidth: 3.5,
+                  color: AppColors.primary,
+                ),
+              ],
+            ),
             MarkerLayer(
               markers: [
                 Marker(
                   point: depCoords,
-                  width: 38,
-                  height: 38,
+                  width: 36,
+                  height: 36,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB),
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4),
-                      ],
                     ),
-                    child: const Icon(Icons.directions_bus_rounded, color: Colors.white, size: 18),
+                    child: const Icon(Icons.directions_bus_rounded, color: Colors.white, size: 17),
                   ),
                 ),
                 Marker(
                   point: arrCoords,
-                  width: 38,
-                  height: 38,
+                  width: 36,
+                  height: 36,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B00),
+                      color: AppColors.success,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4),
-                      ],
                     ),
-                    child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                    child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 18),
                   ),
                 ),
               ],
@@ -568,19 +526,21 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6),
-                ],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.fullscreen_rounded, size: 16, color: Color(0xFFFF6B00)),
+                children: [
+                  Icon(Icons.fullscreen_rounded, size: 16, color: AppColors.primary),
                   SizedBox(width: 4),
                   Text(
                     'Xem bản đồ lớn',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -593,66 +553,57 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
   Widget _buildMapStopsPickerCard(Trip trip) {
     final hasStops = _pickupStop != null || _dropoffStop != null;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFEDD5)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF6B00).withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
-                  Icon(Icons.map_rounded, size: 20, color: Color(0xFFFF6B00)),
+              const Row(
+                children: [
+                  Icon(Icons.map_rounded, size: 19, color: AppColors.primary),
                   SizedBox(width: 8),
                   Text(
                     'Điểm đón / trả trên bản đồ',
                     style: TextStyle(
-                      color: Color(0xFF0F172A),
+                      color: AppColors.textPrimary,
                       fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: () => _openFullMapBooking(trip),
-                icon: const Icon(Icons.edit_location_alt_rounded, size: 14),
-                label: Text(hasStops ? 'Đổi trạm' : 'Chọn trạm', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6B00),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              SizedBox(
+                height: 32,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openFullMapBooking(trip),
+                  icon: const Icon(Icons.edit_location_alt_rounded, size: 14),
+                  label: Text(
+                    hasStops ? 'Đổi trạm' : 'Chọn trạm',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Điểm đón
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                margin: const EdgeInsets.only(top: 3),
-                width: 10,
-                height: 10,
+                margin: const EdgeInsets.only(top: 4),
+                width: 9,
+                height: 9,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF2563EB),
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -661,14 +612,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Điểm đón khách:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Điểm đón khách:',
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                    ),
                     const SizedBox(height: 1),
                     Text(
                       _pickupStop != null ? _pickupStop!.name : 'Bến xe ${trip.departureStation} (Mặc định)',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                     if (_pickupStop != null && _pickupStop!.address.isNotEmpty)
-                      Text(_pickupStop!.address, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                      Text(_pickupStop!.address, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -678,19 +632,18 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             padding: EdgeInsets.only(left: 4),
             child: SizedBox(
               height: 12,
-              child: VerticalDivider(width: 1, thickness: 1, color: Color(0xFFCBD5E1)),
+              child: VerticalDivider(width: 1, thickness: 1, color: AppColors.border),
             ),
           ),
-          // Điểm trả
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                margin: const EdgeInsets.only(top: 3),
-                width: 10,
-                height: 10,
+                margin: const EdgeInsets.only(top: 4),
+                width: 9,
+                height: 9,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFF6B00),
+                  color: AppColors.success,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -699,14 +652,17 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Điểm trả khách:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Điểm trả khách:',
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                    ),
                     const SizedBox(height: 1),
                     Text(
                       _dropoffStop != null ? _dropoffStop!.name : 'Bến xe ${trip.arrivalStation} (Mặc định)',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                     ),
                     if (_dropoffStop != null && _dropoffStop!.address.isNotEmpty)
-                      Text(_dropoffStop!.address, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                      Text(_dropoffStop!.address, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -734,7 +690,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             child: Column(
               children: [
                 if (!isFirst)
-                  Container(width: 1, height: 16, color: const Color(0xFFE2E8F0)),
+                  Container(width: 1.5, height: 14, color: AppColors.border),
                 Container(
                   width: 16,
                   height: 16,
@@ -756,7 +712,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 ),
                 if (!isLast)
                   Expanded(
-                    child: Container(width: 1, color: const Color(0xFFE2E8F0)),
+                    child: Container(width: 1.5, color: AppColors.border),
                   ),
               ],
             ),
@@ -764,24 +720,24 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '$time • $station',
                     style: const TextStyle(
-                      color: Color(0xFF0F172A),
+                      color: AppColors.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     address,
                     style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      fontSize: 12.5,
                     ),
                   ),
                 ],
@@ -796,13 +752,22 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   Widget _buildAmenity(IconData icon, String label) {
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFF0F172A), size: 24),
-        const SizedBox(height: 8),
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        const SizedBox(height: 6),
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF475569),
-            fontSize: 12,
+            color: AppColors.textSecondary,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -813,13 +778,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: iconColor, size: 20),
-        const SizedBox(width: 12),
+        Icon(icon, color: iconColor, size: 19),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
             style: const TextStyle(
-              color: Color(0xFF475569),
+              color: AppColors.textSecondary,
               fontSize: 13,
               height: 1.4,
             ),

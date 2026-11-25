@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Search, Ticket, Phone } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -21,26 +22,28 @@ const CheckTicket = () => {
     }
   }, []);
 
-  const handleSearch = async (e) => {
+  const handleSearch = async e => {
     if (e && e.preventDefault) e.preventDefault();
     const p = phone || initialPhone;
     const c = ticketCode || initialCode;
     if (!p || !c) return;
-    
+
     setLoading(true);
     setError('');
     setTicket(null);
-    
+
     try {
-      const res = await fetch(`/api/check-ticket?phone=${encodeURIComponent(p)}&code=${encodeURIComponent(c)}`);
+      const res = await fetch(
+        `/api/check-ticket?phone=${encodeURIComponent(p)}&code=${encodeURIComponent(c)}`
+      );
       const data = await res.json();
-      
+
       if (res.ok && data.success) {
         setTicket(data.ticket);
       } else {
-        setError(data.message || 'Không tìm thấy vé. Vui lòng kiểm tra lại thông tin.');
+        setError(data.message || 'Không tìm thấy vé. Vui lòng kiểm tra lại mã vé và số điện thoại.');
       }
-    } catch (err) {
+    } catch {
       setError('Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
@@ -48,112 +51,128 @@ const CheckTicket = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
+    <div className="min-h-screen flex flex-col bg-[#F7F8FA]">
       <Navbar />
-      
-      <main style={{ flex: 1, padding: '120px 24px 60px', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 800 }}>
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <h1 style={{ fontSize: 32, fontWeight: 900, color: '#1e293b', fontStyle: 'italic', textTransform: 'uppercase', marginBottom: 12 }}>
-              Tra cứu thông tin vé
-            </h1>
-            <p style={{ color: '#64748b', fontSize: 14, fontWeight: 600 }}>
-              Kiểm tra tình trạng chuyến đi và thông tin ghế ngồi của bạn
-            </p>
-          </div>
-          
-          <div style={{ background: '#fff', borderRadius: 24, padding: 32, boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', marginBottom: 32 }}>
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Số điện thoại đặt vé</label>
-                <input 
-                  type="tel" 
+
+      <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+        <div className="text-center mb-8">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFF1E6] px-3 py-1 text-xs font-bold text-[#FF6B00] mb-3">
+            <Ticket size={14} /> Vé xe điện tử Triply
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#202938]">
+            Tra cứu thông tin vé đã đặt
+          </h1>
+          <p className="mt-1.5 text-sm text-[#778196]">
+            Nhập số điện thoại và mã vé (VD: HT12345678) để kiểm tra trạng thái vé và vị trí ghế
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#E7EAF0] bg-white p-6 card-shadow mb-6">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+            <div className="sm:col-span-5">
+              <label className="block text-xs font-bold text-[#202938] mb-1.5">
+                Số điện thoại đặt vé
+              </label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#778196]" />
+                <input
+                  type="tel"
                   required
-                  placeholder="Nhập số điện thoại..." 
+                  placeholder="VD: 0912345678"
                   value={phone}
                   onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                  style={{ width: '100%', padding: '16px 20px', borderRadius: 16, border: '2px solid #f1f5f9', fontSize: 14, fontWeight: 700, color: '#1e293b', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
-                  onFocus={e => e.target.style.borderColor = '#EF5222'}
-                  onBlur={e => e.target.style.borderColor = '#f1f5f9'}
+                  className="w-full rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] pl-10 pr-3.5 py-2.5 text-sm font-semibold text-[#202938] outline-none focus:border-[#FF6B00] focus:bg-white"
                 />
               </div>
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Mã vé</label>
-                <input 
-                  type="text" 
+            </div>
+            <div className="sm:col-span-4">
+              <label className="block text-xs font-bold text-[#202938] mb-1.5">Mã đặt vé</label>
+              <div className="relative">
+                <Ticket size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#778196]" />
+                <input
+                  type="text"
                   required
-                  placeholder="Ví dụ: HT12345678" 
+                  placeholder="HT12345678"
                   value={ticketCode}
-                  onChange={e => setTicketCode(e.target.value)}
-                  style={{ width: '100%', padding: '16px 20px', borderRadius: 16, border: '2px solid #f1f5f9', fontSize: 14, fontWeight: 700, color: '#1e293b', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' }}
-                  onFocus={e => e.target.style.borderColor = '#EF5222'}
-                  onBlur={e => e.target.style.borderColor = '#f1f5f9'}
+                  onChange={e => setTicketCode(e.target.value.toUpperCase())}
+                  className="w-full rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] pl-10 pr-3.5 py-2.5 text-sm font-semibold text-[#202938] outline-none focus:border-[#FF6B00] focus:bg-white"
                 />
               </div>
-              <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-end' }}>
-                <button 
-                  type="submit" 
-                  disabled={loading || !phone || !ticketCode}
-                  style={{ height: 55, padding: '0 32px', background: '#EF5222', color: '#fff', border: 'none', borderRadius: 16, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, cursor: (loading || !phone || !ticketCode) ? 'not-allowed' : 'pointer', opacity: (loading || !phone || !ticketCode) ? 0.6 : 1, transition: 'all 0.2s' }}
-                >
-                  {loading ? 'Đang tìm...' : 'Tra cứu vé'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {error && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 16, padding: 20, textAlign: 'center', marginBottom: 32 }}>
-              <p style={{ color: '#ef4444', fontWeight: 700, fontSize: 14 }}>{error}</p>
             </div>
-          )}
-
-          {ticket && (
-            <div style={{ background: '#fff', borderRadius: 24, padding: 32, boxShadow: '0 10px 30px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: 8, height: '100%', background: ticket.status === 'CANCELLED' ? '#ef4444' : '#22c55e' }} />
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #e2e8f0', paddingBottom: 24, marginBottom: 24 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Mã vé</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: '#1e293b' }}>{ticket.ticket_code}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Trạng thái</div>
-                  <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 900, textTransform: 'uppercase', background: ticket.status === 'CANCELLED' ? '#fef2f2' : '#f0fdf4', color: ticket.status === 'CANCELLED' ? '#ef4444' : '#22c55e' }}>
-                    {ticket.status === 'CANCELLED' ? 'Đã hủy' : 'Thành công'}
-                  </div>
-                </div>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Hành khách</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{ticket.passenger_name}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Tuyến đường</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{ticket.route}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Thời gian khởi hành</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{new Date(ticket.departure_time).toLocaleString('vi-VN')}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Ghế / Tầng</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#EF5222' }}>{ticket.seat_number}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Điểm đón</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{ticket.pickup_point || 'Tại bến'}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>Thanh toán</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{ticket.ticket_price.toLocaleString()}đ <span style={{ color: '#94a3b8', fontSize: 12 }}>({ticket.payment_status})</span></div>
-                </div>
-              </div>
+            <div className="sm:col-span-3">
+              <button
+                type="submit"
+                disabled={loading || !phone || !ticketCode}
+                className="w-full h-[42px] rounded-xl bg-[#FF6B00] hover:bg-[#E85F00] text-white text-sm font-bold transition disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Search size={16} />
+                {loading ? 'Đang tìm...' : 'Tra cứu'}
+              </button>
             </div>
-          )}
+          </form>
         </div>
+
+        {error && (
+          <div className="rounded-xl border border-[#F8C6C6] bg-[#FDECEC] p-4 text-center text-sm font-bold text-[#DC4545] mb-6">
+            {error}
+          </div>
+        )}
+
+        {ticket && (
+          <div className="overflow-hidden rounded-2xl border border-[#E7EAF0] bg-white card-shadow">
+            <div className="flex items-center justify-between bg-[#FF6B00] px-6 py-4 text-white">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-white/80">
+                  Mã vé điện tử
+                </div>
+                <div className="text-xl font-black">{ticket.ticket_code}</div>
+              </div>
+              <span
+                className={`rounded-lg px-3 py-1 text-xs font-extrabold ${
+                  ticket.status === 'CANCELLED'
+                    ? 'bg-[#FDECEC] text-[#DC4545]'
+                    : 'bg-white text-[#16A36A]'
+                }`}
+              >
+                {ticket.status === 'CANCELLED' ? 'Đã hủy' : 'Đã xác nhận'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 p-6">
+              <div>
+                <div className="text-xs font-semibold text-[#778196]">Hành khách</div>
+                <div className="mt-1 text-sm font-bold text-[#202938]">{ticket.passenger_name}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[#778196]">Hành trình</div>
+                <div className="mt-1 text-sm font-bold text-[#202938]">{ticket.route}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[#778196]">Thời gian khởi hành</div>
+                <div className="mt-1 text-sm font-bold text-[#202938]">
+                  {new Date(ticket.departure_time).toLocaleString('vi-VN')}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[#778196]">Vị trí ghế</div>
+                <div className="mt-1 text-sm font-black text-[#FF6B00]">Ghế {ticket.seat_number}</div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[#778196]">Điểm đón</div>
+                <div className="mt-1 text-sm font-bold text-[#202938]">
+                  {ticket.pickup_point || 'Tại bến xuất phát'}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-[#778196]">Tổng tiền & Thanh toán</div>
+                <div className="mt-1 text-sm font-black text-[#FF6B00]">
+                  {ticket.ticket_price.toLocaleString('vi-VN')} đ{' '}
+                  <span className="text-xs font-medium text-[#778196]">({ticket.payment_status})</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />

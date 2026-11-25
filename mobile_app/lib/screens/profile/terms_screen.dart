@@ -1,19 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
+import '../../widgets/shared_components.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
 
+  static const _sections = [
+    (
+      title: '1. Chấp nhận điều khoản sử dụng',
+      body:
+          'Bằng việc tải xuống, truy cập hoặc sử dụng nền tảng đặt vé xe khách thông minh Triply, bạn đồng ý tuân thủ các Điều khoản sử dụng này. Nếu có bất kỳ điều khoản nào bạn chưa đồng ý, vui lòng ngừng sử dụng dịch vụ.',
+    ),
+    (
+      title: '2. Dịch vụ đặt vé & vận chuyển',
+      body:
+          'Triply cung cấp nền tảng công nghệ giúp hành khách tìm kiếm hành trình, so sánh giá vé, chọn vị trí ghế trực quan và thanh toán vé xe khách từ mạng lưới đối tác nhà xe uy tín trên toàn quốc.',
+    ),
+    (
+      title: '3. Thanh toán & chính sách hoàn hủy',
+      body:
+          'Mọi giao dịch trực tuyến hoặc giữ chỗ tiền mặt trên Triply đều được xác nhận tức thì bằng mã vé điện tử và QR Code. Quy định đổi hoặc hủy vé được áp dụng minh bạch theo chính sách của từng nhà xe đối tác.',
+    ),
+    (
+      title: '4. Bảo mật dữ liệu khách hàng',
+      body:
+          'Triply cam kết bảo mật tuyệt đối thông tin cá nhân, số điện thoại và lịch trình di chuyển của bạn. Dữ liệu chỉ được cung cấp cho nhà xe phụ trách chuyến đi nhằm phục vụ việc đón trả và xác thực vé.',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19, color: AppColors.textPrimary),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -23,95 +48,65 @@ class TermsScreen extends StatelessWidget {
           },
         ),
         title: const Text(
-          'Điều khoản sử dụng',
+          'Điều khoản & Chính sách',
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            fontSize: 17.5,
+            fontWeight: FontWeight.w800,
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              '1. Chấp nhận điều khoản',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Bằng việc tải xuống, cài đặt hoặc sử dụng ứng dụng này, bạn đồng ý chịu sự ràng buộc của các Điều khoản Sử dụng này. Nếu bạn không đồng ý với bất kỳ phần nào của điều khoản, vui lòng không sử dụng ứng dụng.',
-              style: TextStyle(
-                color: Color(0xFF475569),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            SizedBox(height: 20),
-            
-            Text(
-              '2. Dịch vụ đặt vé',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Chúng tôi cung cấp nền tảng để bạn tìm kiếm, so sánh và đặt vé xe khách từ các đối tác nhà xe. Chúng tôi không phải là nhà cung cấp dịch vụ vận tải và không chịu trách nhiệm trực tiếp về chất lượng xe, thái độ phục vụ của tài xế hay thời gian khởi hành thực tế.',
-              style: TextStyle(
-                color: Color(0xFF475569),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            SizedBox(height: 20),
-
-            Text(
-              '3. Thanh toán và hoàn hủy',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Giao dịch thanh toán được thực hiện qua các cổng thanh toán an toàn. Việc hủy vé và hoàn tiền sẽ tuân theo chính sách cụ thể của từng nhà xe. Vui lòng đọc kỹ chính sách hủy vé trước khi tiến hành thanh toán.',
-              style: TextStyle(
-                color: Color(0xFF475569),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            SizedBox(height: 20),
-
-            Text(
-              '4. Bảo mật thông tin',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn theo Chính sách Bảo mật. Thông tin của bạn chỉ được chia sẻ với nhà xe để phục vụ cho mục đích xác nhận chuyến đi.',
-              style: TextStyle(
-                color: Color(0xFF475569),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ],
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
         ),
+      ),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: _sections.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final section = _sections[index];
+          return AppCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        section.title,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  section.body,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                    height: 1.55,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

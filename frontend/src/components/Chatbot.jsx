@@ -1,97 +1,210 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Bus, CalendarDays, ChevronRight, CircleHelp, LoaderCircle, MessageSquare, RotateCcw, Ticket, X } from 'lucide-react';
+import {
+  ArrowUp,
+  Bus,
+  CalendarDays,
+  ChevronRight,
+  CircleHelp,
+  LoaderCircle,
+  MapPin,
+  MessageSquare,
+  RotateCcw,
+  Search,
+  Sparkles,
+  Ticket,
+  X,
+} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-const initialMessage = { response: 'Bạn muốn tìm chuyến, đặt vé hay tra vé đã đặt?' };
-const primary = 'rounded-xl bg-[#d44519] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ad3515] disabled:cursor-not-allowed disabled:opacity-50';
-const secondary = 'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-[#ad3515] disabled:opacity-50';
-const field = 'min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100';
+const initialMessage = {
+  response: 'Xin chào! Mình là Trợ lý Triply. Bạn muốn tìm chuyến xe, đặt vé nhanh hay tra cứu vé đã đặt?',
+};
+const primary =
+  'rounded-xl bg-[#FF6B00] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#E85F00] disabled:cursor-not-allowed disabled:opacity-50';
+const secondary =
+  'rounded-xl border border-[#E7EAF0] bg-white px-3.5 py-2 text-sm font-semibold text-[#202938] transition hover:border-[#FF6B00] hover:text-[#FF6B00] disabled:opacity-50';
+const field =
+  'min-w-0 rounded-xl border border-[#E7EAF0] bg-white px-3.5 py-2.5 text-sm text-[#202938] outline-none transition focus:border-[#FF6B00] focus:ring-2 focus:ring-[#FF6B00]/15';
 const currency = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
-const labels = { CONFIRMED: 'Đã xác nhận', HOLD: 'Đang giữ chỗ', CANCELLED: 'Đã hủy', Paid: 'Đã thanh toán', Pending: 'Chờ thu tiền', Unpaid: 'Chưa thanh toán', 'Refund Pending': 'Chờ hoàn tiền', Expired: 'Hết hạn', Cancelled: 'Đã hủy' };
+const labels = {
+  CONFIRMED: 'Đã xác nhận',
+  HOLD: 'Đang giữ chỗ',
+  CANCELLED: 'Đã hủy',
+  Paid: 'Đã thanh toán',
+  Pending: 'Chờ thu tiền',
+  Unpaid: 'Chưa thanh toán',
+  'Refund Pending': 'Chờ hoàn tiền',
+  Expired: 'Hết hạn',
+  Cancelled: 'Đã hủy',
+};
 
 function SearchForm({ criteria, places, busy, send }) {
   return (
-    <form className="grid gap-2.5 rounded-2xl border border-slate-200 bg-white p-3.5" onSubmit={event => {
-      event.preventDefault();
-      const data = new FormData(event.currentTarget);
-      send({ action: 'search', from: data.get('from'), to: data.get('to'), date: data.get('date'), pax: Number(data.get('pax')) });
-    }}>
+    <form
+      className="grid gap-3 rounded-2xl border border-[#FF6B00]/25 bg-white p-4 shadow-sm"
+      onSubmit={event => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        send({
+          action: 'search',
+          from: data.get('from'),
+          to: data.get('to'),
+          date: data.get('date'),
+          pax: Number(data.get('pax')),
+        });
+      }}
+    >
+      <div className="flex items-center gap-2.5 border-b border-[#E7EAF0] pb-2.5">
+        <span className="grid size-8 place-items-center rounded-lg bg-[#FFF1E6] text-[#FF6B00]">
+          <Search size={16} />
+        </span>
+        <div>
+          <p className="text-sm font-bold text-[#202938]">Tìm kiếm chuyến xe</p>
+          <p className="text-xs text-[#778196]">Chọn điểm đi, điểm đến và ngày khởi hành</p>
+        </div>
+      </div>
       {['from', 'to'].map(key => (
-        <label key={key} className="grid gap-1 text-xs font-semibold text-slate-700">
+        <label key={key} className="grid gap-1 text-xs font-bold text-[#202938]">
           {key === 'from' ? 'Điểm đi' : 'Điểm đến'}
           <select className={field} name={key} defaultValue={criteria?.[key] || ''} required>
             <option value="">Chọn địa điểm</option>
-            {places.map(place => <option key={place}>{place}</option>)}
+            {places.map(place => (
+              <option key={place}>{place}</option>
+            ))}
           </select>
         </label>
       ))}
-      <div className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2">
-        <label className="grid gap-1 text-xs font-semibold text-slate-700">
+      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2.5">
+        <label className="grid gap-1 text-xs font-bold text-[#202938]">
           Ngày đi
           <input className={field} name="date" type="date" defaultValue={criteria?.date || ''} required />
         </label>
-        <label className="grid gap-1 text-xs font-semibold text-slate-700">
+        <label className="grid gap-1 text-xs font-bold text-[#202938]">
           Số vé
           <input className={field} name="pax" type="number" min="1" max="20" defaultValue={criteria?.pax || 1} required />
         </label>
       </div>
-      <button className={primary} disabled={busy || !places.length}>Tìm chuyến</button>
+      <button className={primary} disabled={busy || !places.length}>
+        Tìm chuyến
+      </button>
     </form>
   );
 }
 
 function LookupForm({ code, busy, send }) {
   return (
-    <form className="grid gap-2.5 rounded-2xl border border-slate-200 bg-white p-3.5" onSubmit={event => {
-      event.preventDefault();
-      const data = new FormData(event.currentTarget);
-      send({ action: 'lookup', code: data.get('code'), phone: data.get('phone') }, 'Tra cứu vé');
-    }}>
-      <label className="grid gap-1 text-xs font-semibold text-slate-700">
+    <form
+      className="grid gap-3 rounded-2xl border border-[#FF6B00]/25 bg-white p-4 shadow-sm"
+      onSubmit={event => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        send({ action: 'lookup', code: data.get('code'), phone: data.get('phone') }, 'Tra cứu vé');
+      }}
+    >
+      <div className="flex items-center gap-2.5 border-b border-[#E7EAF0] pb-2.5">
+        <span className="grid size-8 place-items-center rounded-lg bg-[#FFF1E6] text-[#FF6B00]">
+          <Ticket size={16} />
+        </span>
+        <div>
+          <p className="text-sm font-bold text-[#202938]">Tra cứu thông tin vé</p>
+          <p className="text-xs text-[#778196]">Nhập mã vé và số điện thoại đặt vé</p>
+        </div>
+      </div>
+      <label className="grid gap-1 text-xs font-bold text-[#202938]">
         Mã vé
         <input className={field} name="code" defaultValue={code || ''} placeholder="HT12345678" maxLength={10} required />
       </label>
-      <label className="grid gap-1 text-xs font-semibold text-slate-700">
+      <label className="grid gap-1 text-xs font-bold text-[#202938]">
         Số điện thoại đặt vé
         <input className={field} name="phone" type="tel" inputMode="tel" maxLength={20} required />
       </label>
-      <button className={primary} disabled={busy}>Tra cứu</button>
+      <button className={primary} disabled={busy}>
+        Tra cứu
+      </button>
     </form>
   );
 }
 
 function TripCard({ trip, onSelect, busy }) {
+  const isLow = Number(trip.available_seats) <= 5;
   return (
-    <article className="grid gap-2 rounded-2xl border border-orange-100 bg-white p-3.5">
+    <article className="grid gap-3 rounded-2xl border border-[#E7EAF0] bg-white p-4 shadow-sm transition hover:border-[#FF6B00]/40">
       <div className="flex items-start justify-between gap-2.5">
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-900">{trip.route_text}</p>
-          <p className="mt-0.5 break-words text-xs text-slate-500">{trip.company_name} · {trip.bus_type_text}</p>
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#FFF1E6] text-[#FF6B00]">
+            <Bus size={18} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-extrabold text-[#202938]">{trip.company_name}</p>
+            <span className="mt-0.5 inline-block rounded-md border border-[#E7EAF0] bg-[#F7F8FA] px-2 py-0.5 text-[11px] font-semibold text-[#778196]">
+              {trip.bus_type_text}
+            </span>
+          </div>
         </div>
-        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">{trip.available_seats} ghế</span>
+        <span
+          className={
+            'shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold ' +
+            (isLow ? 'bg-[#FFF5E5] text-[#E99A22]' : 'bg-[#E9F8F0] text-[#16A36A]')
+          }
+        >
+          Còn {trip.available_seats} ghế
+        </span>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="flex items-center gap-1.5 text-slate-600"><CalendarDays size={14} />{trip.time_text}</span>
-        <strong className="text-[#ad3515]">{currency.format(trip.price_value)} <span className="text-xs font-normal text-slate-500">/ vé</span></strong>
+
+      <div className="rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] p-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-[#202938]">
+          <MapPin size={15} className="shrink-0 text-[#FF6B00]" />
+          <span className="truncate">{trip.route_text}</span>
+        </div>
+        <div className="mt-2 flex items-center gap-2 border-t border-[#E7EAF0] pt-2 text-xs font-semibold text-[#778196]">
+          <CalendarDays size={14} className="shrink-0 text-[#FF6B00]" />
+          <span>Khởi hành: <strong className="text-[#202938]">{trip.time_text}</strong></span>
+        </div>
       </div>
-      <button type="button" className={primary} disabled={busy} onClick={onSelect}>Chọn ghế</button>
+
+      <div className="flex items-center justify-between gap-3 pt-0.5">
+        <div>
+          <span className="block text-[11px] font-medium text-[#778196]">Giá vé niêm yết</span>
+          <strong className="text-lg font-black text-[#FF6B00]">
+            {currency.format(trip.price_value)}{' '}
+            <span className="text-xs font-normal text-[#778196]">/ vé</span>
+          </strong>
+        </div>
+        <button type="button" className={primary} disabled={busy} onClick={onSelect}>
+          Chọn ghế
+        </button>
+      </div>
     </article>
   );
 }
 
 function TicketCard({ ticket, onCancel, busy }) {
   return (
-    <article className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3.5 text-sm">
+    <article className="grid gap-2.5 rounded-2xl border border-[#E7EAF0] bg-white p-4 text-sm shadow-sm">
       <div className="flex items-center justify-between gap-2">
-        <strong className="flex items-center gap-1.5 text-slate-900"><Ticket size={16} />{ticket.code}</strong>
-        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">{labels[ticket.status] || ticket.status}</span>
+        <strong className="flex items-center gap-2 text-[#202938]">
+          <span className="grid size-7 place-items-center rounded-lg bg-[#FFF1E6] text-[#FF6B00]">
+            <Ticket size={15} />
+          </span>
+          {ticket.code}
+        </strong>
+        <span className="rounded-lg bg-[#F7F8FA] border border-[#E7EAF0] px-2.5 py-1 text-xs font-bold text-[#202938]">
+          {labels[ticket.status] || ticket.status}
+        </span>
       </div>
-      <p className="font-semibold text-slate-800">{ticket.route}</p>
-      <p className="text-xs leading-relaxed text-slate-600">{ticket.departure} · Ghế {ticket.seat} · {currency.format(ticket.price)}</p>
-      {ticket.pickup && <p className="break-words text-xs text-slate-600">Điểm đón: {ticket.pickup}</p>}
-      {ticket.dropoff && <p className="break-words text-xs text-slate-600">Điểm trả: {ticket.dropoff}</p>}
-      <p className="text-xs text-slate-600">{labels[ticket.payment_status] || ticket.payment_status}</p>
-      {ticket.can_cancel && <button type="button" onClick={onCancel} disabled={busy} className={secondary}>Hủy vé</button>}
+      <p className="font-bold text-[#202938]">{ticket.route}</p>
+      <p className="text-xs leading-relaxed text-[#778196]">
+        {ticket.departure} · Ghế <strong className="text-[#FF6B00]">{ticket.seat}</strong> ·{' '}
+        <strong className="text-[#202938]">{currency.format(ticket.price)}</strong>
+      </p>
+      {ticket.pickup && <p className="break-words text-xs text-[#778196]">Điểm đón: {ticket.pickup}</p>}
+      {ticket.dropoff && <p className="break-words text-xs text-[#778196]">Điểm trả: {ticket.dropoff}</p>}
+      <p className="text-xs font-bold text-[#FF6B00]">{labels[ticket.payment_status] || ticket.payment_status}</p>
+      {ticket.can_cancel && (
+        <button type="button" onClick={onCancel} disabled={busy} className={secondary}>
+          Hủy vé
+        </button>
+      )}
     </article>
   );
 }
@@ -123,7 +236,13 @@ function BookingForm({ checkout, onDone, onBack }) {
 
   function toggleSeat(id) {
     setError('');
-    setSelected(current => current.includes(id) ? current.filter(seat => seat !== id) : current.length < pax ? [...current, id] : current);
+    setSelected(current =>
+      current.includes(id)
+        ? current.filter(seat => seat !== id)
+        : current.length < pax
+          ? [...current, id]
+          : current
+    );
   }
 
   function prepare(event) {
@@ -162,7 +281,10 @@ function BookingForm({ checkout, onDone, onBack }) {
         if (checkoutUrl.protocol !== 'https:') throw new Error();
         onDone({ response: 'Đã giữ ghế. Bạn mở cổng thanh toán để hoàn tất.', paymentUrl: checkoutUrl.href });
       } else {
-        onDone({ response: 'Đã đặt vé thành công. Bạn thanh toán tiền mặt trên xe.', codes: data.ticket_codes || [] });
+        onDone({
+          response: 'Đã đặt vé thành công. Bạn thanh toán tiền mặt trên xe.',
+          codes: data.ticket_codes || [],
+        });
       }
     } catch {
       setError('Không nhận được kết quả. Bạn kiểm tra vé đã đặt trước khi thử lại.');
@@ -173,69 +295,165 @@ function BookingForm({ checkout, onDone, onBack }) {
   }
 
   return (
-    <section className="grid gap-3 rounded-2xl border border-orange-100 bg-white p-3.5">
-      <div className="flex items-start justify-between gap-2">
+    <section className="grid gap-3 rounded-2xl border border-[#FF6B00]/30 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-2 border-b border-[#E7EAF0] pb-2.5">
         <div>
-          <h3 className="text-sm font-bold text-slate-900">{summary ? 'Xác nhận đặt vé' : 'Chọn ghế và thông tin'}</h3>
-          <p className="mt-1 text-xs text-slate-600">{trip.route_text} · {trip.time_text}</p>
+          <h3 className="text-sm font-extrabold text-[#202938]">
+            {summary ? 'Xác nhận đặt vé' : 'Chọn ghế và thông tin'}
+          </h3>
+          <p className="mt-0.5 text-xs text-[#778196]">
+            {trip.route_text} · {trip.time_text}
+          </p>
         </div>
-        <button type="button" className={secondary} disabled={sending} onClick={onBack}>Quay lại</button>
+        <button type="button" className={secondary} disabled={sending} onClick={onBack}>
+          Quay lại
+        </button>
       </div>
-      {!map && !error && <p className="text-sm text-slate-500">Đang tải sơ đồ ghế…</p>}
-      {map && <form className={summary ? 'hidden' : 'grid gap-3'} onSubmit={prepare}>
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-slate-700">
-          <span>Đã chọn {selected.length}/{pax} ghế</span>
-          <button type="button" className={secondary} disabled={available.length < pax} onClick={() => {
-            setSelected(available.slice(0, pax).map(seat => seat.id));
-            setError('');
-          }}>Chọn giúp {pax} ghế</button>
-        </div>
-        <div className="max-h-56 space-y-2 overflow-auto rounded-xl bg-slate-50 p-2.5">
-          {map.seat_map.map((floor, index) => <fieldset className="space-y-1.5" key={index}>
-            <legend className="py-1 text-xs font-semibold text-slate-600">{floor.floor}</legend>
-            {floor.rows.map((row, rowIndex) => <div key={rowIndex} className="flex flex-wrap gap-1.5">
-              {row.map(seat => <button type="button" key={seat.id}
-                aria-label={'Ghế ' + seat.id}
-                aria-pressed={selected.includes(seat.id)}
-                disabled={seat.status !== 'available'}
-                className={'min-w-10 rounded-lg border px-2 py-1.5 text-xs font-semibold disabled:bg-slate-200 disabled:text-slate-500 ' + (selected.includes(seat.id) ? 'border-[#d44519] bg-orange-100 text-[#ad3515]' : 'border-slate-200 bg-white text-slate-700')}
-                onClick={() => toggleSeat(seat.id)}>{seat.name || seat.id}</button>)}
-            </div>)}
-          </fieldset>)}
-        </div>
-        <label className="grid gap-1 text-xs font-semibold text-slate-700">Họ tên
-          <input className={field} name="name" defaultValue={contact?.name || ''} maxLength={100} autoComplete="name" required />
-        </label>
-        <label className="grid gap-1 text-xs font-semibold text-slate-700">Số điện thoại
-          <input className={field} name="phone" type="tel" defaultValue={contact?.phone || ''} maxLength={20} autoComplete="tel" required />
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="grid min-w-0 gap-1 text-xs font-semibold text-slate-700">Điểm đón
-            <input className={field} name="pickup" maxLength={200} />
+      {!map && !error && <p className="text-sm text-[#778196]">Đang tải sơ đồ ghế…</p>}
+      {map && (
+        <form className={summary ? 'hidden' : 'grid gap-3'} onSubmit={prepare}>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#FFF9F5] border border-[#FF6B00]/20 px-3 py-2 text-xs font-bold text-[#202938]">
+            <span>
+              Đã chọn {selected.length}/{pax} ghế
+            </span>
+            <button
+              type="button"
+              className="text-[#FF6B00] hover:underline disabled:opacity-50"
+              disabled={available.length < pax}
+              onClick={() => {
+                setSelected(available.slice(0, pax).map(seat => seat.id));
+                setError('');
+              }}
+            >
+              Chọn giúp {pax} ghế
+            </button>
+          </div>
+          <div className="max-h-56 space-y-2.5 overflow-auto rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] p-3">
+            <div className="flex items-center gap-3 text-[11px] font-semibold text-[#778196]">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block size-3 rounded border border-[#D5DBE5] bg-white" /> Trống
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block size-3 rounded bg-[#FF6B00]" /> Đang chọn
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block size-3 rounded bg-[#E2E6ED]" /> Đã đặt
+              </span>
+            </div>
+            {map.seat_map.map((floor, index) => (
+              <fieldset className="space-y-1.5" key={index}>
+                <legend className="py-1 text-xs font-bold text-[#202938]">{floor.floor}</legend>
+                {floor.rows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex flex-wrap gap-1.5">
+                    {row.map(seat => (
+                      <button
+                        type="button"
+                        key={seat.id}
+                        aria-label={'Ghế ' + seat.id}
+                        aria-pressed={selected.includes(seat.id)}
+                        disabled={seat.status !== 'available'}
+                        className={
+                          'min-w-10 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition disabled:bg-[#E2E6ED] disabled:text-[#98A2B3] ' +
+                          (selected.includes(seat.id)
+                            ? 'border-[#FF6B00] bg-[#FF6B00] text-white shadow-sm'
+                            : 'border-[#E7EAF0] bg-white text-[#202938] hover:border-[#FF6B00]')
+                        }
+                        onClick={() => toggleSeat(seat.id)}
+                      >
+                        {seat.name || seat.id}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </fieldset>
+            ))}
+          </div>
+          <label className="grid gap-1 text-xs font-bold text-[#202938]">
+            Họ tên hành khách
+            <input
+              className={field}
+              name="name"
+              defaultValue={contact?.name || ''}
+              maxLength={100}
+              autoComplete="name"
+              required
+            />
           </label>
-          <label className="grid min-w-0 gap-1 text-xs font-semibold text-slate-700">Điểm trả
-            <input className={field} name="dropoff" maxLength={200} />
+          <label className="grid gap-1 text-xs font-bold text-[#202938]">
+            Số điện thoại liên hệ
+            <input
+              className={field}
+              name="phone"
+              type="tel"
+              defaultValue={contact?.phone || ''}
+              maxLength={20}
+              autoComplete="tel"
+              required
+            />
           </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="grid min-w-0 gap-1 text-xs font-bold text-[#202938]">
+              Điểm đón
+              <input className={field} name="pickup" maxLength={200} />
+            </label>
+            <label className="grid min-w-0 gap-1 text-xs font-bold text-[#202938]">
+              Điểm trả
+              <input className={field} name="dropoff" maxLength={200} />
+            </label>
+          </div>
+          <label className="grid gap-1 text-xs font-bold text-[#202938]">
+            Phương thức thanh toán
+            <select className={field} name="payment_method">
+              <option value="cash">Tiền mặt trên xe</option>
+              {checkout.online_payment && <option value="payos">Thanh toán qua PayOS</option>}
+            </select>
+          </label>
+          <button className={primary} disabled={selected.length !== pax}>
+            Xem lại đơn
+          </button>
+        </form>
+      )}
+      {summary && (
+        <div className="grid gap-3 text-sm text-[#202938]">
+          <div className="grid gap-1.5 rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] p-3">
+            <p>
+              Ghế <strong className="text-[#FF6B00]">{selected.join(', ')}</strong> · {summary.name} · {summary.phone}
+            </p>
+            {(summary.pickup || summary.dropoff) && (
+              <p className="text-xs text-[#778196]">
+                {summary.pickup || 'Điểm đón mặc định'} → {summary.dropoff || 'Điểm trả mặc định'}
+              </p>
+            )}
+            <p className="text-xs font-semibold text-[#778196]">
+              {summary.payment_method === 'cash' ? 'Tiền mặt trên xe' : 'Thanh toán qua PayOS'}
+            </p>
+            <p className="mt-1 border-t border-[#E7EAF0] pt-2 text-base">
+              Tổng cộng <strong className="font-black text-[#FF6B00]">{currency.format(map.price * selected.length)}</strong>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={secondary}
+              disabled={sending}
+              onClick={() => {
+                setSummary(null);
+                setError('');
+              }}
+            >
+              Chỉnh sửa
+            </button>
+            <button type="button" className={primary} disabled={sending} onClick={confirm}>
+              {sending ? 'Đang đặt vé…' : 'Xác nhận đặt vé'}
+            </button>
+          </div>
         </div>
-        <label className="grid gap-1 text-xs font-semibold text-slate-700">Thanh toán
-          <select className={field} name="payment_method">
-            <option value="cash">Tiền mặt trên xe</option>
-            {checkout.online_payment && <option value="payos">Thanh toán qua PayOS</option>}
-          </select>
-        </label>
-        <button className={primary} disabled={selected.length !== pax}>Xem lại đơn</button>
-      </form>}
-      {summary && <div className="grid gap-2.5 text-sm text-slate-700">
-        <p>Ghế <strong>{selected.join(', ')}</strong> · {summary.name} · {summary.phone}</p>
-        {(summary.pickup || summary.dropoff) && <p>{summary.pickup || 'Điểm đón mặc định'} → {summary.dropoff || 'Điểm trả mặc định'}</p>}
-        <p>{summary.payment_method === 'cash' ? 'Tiền mặt trên xe' : 'Thanh toán qua PayOS'}</p>
-        <p>Tổng cộng <strong className="text-[#ad3515]">{currency.format(map.price * selected.length)}</strong></p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={secondary} disabled={sending} onClick={() => { setSummary(null); setError(''); }}>Chỉnh sửa</button>
-          <button type="button" className={primary} disabled={sending} onClick={confirm}>{sending ? 'Đang đặt vé…' : 'Xác nhận đặt vé'}</button>
-        </div>
-      </div>}
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      )}
+      {error && (
+        <p role="alert" className="rounded-xl bg-[#FDECEC] px-3 py-2 text-xs font-bold text-[#DC4545]">
+          {error}
+        </p>
+      )}
     </section>
   );
 }
@@ -263,11 +481,18 @@ export default function Chatbot() {
         if (!response.ok) throw new Error();
         return response.json();
       })
-      .then(data => { setPlaces(Array.isArray(data) ? data : []); setPlacesError(false); })
-      .catch(() => { if (!controller.signal.aborted) setPlacesError(true); });
+      .then(data => {
+        setPlaces(Array.isArray(data) ? data : []);
+        setPlacesError(false);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setPlacesError(true);
+      });
     fetch('/api/ai/chatbot', { signal: controller.signal })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => { if (data) setUsesGemini(data.gemini_enabled === true); })
+      .then(response => (response.ok ? response.json() : null))
+      .then(data => {
+        if (data) setUsesGemini(data.gemini_enabled === true);
+      })
       .catch(() => {});
 
     return () => controller.abort();
@@ -300,7 +525,9 @@ export default function Chatbot() {
       }
       setMessages(current => [...current, { ...data, response: data.response || 'Bạn thử lại nhé.' }]);
       if (response.ok) {
-        setPanel(data.checkout ? { type: 'checkout', checkout: data.checkout } : data.panel ? { type: data.panel, ...data } : null);
+        setPanel(
+          data.checkout ? { type: 'checkout', checkout: data.checkout } : data.panel ? { type: data.panel, ...data } : null
+        );
         setPendingCancel(null);
       }
     } catch {
@@ -323,78 +550,308 @@ export default function Chatbot() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[1100] sm:bottom-6 sm:right-6">
-      {open && <section id="hutech-assistant" aria-label="Trợ lý HUTECH BUS"
-        onKeyDown={event => { if (event.key === 'Escape') close(); }}
-        className="absolute bottom-[4.25rem] right-0 flex h-[min(650px,calc(100dvh-6rem))] w-[min(430px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-[#f7f8fa] shadow-2xl">
-        <header className="flex shrink-0 items-center gap-3 bg-[#18243a] px-4 py-3.5 text-white">
-          <span className="grid size-10 place-items-center rounded-xl bg-[#d44519]"><Bus size={22} /></span>
-          <h2 className="flex-1 text-base font-bold">Trợ lý HUTECH BUS</h2>
-          <button type="button" title="Cuộc trò chuyện mới" aria-label="Cuộc trò chuyện mới" disabled={busy || panel?.type === 'checkout'} className="rounded-lg p-2 hover:bg-white/15 disabled:opacity-50" onClick={() => send({ action: 'reset' })}><RotateCcw size={17} /></button>
-          <button type="button" aria-label="Đóng trợ lý" className="rounded-lg p-2 hover:bg-white/15" onClick={close}><X size={19} /></button>
-        </header>
-        <div ref={log} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3.5 sm:p-4">
-          <div role="log" aria-live="polite" className="grid gap-3">
-            {messages.map((message, index) => <div key={index} className="grid gap-2">
-              <p className={(message.user ? 'ml-auto bg-[#d44519] text-white' : 'mr-auto border border-slate-200 bg-white text-slate-800') + ' max-w-[92%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed'}>{message.response}</p>
-              {message.criteria?.from && message.criteria?.to && <p className="text-xs font-semibold text-slate-600">
-                {[message.criteria.from + ' → ' + message.criteria.to, message.criteria.date?.split('-').reverse().join('/'), message.criteria.pax && message.criteria.pax + ' vé', message.criteria.time].filter(Boolean).join(' · ')}
-              </p>}
-              {message.trips?.map(trip => <TripCard key={trip.trip_id} trip={trip} busy={busy || panel?.type === 'checkout'} onSelect={() => send({ action: 'select_trip', trip_id: trip.trip_id }, 'Chọn chuyến ' + trip.time_text)} />)}
-              {message.tickets?.map(ticket => <TicketCard key={ticket.code} ticket={ticket} busy={busy || panel?.type === 'checkout'} onCancel={() => { setPanel(null); setPendingCancel(ticket); }} />)}
-              {message.links?.length > 0 && <div className="flex flex-wrap gap-2">
-                {message.links.map(link => <Link key={link.href} to={link.href} onClick={close} className={secondary + ' inline-flex items-center gap-1'}>{link.label}<ChevronRight size={15} /></Link>)}
-              </div>}
-              {message.clear_filters && <button type="button" className={secondary + ' justify-self-start'} disabled={busy || panel?.type === 'checkout'} onClick={() => send({ action: 'clear_filters' })}>Bỏ lọc giờ và loại xe</button>}
-              {message.codes?.map(code => <button key={code} type="button"
-                disabled={busy || panel?.type === 'checkout'} className="rounded-xl bg-emerald-50 px-3 py-2 text-left text-sm font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
-                onClick={() => { setPendingCancel(null); setPanel({ type: 'lookup', code }); }}>Tra vé {code}</button>)}
-              {message.paymentUrl && <a href={message.paymentUrl} className={primary + ' justify-self-start'}>Mở cổng thanh toán</a>}
-            </div>)}
-            {busy && <p role="status" className="flex items-center gap-1.5 text-xs text-slate-600"><LoaderCircle size={14} className="animate-spin" />Đang xử lý…</p>}
-          </div>
-          {panel && <div className="mt-3">
-            {panel.type === 'search' && <SearchForm key={messages.length} criteria={panel.criteria} places={places} busy={busy} send={send} />}
-            {panel.type === 'search' && placesError && <p className="mt-2 text-xs text-red-700">Chưa tải được địa điểm. Bạn đóng rồi mở lại trợ lý để thử lại.</p>}
-            {panel.type === 'lookup' && <LookupForm key={panel.code} code={panel.code} busy={busy} send={send} />}
-            {panel.type === 'checkout' && <BookingForm key={panel.checkout.trip.trip_id} checkout={panel.checkout} onDone={complete} onBack={() => setPanel(null)} />}
-          </div>}
-          {pendingCancel && <div className="mt-3 grid gap-2 rounded-2xl border border-orange-200 bg-white p-3.5">
-            <p className="text-sm text-slate-800">Hủy vé <strong>{pendingCancel.code}</strong> · ghế {pendingCancel.seat}?</p>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className={secondary} disabled={busy} onClick={() => setPendingCancel(null)}>Giữ vé</button>
-              <button type="button" className={primary} disabled={busy} onClick={() => send({ action: 'cancel_ticket', code: pendingCancel.code, confirmed: true })}>Xác nhận hủy vé</button>
+      {open && (
+        <section
+          id="triply-assistant"
+          aria-label="Trợ lý Triply"
+          onKeyDown={event => {
+            if (event.key === 'Escape') close();
+          }}
+          className="absolute bottom-[4.25rem] right-0 flex h-[min(660px,calc(100dvh-6rem))] w-[min(430px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-[#E7EAF0] bg-[#F7F8FA] shadow-2xl"
+        >
+          {/* Clean White Modern Header */}
+          <header className="flex shrink-0 items-center gap-3 border-b border-[#E7EAF0] bg-white px-4 py-3.5 text-[#202938]">
+            <span className="grid size-10 place-items-center rounded-xl bg-[#FFF1E6] text-[#FF6B00] border border-[#FF6B00]/20">
+              <Bus size={21} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-extrabold text-[#202938]">Trợ lý Triply</h2>
+              <p className="flex items-center gap-1.5 text-xs font-medium text-[#778196]">
+                <span className="inline-block size-2 rounded-full bg-[#16A36A]" />
+                Đang hoạt động • Hỗ trợ 24/7
+              </p>
             </div>
-          </div>}
-        </div>
-        <div className="shrink-0 border-t border-slate-200 bg-white px-3.5 pb-3 pt-2.5 sm:px-4">
-          <div className="mb-2 flex gap-1.5 overflow-x-auto whitespace-nowrap pb-1">
-            <button type="button" className={secondary} disabled={busy || panel?.type === 'checkout'} onClick={() => { setPendingCancel(null); setPanel({ type: 'search' }); }}>Tìm chuyến</button>
-            <button type="button" className={secondary} disabled={busy || panel?.type === 'checkout'} onClick={() => { setPendingCancel(null); setPanel({ type: 'lookup' }); }}>Tra vé</button>
-            <button type="button" className={secondary} disabled={busy || panel?.type === 'checkout'} onClick={() => send({ action: 'tickets' }, 'Vé của tôi')}>Vé của tôi</button>
-            <Link className={secondary + ' inline-flex items-center gap-1'} to="/thong-tin/giai-quyet-khieu-nai" onClick={close}><CircleHelp size={15} />Hỗ trợ</Link>
+            <button
+              type="button"
+              title="Cuộc trò chuyện mới"
+              aria-label="Cuộc trò chuyện mới"
+              disabled={busy || panel?.type === 'checkout'}
+              className="rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] p-2 text-[#202938] transition hover:border-[#FF6B00] hover:text-[#FF6B00] disabled:opacity-50"
+              onClick={() => send({ action: 'reset' })}
+            >
+              <RotateCcw size={16} />
+            </button>
+            <button
+              type="button"
+              aria-label="Đóng trợ lý"
+              className="rounded-xl border border-[#E7EAF0] bg-[#F7F8FA] p-2 text-[#202938] transition hover:border-[#FF6B00] hover:text-[#FF6B00]"
+              onClick={close}
+            >
+              <X size={18} />
+            </button>
+          </header>
+
+          {/* Messages & Interactive Cards Area */}
+          <div ref={log} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3.5 sm:p-4">
+            <div role="log" aria-live="polite" className="grid gap-3.5">
+              {messages.map((message, index) => (
+                <div key={index} className="grid gap-2.5">
+                  <div className={'flex items-start gap-2 ' + (message.user ? 'justify-end' : 'justify-start')}>
+                    {!message.user && (
+                      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-[#FFF1E6] text-[#FF6B00] border border-[#FF6B00]/20">
+                        <Bus size={14} />
+                      </span>
+                    )}
+                    <p
+                      className={
+                        (message.user
+                          ? 'bg-[#FF6B00] text-white rounded-br-sm font-medium'
+                          : 'border border-[#E7EAF0] bg-white text-[#202938] rounded-bl-sm') +
+                        ' max-w-[88%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-xs'
+                      }
+                    >
+                      {message.response}
+                    </p>
+                  </div>
+                  {message.criteria?.from && message.criteria?.to && (
+                    <div className="ml-9 flex items-center gap-2 rounded-xl border border-[#FF6B00]/25 bg-[#FFF9F5] px-3 py-2 text-xs font-bold text-[#202938]">
+                      <MapPin size={14} className="shrink-0 text-[#FF6B00]" />
+                      <span>
+                        {[
+                          message.criteria.from + ' → ' + message.criteria.to,
+                          message.criteria.date?.split('-').reverse().join('/'),
+                          message.criteria.pax && message.criteria.pax + ' vé',
+                          message.criteria.time,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </div>
+                  )}
+                  {message.trips?.map(trip => (
+                    <TripCard
+                      key={trip.trip_id}
+                      trip={trip}
+                      busy={busy || panel?.type === 'checkout'}
+                      onSelect={() =>
+                        send({ action: 'select_trip', trip_id: trip.trip_id }, 'Chọn chuyến ' + trip.time_text)
+                      }
+                    />
+                  ))}
+                  {message.tickets?.map(ticket => (
+                    <TicketCard
+                      key={ticket.code}
+                      ticket={ticket}
+                      busy={busy || panel?.type === 'checkout'}
+                      onCancel={() => {
+                        setPanel(null);
+                        setPendingCancel(ticket);
+                      }}
+                    />
+                  ))}
+                  {message.links?.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {message.links.map(link => (
+                        <Link
+                          key={link.href}
+                          to={link.href}
+                          onClick={close}
+                          className={secondary + ' inline-flex items-center gap-1'}
+                        >
+                          {link.label}
+                          <ChevronRight size={15} />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  {message.clear_filters && (
+                    <button
+                      type="button"
+                      className={secondary + ' justify-self-start'}
+                      disabled={busy || panel?.type === 'checkout'}
+                      onClick={() => send({ action: 'clear_filters' })}
+                    >
+                      Bỏ lọc giờ và loại xe
+                    </button>
+                  )}
+                  {message.codes?.map(code => (
+                    <button
+                      key={code}
+                      type="button"
+                      disabled={busy || panel?.type === 'checkout'}
+                      className="rounded-xl border border-[#C2ECD5] bg-[#E9F8F0] px-3.5 py-2 text-left text-sm font-bold text-[#16A36A] hover:bg-[#d7f3e4] disabled:opacity-50"
+                      onClick={() => {
+                        setPendingCancel(null);
+                        setPanel({ type: 'lookup', code });
+                      }}
+                    >
+                      Tra vé {code}
+                    </button>
+                  ))}
+                  {message.paymentUrl && (
+                    <a href={message.paymentUrl} className={primary + ' justify-self-start'}>
+                      Mở cổng thanh toán
+                    </a>
+                  )}
+                </div>
+              ))}
+              {busy && (
+                <p role="status" className="flex items-center gap-2 text-xs font-medium text-[#778196]">
+                  <LoaderCircle size={15} className="animate-spin text-[#FF6B00]" />
+                  Trợ lý Triply đang xử lý…
+                </p>
+              )}
+            </div>
+            {panel && (
+              <div className="mt-3.5">
+                {panel.type === 'search' && (
+                  <SearchForm
+                    key={messages.length}
+                    criteria={panel.criteria}
+                    places={places}
+                    busy={busy}
+                    send={send}
+                  />
+                )}
+                {panel.type === 'search' && placesError && (
+                  <p className="mt-2 text-xs font-semibold text-[#DC4545]">
+                    Chưa tải được địa điểm. Bạn đóng rồi mở lại trợ lý để thử lại.
+                  </p>
+                )}
+                {panel.type === 'lookup' && (
+                  <LookupForm key={panel.code} code={panel.code} busy={busy} send={send} />
+                )}
+                {panel.type === 'checkout' && (
+                  <BookingForm
+                    key={panel.checkout.trip.trip_id}
+                    checkout={panel.checkout}
+                    onDone={complete}
+                    onBack={() => setPanel(null)}
+                  />
+                )}
+              </div>
+            )}
+            {pendingCancel && (
+              <div className="mt-3.5 grid gap-2.5 rounded-2xl border border-[#F8C6C6] bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-[#202938]">
+                  Xác nhận hủy vé <strong className="text-[#FF6B00]">{pendingCancel.code}</strong> · ghế{' '}
+                  {pendingCancel.seat}?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={secondary} disabled={busy} onClick={() => setPendingCancel(null)}>
+                    Giữ vé
+                  </button>
+                  <button
+                    type="button"
+                    className={primary}
+                    disabled={busy}
+                    onClick={() => send({ action: 'cancel_ticket', code: pendingCancel.code, confirmed: true })}
+                  >
+                    Xác nhận hủy vé
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          <form className="flex items-center gap-2" onSubmit={event => {
-            event.preventDefault();
-            const message = input.trim();
-            if (!message || busy || panel?.type === 'checkout') return;
-            setInput('');
-            send({ message }, message);
-          }}>
-            <input className={field + ' flex-1'} value={input} aria-label="Tin nhắn cho trợ lý" maxLength={500}
-              disabled={panel?.type === 'checkout'} placeholder="VD: TP.HCM đi Cư Jút mai, 2 vé"
-              onChange={event => setInput(event.target.value)} />
-            <button className={primary + ' grid size-10 place-items-center !p-0'} aria-label="Gửi tin nhắn" disabled={busy || !input.trim() || panel?.type === 'checkout'}><ArrowUp size={19} /></button>
-          </form>
-          {usesGemini && <p className="mt-1.5 text-xs text-slate-500">
-            Câu tìm chuyến có thể được xử lý bằng Google Gemini. Nhập số điện thoại trong biểu mẫu tra vé hoặc đặt vé.
-          </p>}
-        </div>
-      </section>}
-      <button ref={toggle} type="button" aria-expanded={open} aria-controls={open ? 'hutech-assistant' : undefined}
-        onClick={() => open ? close() : setOpen(true)}
-        className="flex h-12 items-center gap-2 rounded-full bg-[#d44519] px-4 text-sm font-bold text-white shadow-lg transition hover:bg-[#ad3515]"
-        aria-label={open ? 'Đóng trợ lý HUTECH BUS' : 'Mở trợ lý HUTECH BUS'}>
-        {open ? <X size={19} /> : <MessageSquare size={19} />}<span>Trợ lý Hutech</span>
+
+          {/* Quick Actions & Input Composer */}
+          <div className="shrink-0 border-t border-[#E7EAF0] bg-white px-3.5 pb-3 pt-2.5 sm:px-4">
+            <div className="mb-2.5 flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
+              <button
+                type="button"
+                className={
+                  'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ' +
+                  (panel?.type === 'search'
+                    ? 'border-[#FF6B00] bg-[#FFF1E6] text-[#FF6B00]'
+                    : 'border-[#E7EAF0] bg-white text-[#202938] hover:border-[#FF6B00]')
+                }
+                disabled={busy || panel?.type === 'checkout'}
+                onClick={() => {
+                  setPendingCancel(null);
+                  setPanel(panel?.type === 'search' ? null : { type: 'search' });
+                }}
+              >
+                <Search size={14} /> Tìm chuyến
+              </button>
+              <button
+                type="button"
+                className={
+                  'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ' +
+                  (panel?.type === 'lookup'
+                    ? 'border-[#FF6B00] bg-[#FFF1E6] text-[#FF6B00]'
+                    : 'border-[#E7EAF0] bg-white text-[#202938] hover:border-[#FF6B00]')
+                }
+                disabled={busy || panel?.type === 'checkout'}
+                onClick={() => {
+                  setPendingCancel(null);
+                  setPanel(panel?.type === 'lookup' ? null : { type: 'lookup' });
+                }}
+              >
+                <Ticket size={14} /> Tra vé
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-1.5 text-xs font-bold text-[#202938] transition hover:border-[#FF6B00] hover:text-[#FF6B00]"
+                disabled={busy || panel?.type === 'checkout'}
+                onClick={() => send({ action: 'tickets' }, 'Vé của tôi')}
+              >
+                <CalendarDays size={14} /> Vé của tôi
+              </button>
+              <Link
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E7EAF0] bg-white px-3 py-1.5 text-xs font-bold text-[#202938] transition hover:border-[#FF6B00] hover:text-[#FF6B00]"
+                to="/thong-tin/giai-quyet-khieu-nai"
+                onClick={close}
+              >
+                <CircleHelp size={14} /> Hỗ trợ
+              </Link>
+            </div>
+            <form
+              className="flex items-center gap-2"
+              onSubmit={event => {
+                event.preventDefault();
+                const message = input.trim();
+                if (!message || busy || panel?.type === 'checkout') return;
+                setInput('');
+                send({ message }, message);
+              }}
+            >
+              <input
+                className={field + ' flex-1 !bg-[#F7F8FA]'}
+                value={input}
+                aria-label="Tin nhắn cho trợ lý"
+                maxLength={500}
+                disabled={panel?.type === 'checkout'}
+                placeholder="VD: TP.HCM đi Đà Lạt mai, 2 vé..."
+                onChange={event => setInput(event.target.value)}
+              />
+              <button
+                className={primary + ' grid size-10 place-items-center !p-0'}
+                aria-label="Gửi tin nhắn"
+                disabled={busy || !input.trim() || panel?.type === 'checkout'}
+              >
+                <ArrowUp size={19} />
+              </button>
+            </form>
+            {usesGemini && (
+              <p className="mt-1.5 flex items-center gap-1 text-[11px] text-[#778196]">
+                <Sparkles size={12} className="text-[#FF6B00]" />
+                Câu tìm chuyến có thể được xử lý bằng Google Gemini.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+      <button
+        ref={toggle}
+        type="button"
+        aria-expanded={open}
+        aria-controls={open ? 'triply-assistant' : undefined}
+        onClick={() => (open ? close() : setOpen(true))}
+        className="flex h-12 items-center gap-2.5 rounded-full bg-[#FF6B00] px-5 text-sm font-bold text-white shadow-lg shadow-[#FF6B00]/25 transition hover:bg-[#E85F00]"
+        aria-label={open ? 'Đóng trợ lý Triply' : 'Mở trợ lý Triply'}
+      >
+        {open ? <X size={19} /> : <MessageSquare size={19} />}
+        <span>Trợ lý Triply</span>
       </button>
     </div>
   );

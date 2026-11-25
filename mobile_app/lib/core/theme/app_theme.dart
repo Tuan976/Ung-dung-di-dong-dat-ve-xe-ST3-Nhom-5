@@ -8,7 +8,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      fontFamily: null, // Uses system font with perfect Vietnamese glyphs
+      fontFamily: null,
       colorScheme: const ColorScheme(
         brightness: Brightness.light,
         primary: AppColors.primary,
@@ -50,24 +50,41 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.border,
+          disabledForegroundColor: AppColors.textMuted,
           elevation: 0,
-          shadowColor: AppColors.primary.withValues(alpha: 0.3),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 22),
+          shadowColor: AppColors.primary.withValues(alpha: 0.25),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: AppTextStyles.button,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.border,
+          disabledForegroundColor: AppColors.textMuted,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: AppTextStyles.button,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary, width: 1.2),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          foregroundColor: AppColors.textPrimary,
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: AppColors.border, width: 1.2),
+          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 18),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: AppTextStyles.buttonSecondary,
+          textStyle: AppTextStyles.buttonSecondary.copyWith(color: AppColors.textPrimary),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -82,7 +99,7 @@ class AppTheme {
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 15,
+          vertical: 14,
         ),
         hintStyle: const TextStyle(
           color: AppColors.textMuted,
@@ -97,31 +114,32 @@ class AppTheme {
         prefixIconColor: AppColors.textSecondary,
         suffixIconColor: AppColors.textSecondary,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.6),
         ),
       ),
       cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
         margin: const EdgeInsets.only(bottom: 12),
@@ -129,7 +147,7 @@ class AppTheme {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
+        unselectedItemColor: AppColors.textSecondary,
         elevation: 8,
         type: BottomNavigationBarType.fixed,
         selectedLabelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
@@ -141,9 +159,14 @@ class AppTheme {
         space: 1,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceSecondary,
+        backgroundColor: Colors.white,
         selectedColor: AppColors.primaryLight,
-        labelStyle: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+        disabledColor: AppColors.surfaceMuted,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

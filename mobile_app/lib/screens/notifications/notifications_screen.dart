@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/network/api_client.dart';
 import '../../widgets/app_nav_bar.dart';
+import '../../widgets/shared_components.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -31,7 +33,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         });
       }
     } catch (e) {
-      print('Error loading notifications: $e');
+      debugPrint('Error loading notifications: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -45,7 +47,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final date = DateTime.parse(isoString).toLocal();
       final now = DateTime.now();
       final difference = now.difference(date);
-      
+
       if (difference.inMinutes < 1) return 'Vừa xong';
       if (difference.inMinutes < 60) return '${difference.inMinutes} phút trước';
       if (difference.inHours < 24) return '${difference.inHours} giờ trước';
@@ -58,89 +60,93 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Thông báo',
                     style: TextStyle(
-                      color: Color(0xFF0F172A),
+                      color: AppColors.textPrimary,
                       fontSize: 18,
-                      fontFamily: 'Inter',
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const Icon(Icons.done_all, color: Color(0xFF0F172A), size: 24),
+                  IconButton(
+                    tooltip: 'Làm mới',
+                    onPressed: _loadNotifications,
+                    icon: const Icon(Icons.done_all_rounded, color: AppColors.primary, size: 22),
+                  ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const Divider(height: 1, color: AppColors.border),
 
             // List
             Expanded(
-              child: _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF00639B)))
-                : _notifications.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Bạn chưa có thông báo nào.',
-                        style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadNotifications,
-                      color: const Color(0xFF00639B),
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _notifications.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final notif = _notifications[index];
-                          
-                          IconData icon = Icons.info_outline;
-                          Color iconColor = const Color(0xFF475569);
-                          Color iconBg = const Color(0xFFF1F5F9);
-                          Color? indicatorColor;
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : _notifications.isEmpty
+                      ? EmptyStateWidget(
+                          icon: Icons.notifications_none_rounded,
+                          title: 'Chưa có thông báo mới',
+                          description: 'Các cập nhật về vé xe, lịch khởi hành và ưu đãi sẽ hiển thị tại đây.',
+                          buttonText: 'Tìm chuyến xe',
+                          onButtonPressed: () => context.go('/home'),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadNotifications,
+                          color: AppColors.primary,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _notifications.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final notif = _notifications[index];
 
-                          if (notif['type'] == 'SUCCESS') {
-                            icon = Icons.check;
-                            iconColor = const Color(0xFF10B981);
-                            iconBg = const Color(0xFFD1FAE5);
-                            indicatorColor = const Color(0xFF00639B);
-                          } else if (notif['type'] == 'PROMO') {
-                            icon = Icons.percent;
-                            iconColor = const Color(0xFF0284C7);
-                            iconBg = const Color(0xFFE0F2FE);
-                            indicatorColor = const Color(0xFF00639B);
-                          } else if (notif['type'] == 'REMINDER') {
-                            icon = Icons.access_time_filled;
-                            iconColor = const Color(0xFFD97706);
-                            iconBg = const Color(0xFFFEF3C7);
-                          }
+                              IconData icon = Icons.notifications_outlined;
+                              Color iconColor = AppColors.primary;
+                              Color iconBg = AppColors.primaryLight;
+                              Color? indicatorColor = AppColors.primary;
 
-                          return _buildNotificationItem(
-                            title: notif['title'] ?? '',
-                            content: notif['message'] ?? '',
-                            time: _formatTime(notif['created_at']),
-                            icon: icon,
-                            iconColor: iconColor,
-                            iconBg: iconBg,
-                            indicatorColor: notif['is_read'] ? null : indicatorColor,
-                          );
-                        },
-                      ),
-                    ),
+                              if (notif['type'] == 'SUCCESS') {
+                                icon = Icons.check_circle_outline_rounded;
+                                iconColor = AppColors.success;
+                                iconBg = AppColors.successBg;
+                                indicatorColor = AppColors.primary;
+                              } else if (notif['type'] == 'PROMO') {
+                                icon = Icons.local_offer_outlined;
+                                iconColor = AppColors.primary;
+                                iconBg = AppColors.primaryLight;
+                                indicatorColor = AppColors.primary;
+                              } else if (notif['type'] == 'REMINDER') {
+                                icon = Icons.schedule_rounded;
+                                iconColor = AppColors.warning;
+                                iconBg = AppColors.warningBg;
+                              }
+
+                              return _buildNotificationItem(
+                                title: notif['title'] ?? '',
+                                content: notif['message'] ?? '',
+                                time: _formatTime(notif['created_at']),
+                                icon: icon,
+                                iconColor: iconColor,
+                                iconBg: iconBg,
+                                indicatorColor: notif['is_read'] == true ? null : indicatorColor,
+                              );
+                            },
+                          ),
+                        ),
             ),
 
-            AppNavBar(currentIndex: 2),
+            const AppNavBar(currentIndex: 2),
           ],
         ),
       ),
@@ -159,27 +165,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x050F172A),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.cardShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (indicatorColor != null)
-                Container(width: 4, color: indicatorColor),
+              if (indicatorColor != null) Container(width: 4, color: indicatorColor),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(15),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -188,7 +187,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         height: 40,
                         decoration: BoxDecoration(
                           color: iconBg,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(icon, color: iconColor, size: 20),
                       ),
@@ -204,16 +203,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   child: Text(
                                     title,
                                     style: const TextStyle(
-                                      color: Color(0xFF0F172A),
+                                      color: AppColors.textPrimary,
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
                                 Text(
                                   time,
                                   style: const TextStyle(
-                                    color: Color(0xFF94A3B8),
+                                    color: AppColors.textSecondary,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -224,7 +223,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             Text(
                               content,
                               style: const TextStyle(
-                                color: Color(0xFF475569),
+                                color: AppColors.textSecondary,
                                 fontSize: 13,
                                 height: 1.4,
                               ),
@@ -242,6 +241,4 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
     );
   }
-
-
 }

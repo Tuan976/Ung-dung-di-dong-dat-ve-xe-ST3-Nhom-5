@@ -8,18 +8,30 @@ class AppNavBar extends StatelessWidget {
 
   static const List<({IconData icon, IconData activeIcon, String label})> _tabs = [
     (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Trang chủ'),
-    (icon: Icons.confirmation_number_outlined, activeIcon: Icons.confirmation_number, label: 'Vé của tôi'),
+    (icon: Icons.confirmation_number_outlined, activeIcon: Icons.confirmation_number_rounded, label: 'Vé của tôi'),
     (icon: Icons.notifications_outlined, activeIcon: Icons.notifications_rounded, label: 'Thông báo'),
     (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Tài khoản'),
+    (icon: Icons.chat_bubble_outline_rounded, activeIcon: Icons.chat_bubble_rounded, label: 'Trợ lý'),
   ];
 
   void _onTap(BuildContext context, int index) {
     if (index == currentIndex) return;
     switch (index) {
-      case 0: context.go('/home'); break;
-      case 1: context.go('/tickets'); break;
-      case 2: context.go('/notifications'); break;
-      case 3: context.go('/profile'); break;
+      case 0:
+        context.go('/home');
+        break;
+      case 1:
+        context.go('/tickets');
+        break;
+      case 2:
+        context.go('/notifications');
+        break;
+      case 3:
+        context.go('/profile');
+        break;
+      case 4:
+        context.push('/assistant');
+        break;
     }
   }
 
@@ -31,7 +43,7 @@ class AppNavBar extends StatelessWidget {
         border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),
@@ -90,11 +102,11 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 220),
       vsync: this,
       value: widget.isActive ? 1.0 : 0.0,
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 1.12).animate(
+    _scaleAnim = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _pillWidthAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -132,39 +144,35 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Pill indicator + Icon
               Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Animated pill background in soft orange
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      width: 54 * _pillWidthAnim.value,
+                      width: 48 * _pillWidthAnim.value,
                       height: 28,
                       decoration: BoxDecoration(
                         color: AppColors.primaryLight.withValues(alpha: _pillWidthAnim.value),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
-                  // Icon
                   Transform.scale(
                     scale: _scaleAnim.value,
                     child: Icon(
                       widget.isActive ? widget.activeIcon : widget.icon,
-                      size: 23,
+                      size: 22,
                       color: widget.isActive
                           ? AppColors.primary
-                          : AppColors.textMuted,
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 3),
-              // Label
               AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 180),
                 style: TextStyle(
                   color: widget.isActive
                       ? AppColors.primary

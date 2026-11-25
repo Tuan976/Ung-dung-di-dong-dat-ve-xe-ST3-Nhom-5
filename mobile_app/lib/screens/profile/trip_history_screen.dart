@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/network/api_client.dart';
+import '../../widgets/shared_components.dart';
 
 class TripHistoryScreen extends StatefulWidget {
   const TripHistoryScreen({super.key});
@@ -12,11 +14,11 @@ class TripHistoryScreen extends StatefulWidget {
 
 class _TripHistoryScreenState extends State<TripHistoryScreen> {
   int _selectedMonthIndex = 0;
-  List<DateTime> _months = [];
-  
+  final List<DateTime> _months = [];
+
   bool _isLoading = true;
   List<dynamic> _allBookings = [];
-  
+
   final _apiClient = ApiClient();
 
   @override
@@ -25,7 +27,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
     _generateMonths();
     _loadBookings();
   }
-  
+
   void _generateMonths() {
     final now = DateTime.now();
     for (int i = 0; i < 6; i++) {
@@ -52,7 +54,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       }
     }
   }
-  
+
   List<dynamic> _getFilteredBookings() {
     final selectedDate = _months[_selectedMonthIndex];
     return _allBookings.where((b) {
@@ -64,7 +66,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredBookings = _getFilteredBookings();
-    
+
     int totalTrips = filteredBookings.length;
     double totalSpent = 0;
     for (var b in filteredBookings) {
@@ -72,17 +74,18 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
         totalSpent += (b['ticket_price'] ?? 0).toDouble();
       }
     }
-    
-    final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19, color: AppColors.textPrimary),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -94,9 +97,9 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
         title: const Text(
           'Lịch sử chuyến đi',
           style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            fontSize: 17.5,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -107,7 +110,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
             color: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: SizedBox(
-              height: 32,
+              height: 36,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
@@ -125,19 +128,19 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF00639B) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: isSelected ? AppColors.primary : Colors.white,
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isSelected ? const Color(0xFF00639B) : const Color(0xFFE2E8F0),
+                          color: isSelected ? AppColors.primary : AppColors.border,
                         ),
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        'Tháng ${monthDate.month}',
+                        'Tháng ${monthDate.month}/${monthDate.year}',
                         style: TextStyle(
-                          color: isSelected ? Colors.white : const Color(0xFF64748B),
-                          fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          fontSize: 12.5,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                         ),
                       ),
                     ),
@@ -146,102 +149,120 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
               ),
             ),
           ),
-          
+          const Divider(height: 1, color: AppColors.border),
+
           Expanded(
-            child: _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF00639B)))
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Summary Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    padding: const EdgeInsets.all(16),
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Tổng chuyến đi',
-                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$totalTrips Chuyến',
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                        ],
+                      // Summary Card (Clean Orange & White Triply style)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                          boxShadow: AppColors.cardShadow,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.directions_bus_rounded, color: AppColors.primary, size: 21),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Tổng số chuyến',
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$totalTrips chuyến đi',
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Text(
+                                  'Tổng chi tiêu',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  currencyFormatter.format(totalSpent),
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Text(
-                            'Tổng chi tiêu',
-                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            currencyFormatter.format(totalSpent),
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 16),
+
+                      if (filteredBookings.isEmpty)
+                        EmptyStateWidget(
+                          icon: Icons.history_rounded,
+                          title: 'Chưa có chuyến đi nào trong tháng này',
+                          description: 'Chọn tháng khác hoặc bắt đầu hành trình mới cùng Triply.',
+                          buttonText: 'Đặt vé ngay',
+                          onButtonPressed: () => context.go('/home'),
+                        )
+                      else
+                        ...filteredBookings.map((b) {
+                          final trip = b['trip'];
+                          final depDate = DateTime.parse(trip['departure_time']).toLocal();
+                          final formattedDate = DateFormat('HH:mm • dd/MM/yyyy').format(depDate);
+
+                          String statusText = 'Đã đặt';
+                          BadgeType badgeType = BadgeType.primary;
+
+                          if (b['status'] == 'COMPLETED') {
+                            statusText = 'Hoàn thành';
+                            badgeType = BadgeType.success;
+                          } else if (b['status'] == 'CANCELLED') {
+                            statusText = 'Đã hủy';
+                            badgeType = BadgeType.error;
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _buildTripCard(
+                              route: '${trip['start_point']} → ${trip['end_point']}',
+                              company: trip['company_name'] ?? 'Nhà xe Triply',
+                              date: formattedDate,
+                              price: currencyFormatter.format(b['ticket_price'] ?? 0),
+                              status: statusText,
+                              badgeType: badgeType,
+                            ),
+                          );
+                        }),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                if (filteredBookings.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 32),
-                    child: Center(
-                      child: Text(
-                        'Không có chuyến đi nào trong tháng này',
-                        style: TextStyle(color: Color(0xFF64748B)),
-                      ),
-                    ),
-                  )
-                else
-                  ...filteredBookings.map((b) {
-                    final trip = b['trip'];
-                    final depDate = DateTime.parse(trip['departure_time']).toLocal();
-                    final formattedDate = DateFormat('dd/MM/yyyy').format(depDate);
-                    
-                    String statusText = 'Đã đặt';
-                    Color statusColor = const Color(0xFF00639B);
-                    Color statusBg = const Color(0xFFE0F2FE);
-                    
-                    if (b['status'] == 'COMPLETED') {
-                      statusText = 'Hoàn thành';
-                      statusColor = const Color(0xFF059669);
-                      statusBg = const Color(0xFFD1FAE5);
-                    } else if (b['status'] == 'CANCELLED') {
-                      statusText = 'Đã huỷ';
-                      statusColor = const Color(0xFFEF4444);
-                      statusBg = const Color(0xFFFEE2E2);
-                    }
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildTripCard(
-                        route: '${trip['start_point']} → ${trip['end_point']}',
-                        company: trip['company_name'] ?? 'Chưa rõ',
-                        date: formattedDate,
-                        price: currencyFormatter.format(b['ticket_price'] ?? 0),
-                        status: statusText,
-                        statusColor: statusColor,
-                        statusBg: statusBg,
-                        hasReviewed: false, // You can extend this logic if API supports reviews
-                      ),
-                    );
-                  }).toList(),
-              ],
-            ),
           ),
         ],
       ),
@@ -254,125 +275,58 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
     required String date,
     required String price,
     required String status,
-    required Color statusColor,
-    required Color statusBg,
-    required bool hasReviewed,
+    required BadgeType badgeType,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+    return AppCard(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        route,
-                        style: const TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Nhà xe: $company',
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Khởi hành: $date',
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusBg,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     Text(
-                      price,
+                      route,
                       style: const TextStyle(
-                        color: Color(0xFF0F172A),
-                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Nhà xe: $company',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Khởi hành: $date',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (hasReviewed) ...[
-                  Row(
-                    children: List.generate(5, (index) {
-                      return const Padding(
-                        padding: EdgeInsets.only(right: 2),
-                        child: Icon(Icons.star_border, color: Color(0xFFF59E0B), size: 16),
-                      );
-                    }),
-                  ),
-                  const Text(
-                    'Cám ơn bạn đã đánh giá',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                  ),
-                ] else ...[
-                  const Text(
-                    'Chưa có đánh giá',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: const Color(0xFF00639B)),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      'Đánh giá',
-                      style: TextStyle(
-                        color: Color(0xFF00639B),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusBadge(label: status, type: badgeType),
+                  const SizedBox(height: 12),
+                  Text(
+                    price,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

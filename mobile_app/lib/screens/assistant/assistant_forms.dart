@@ -57,12 +57,16 @@ class _SearchFormState extends State<_SearchForm> {
 
   Widget _places(
     String label,
+    IconData icon,
     String? selected,
     ValueChanged<String?> change,
   ) => DropdownButtonFormField<String>(
     isExpanded: true,
     initialValue: widget.locations.contains(selected) ? selected : null,
-    decoration: InputDecoration(labelText: label),
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 18, color: _brandOrange),
+    ),
     items: [
       for (final place in widget.locations)
         DropdownMenuItem(
@@ -77,47 +81,96 @@ class _SearchFormState extends State<_SearchForm> {
   @override
   Widget build(BuildContext context) {
     return _AssistantCard(
+      borderColor: _brandOrange.withValues(alpha: 0.25),
       child: Form(
         key: _form,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 9,
+          spacing: 12,
           children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(Icons.search_rounded, size: 18, color: _brandOrange),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tìm kiếm chuyến xe',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        'Chọn điểm đi, điểm đến và ngày khởi hành',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             if (widget.settingsError)
-              TextButton(
+              TextButton.icon(
                 onPressed: widget.onRetry,
-                child: const Text('Tải lại danh sách địa điểm'),
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Tải lại danh sách địa điểm'),
               ),
             _places(
               'Điểm đi',
+              Icons.trip_origin_rounded,
               _origin,
               (value) => setState(() => _origin = value),
             ),
             _places(
               'Điểm đến',
+              Icons.location_on_rounded,
               _destination,
               (value) => setState(() => _destination = value),
             ),
             Row(
-              spacing: 8,
+              spacing: 10,
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: widget.busy ? null : _pickDate,
-                    icon: const Icon(Icons.calendar_today_outlined, size: 16),
-                    label: Text(
-                      _date == null
-                          ? 'Chọn ngày đi'
-                          : DateFormat('dd/MM/yyyy').format(_date!),
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: widget.busy ? null : _pickDate,
+                      icon: const Icon(Icons.calendar_today_outlined, size: 16, color: _brandOrange),
+                      label: Text(
+                        _date == null
+                            ? 'Chọn ngày đi'
+                            : DateFormat('dd/MM/yyyy').format(_date!),
+                        style: TextStyle(
+                          color: _date == null ? AppColors.textSecondary : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ),
                 SizedBox(
-                  width: 92,
+                  width: 96,
                   child: TextFormField(
                     controller: _count,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Số vé'),
+                    decoration: const InputDecoration(
+                      labelText: 'Số vé',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    ),
                     validator: (value) {
                       final count = int.tryParse(value?.trim() ?? '');
                       return count == null || count < 1 || count > 20
@@ -128,7 +181,7 @@ class _SearchFormState extends State<_SearchForm> {
                 ),
               ],
             ),
-            FilledButton(
+            FilledButton.icon(
               onPressed:
                   widget.busy || _date == null || widget.locations.isEmpty
                   ? null
@@ -141,7 +194,8 @@ class _SearchFormState extends State<_SearchForm> {
                         'pax': int.parse(_count.text.trim()),
                       });
                     },
-              child: const Text('Tìm chuyến'),
+              icon: const Icon(Icons.directions_bus_rounded, size: 18),
+              label: const Text('Tìm chuyến'),
             ),
           ],
         ),
@@ -180,18 +234,56 @@ class _LookupFormState extends State<_LookupForm> {
 
   @override
   Widget build(BuildContext context) => _AssistantCard(
+    borderColor: _brandOrange.withValues(alpha: 0.25),
     child: Form(
       key: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 8,
+        spacing: 12,
         children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Icon(Icons.manage_search_rounded, size: 18, color: _brandOrange),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tra cứu vé xe điện tử',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      'Nhập mã đặt vé và số điện thoại đã đăng ký',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           TextFormField(
             controller: _code,
             textCapitalization: TextCapitalization.characters,
             decoration: const InputDecoration(
               labelText: 'Mã vé',
               hintText: 'HT12345678',
+              prefixIcon: Icon(Icons.confirmation_number_outlined, size: 19),
+              counterText: '',
             ),
             maxLength: 10,
             validator: (value) =>
@@ -207,11 +299,13 @@ class _LookupFormState extends State<_LookupForm> {
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
               labelText: 'Số điện thoại đặt vé',
+              prefixIcon: Icon(Icons.phone_outlined, size: 19),
+              counterText: '',
             ),
             maxLength: 20,
             validator: _validatePhone,
           ),
-          FilledButton(
+          FilledButton.icon(
             onPressed: widget.busy
                 ? null
                 : () {
@@ -219,7 +313,8 @@ class _LookupFormState extends State<_LookupForm> {
                       widget.onSubmit(_code.text.trim(), _phone.text.trim());
                     }
                   },
-            child: const Text('Tra cứu'),
+            icon: const Icon(Icons.search_rounded, size: 18),
+            label: const Text('Tra cứu'),
           ),
         ],
       ),

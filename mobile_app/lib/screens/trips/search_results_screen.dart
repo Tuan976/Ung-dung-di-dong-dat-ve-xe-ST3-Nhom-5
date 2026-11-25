@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_colors.dart';
 import '../../services/trip_service.dart';
 import '../../services/map_booking_service.dart';
 import '../../models/booking_strategy.dart';
 import '../../models/trip.dart';
 import '../../models/map_station.dart';
+import '../../widgets/shared_components.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String from;
@@ -67,110 +69,120 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+    final fmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(12, 12, 16, 10),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: const Icon(Icons.arrow_back_ios, size: 20, color: Color(0xFF0F172A)),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19, color: AppColors.textPrimary),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.my_location, size: 14, color: Color(0xFF00639B)),
-                                const SizedBox(width: 4),
-                                Text(widget.from,
-                                    style: const TextStyle(
-                                        color: Color(0xFF0F172A),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w800)),
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 6),
-                                  child: Icon(Icons.arrow_forward, size: 14, color: Color(0xFF94A3B8)),
+                            Flexible(
+                              child: Text(
+                                widget.from,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                const Icon(Icons.location_on, size: 14, color: Color(0xFFEF4444)),
-                                const SizedBox(width: 4),
-                                Text(widget.to,
-                                    style: const TextStyle(
-                                        color: Color(0xFF0F172A),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w800)),
-                              ],
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const SizedBox(height: 2),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6),
+                              child: Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary),
+                            ),
+                            Flexible(
+                              child: Text(
+                                widget.to,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Khởi hành: ${_formatDate(widget.date)}',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_strategy?.hasMapConfig == true)
+                    InkWell(
+                      onTap: () {
+                        context.push(
+                          '/map_booking?route_id=${_strategy?.routeId ?? ""}&direction=${_strategy?.direction ?? "forward"}&from=${Uri.encodeComponent(widget.from)}&to=${Uri.encodeComponent(widget.to)}&date=${widget.date}&passengers=1',
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.map_outlined, size: 15, color: AppColors.primary),
+                            SizedBox(width: 4),
                             Text(
-                              '${_formatDate(widget.date)} • Một chiều',
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                              'Bản đồ',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      if (_strategy?.hasMapConfig == true)
-                        InkWell(
-                          onTap: () {
-                            context.push(
-                              '/map_booking?route_id=${_strategy?.routeId ?? ""}&direction=${_strategy?.direction ?? "forward"}&from=${Uri.encodeComponent(widget.from)}&to=${Uri.encodeComponent(widget.to)}&date=${widget.date}&passengers=1',
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFF7ED),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: const Color(0xFFFF6B00)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.map_outlined, size: 14, color: Color(0xFFFF6B00)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Bản đồ tuyến',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFFFF6B00),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
                 ],
               ),
             ),
+
+            const BookingStepIndicator(currentStep: 1),
+            const Divider(height: 1, color: AppColors.border),
 
             if (widget.pickupStop != null || widget.dropoffStop != null)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFFFEDD5)),
+                  color: AppColors.surfaceWarm,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.map_outlined, size: 20, color: Color(0xFFFF6B00)),
+                    const Icon(Icons.place_rounded, size: 20, color: AppColors.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -178,15 +190,23 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         children: [
                           if (widget.pickupStop != null)
                             Text(
-                              'Đón: ${widget.pickupStop!.name}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF9A3412)),
+                              'Điểm đón: ${widget.pickupStop!.name}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           if (widget.dropoffStop != null)
                             Text(
-                              'Trả: ${widget.dropoffStop!.name}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                              'Điểm trả: ${widget.dropoffStop!.name}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -204,72 +224,25 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF0B192C)));
+                      child: CircularProgressIndicator(color: AppColors.primary),
+                    );
                   }
                   if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 72, height: 72,
-                              decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(36)),
-                              child: const Icon(Icons.wifi_off, size: 36, color: Color(0xFFDC2626)),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text('Không thể tải dữ liệu',
-                                style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.w700)),
-                            const SizedBox(height: 8),
-                            Text('${snapshot.error}',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-                            const SizedBox(height: 24),
-                            ElevatedButton.icon(
-                              onPressed: () => setState(_loadTrips),
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text('Thử lại'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0B192C),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return EmptyStateWidget(
+                      icon: Icons.wifi_off_rounded,
+                      title: 'Không thể tải danh sách chuyến',
+                      description: '${snapshot.error}',
+                      buttonText: 'Thử lại',
+                      onButtonPressed: () => setState(_loadTrips),
                     );
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 88, height: 88,
-                            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(44)),
-                            child: const Icon(Icons.directions_bus_outlined, size: 44, color: Color(0xFF94A3B8)),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text('Không tìm thấy chuyến xe',
-                              style: TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 8),
-                          const Text('Thử chọn ngày hoặc tuyến khác',
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: () => context.pop(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0B192C),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                            ),
-                            child: const Text('Quay lại'),
-                          ),
-                        ],
-                      ),
+                    return EmptyStateWidget(
+                      icon: Icons.directions_bus_outlined,
+                      title: 'Không tìm thấy chuyến xe phù hợp',
+                      description: 'Hãy thử đổi ngày khởi hành hoặc chọn tuyến đường khác.',
+                      buttonText: 'Chọn lại hành trình',
+                      onButtonPressed: () => context.pop(),
                     );
                   }
 
@@ -281,111 +254,230 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     itemBuilder: (context, index) {
                       final trip = trips[index];
                       final isLowSeat = trip.availableSeats <= 5;
-                      return GestureDetector(
+                      return AppCard(
                         onTap: () => context.push('/trip/${trip.id}', extra: {
                           'pickup_stop': widget.pickupStop,
                           'dropoff_stop': widget.dropoffStop,
                         }),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [BoxShadow(color: const Color(0x0A0F172A), blurRadius: 8, offset: const Offset(0, 2))],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            // Top: Company + Bus type + Seat status
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Company + price
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(trip.companyName,
-                                          style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w800)),
-                                    ),
-                                    Text(
-                                      fmt.format(trip.price),
-                                      style: const TextStyle(color: Color(0xFF00639B), fontSize: 16, fontWeight: FontWeight.w800),
-                                    ),
-                                  ],
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.directions_bus_rounded,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
                                 ),
-                                const SizedBox(height: 12),
-                                // Time row
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(trip.departureTime,
-                                            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 20, fontWeight: FontWeight.w800)),
-                                        const SizedBox(height: 2),
-                                        Text(trip.departureStation,
-                                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                                      ],
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                                            height: 1,
-                                            color: const Color(0xFFE2E8F0),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          const Icon(Icons.directions_bus, size: 16, color: Color(0xFF94A3B8)),
-                                        ],
-                                      ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(trip.arrivalTime.isNotEmpty ? trip.arrivalTime : '--:--',
-                                            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 20, fontWeight: FontWeight.w800)),
-                                        const SizedBox(height: 2),
-                                        Text(trip.arrivalStation,
-                                            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                                const SizedBox(height: 10),
-                                // Bus type + available seats
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(trip.busType,
-                                          style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w500)),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: isLowSeat ? const Color(0xFFFEF3C7) : const Color(0xFFDCFCE7),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        'Còn ${trip.availableSeats} chỗ',
-                                        style: TextStyle(
-                                          color: isLowSeat ? const Color(0xFFD97706) : const Color(0xFF16A34A),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        trip.companyName,
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        trip.busType,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                StatusBadge(
+                                  label: 'Còn ${trip.availableSeats} chỗ',
+                                  type: isLowSeat ? BadgeType.warning : BadgeType.success,
                                 ),
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 14),
+
+                            // Middle: Departure & Arrival Timeline
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceSecondary,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.borderLight),
+                              ),
+                              child: Row(
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        trip.departureTime,
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        trip.departureStation,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                width: 6,
+                                                height: 6,
+                                                decoration: const BoxDecoration(
+                                                  color: AppColors.primary,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Container(
+                                                  height: 1.5,
+                                                  color: AppColors.border,
+                                                ),
+                                              ),
+                                              const Icon(
+                                                Icons.directions_bus_rounded,
+                                                size: 16,
+                                                color: AppColors.primary,
+                                              ),
+                                              Expanded(
+                                                child: Container(
+                                                  height: 1.5,
+                                                  color: AppColors.border,
+                                                ),
+                                              ),
+                                              Container(
+                                                width: 6,
+                                                height: 6,
+                                                decoration: const BoxDecoration(
+                                                  color: AppColors.success,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          const Text(
+                                            'Chuyến thẳng',
+                                            style: TextStyle(
+                                              color: AppColors.textSecondary,
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        trip.arrivalTime.isNotEmpty ? trip.arrivalTime : '--:--',
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        trip.arrivalStation,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Bottom: Highlighted Price + Select Trip CTA
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Giá vé',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      fmt.format(trip.price),
+                                      style: const TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 40,
+                                  child: ElevatedButton(
+                                    onPressed: () => context.push('/trip/${trip.id}', extra: {
+                                      'pickup_stop': widget.pickupStop,
+                                      'dropoff_stop': widget.dropoffStop,
+                                    }),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Chọn chuyến',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       );
                     },

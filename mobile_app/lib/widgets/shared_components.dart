@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_text_styles.dart';
 
-/// Primary Brand Button — Orange #F26A21
+/// Primary Brand Button — Triply Orange #FF6B00
 class PrimaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -19,7 +19,7 @@ class PrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.width,
-    this.height = 50,
+    this.height = 48,
     this.padding,
   });
 
@@ -33,18 +33,18 @@ class PrimaryButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-          disabledForegroundColor: Colors.white70,
+          disabledBackgroundColor: AppColors.border,
+          disabledForegroundColor: AppColors.textMuted,
           elevation: 0,
           padding: padding ?? const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: isLoading
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
               )
             : Row(
@@ -52,10 +52,16 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 19, color: Colors.white),
+                    Icon(icon, size: 18, color: Colors.white),
                     const SizedBox(width: 8),
                   ],
-                  Text(text, style: AppTextStyles.button),
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: AppTextStyles.button,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
       ),
@@ -63,7 +69,7 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-/// Secondary Button — White with Orange Border or Subtle Tint
+/// Secondary Button — Clean White with Border or Orange Tint
 class SecondaryButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -78,7 +84,7 @@ class SecondaryButton extends StatelessWidget {
     this.onPressed,
     this.icon,
     this.width,
-    this.height = 48,
+    this.height = 46,
     this.isTinted = false,
   });
 
@@ -91,13 +97,13 @@ class SecondaryButton extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           backgroundColor: isTinted ? AppColors.primaryLight : Colors.white,
-          foregroundColor: AppColors.primary,
+          foregroundColor: isTinted ? AppColors.primary : AppColors.textPrimary,
           side: BorderSide(
-            color: isTinted ? Colors.transparent : AppColors.primary,
+            color: isTinted ? AppColors.primary.withValues(alpha: 0.3) : AppColors.border,
             width: 1.2,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16),
         ),
@@ -106,10 +112,19 @@ class SecondaryButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 18, color: AppColors.primary),
+              Icon(icon, size: 17, color: isTinted ? AppColors.primary : AppColors.textSecondary),
               const SizedBox(width: 6),
             ],
-            Text(text, style: AppTextStyles.buttonSecondary),
+            Flexible(
+              child: Text(
+                text,
+                style: AppTextStyles.buttonSecondary.copyWith(
+                  color: isTinted ? AppColors.primary : AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),
@@ -162,17 +177,17 @@ class StatusBadge extends StatelessWidget {
       case BadgeType.primary:
         bg = AppColors.primaryLight;
         fg = AppColors.primary;
-        border = AppColors.primary.withValues(alpha: 0.3);
+        border = AppColors.primary.withValues(alpha: 0.25);
         break;
       case BadgeType.neutral:
-        bg = AppColors.surfaceMuted;
+        bg = AppColors.surfaceSecondary;
         fg = AppColors.textSecondary;
         border = AppColors.border;
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(6),
@@ -189,9 +204,9 @@ class StatusBadge extends StatelessWidget {
             label,
             style: TextStyle(
               color: fg,
-              fontSize: 11,
+              fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              letterSpacing: 0.1,
             ),
           ),
         ],
@@ -216,7 +231,7 @@ class AppCard extends StatelessWidget {
     this.onTap,
     this.color,
     this.border,
-    this.radius = 16,
+    this.radius = 14,
   });
 
   @override
@@ -249,6 +264,132 @@ class AppCard extends StatelessWidget {
       decoration: decoration,
       padding: padding ?? const EdgeInsets.all(16),
       child: child,
+    );
+  }
+}
+
+/// Booking Journey Step Progress Indicator
+/// Steps: 1. Chọn chuyến -> 2. Chọn ghế -> 3. Hành khách -> 4. Thanh toán
+class BookingStepIndicator extends StatelessWidget {
+  final int currentStep; // 1 to 4
+  const BookingStepIndicator({super.key, required this.currentStep});
+
+  static const _steps = ['Chọn chuyến', 'Chọn ghế', 'Thông tin', 'Thanh toán'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Row(
+        children: List.generate(_steps.length * 2 - 1, (index) {
+          if (index.isOdd) {
+            final stepBefore = (index ~/ 2) + 1;
+            final isDone = currentStep > stepBefore;
+            return Expanded(
+              child: Container(
+                height: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                color: isDone ? AppColors.primary : AppColors.border,
+              ),
+            );
+          }
+          final stepNum = (index ~/ 2) + 1;
+          final isActive = currentStep == stepNum;
+          final isDone = currentStep > stepNum;
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDone
+                      ? AppColors.success
+                      : isActive
+                          ? AppColors.primary
+                          : AppColors.surfaceSecondary,
+                  border: Border.all(
+                    color: isDone
+                        ? AppColors.success
+                        : isActive
+                            ? AppColors.primary
+                            : AppColors.border,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: isDone
+                    ? const Icon(Icons.check_rounded, size: 13, color: Colors.white)
+                    : Text(
+                        '$stepNum',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isActive ? Colors.white : AppColors.textSecondary,
+                        ),
+                      ),
+              ),
+              if (isActive) ...[
+                const SizedBox(width: 6),
+                Text(
+                  _steps[stepNum - 1],
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// Triply Brand Logo Widget
+class TriplyLogo extends StatelessWidget {
+  final double iconSize;
+  final double fontSize;
+  const TriplyLogo({super.key, this.iconSize = 32, this.fontSize = 18});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: iconSize,
+          height: iconSize,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(iconSize * 0.3),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.directions_bus_rounded,
+              color: Colors.white,
+              size: iconSize * 0.56,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        RichText(
+          text: TextSpan(
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.3,
+            ),
+            children: const [
+              TextSpan(text: 'TRIP', style: TextStyle(color: AppColors.textPrimary)),
+              TextSpan(text: 'LY', style: TextStyle(color: AppColors.primary)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -416,27 +557,27 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
                 color: AppColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 48, color: AppColors.primary),
+              child: Icon(icon, size: 42, color: AppColors.primary),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             Text(
               title,
               style: AppTextStyles.h3,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               description,
               style: AppTextStyles.caption,
               textAlign: TextAlign.center,
             ),
             if (buttonText != null && onButtonPressed != null) ...[
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
               PrimaryButton(
                 text: buttonText!,
                 onPressed: onButtonPressed,
@@ -450,4 +591,3 @@ class EmptyStateWidget extends StatelessWidget {
     );
   }
 }
-

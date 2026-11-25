@@ -6,87 +6,87 @@ const policyData = {
     title: 'Quy chế hoạt động',
     content: (
       <>
-        <p>Chào mừng bạn đến với Hutech Bus. Dưới đây là các quy chế hoạt động của chúng tôi:</p>
+        <p>Chào mừng bạn đến với nền tảng đặt vé xe khách thông minh Triply. Dưới đây là các quy chế hoạt động của chúng tôi:</p>
         <h3>1. Nguyên tắc chung</h3>
-        <p>Hệ thống đặt vé trực tuyến Hutech Bus cung cấp dịch vụ vé xe khách chất lượng cao. Khách hàng tham gia giao dịch trên Hutech Bus là các cá nhân, tổ chức có nhu cầu mua vé và sử dụng dịch vụ vận tải của chúng tôi.</p>
+        <p>Nền tảng đặt vé trực tuyến Triply cung cấp dịch vụ tìm kiếm và đặt vé xe khách chất lượng cao. Khách hàng tham gia giao dịch trên Triply là các cá nhân, tổ chức có nhu cầu mua vé và sử dụng dịch vụ vận tải hợp pháp.</p>
         <h3>2. Quy trình giao dịch</h3>
-        <p>Khách hàng có thể tìm kiếm chuyến đi, chọn chỗ ngồi và tiến hành thanh toán trực tuyến qua các cổng thanh toán được hỗ trợ. Vé điện tử sẽ được gửi qua email sau khi thanh toán thành công.</p>
+        <p>Khách hàng có thể tìm kiếm chuyến đi, chọn vị trí ghế ngồi trực quan và tiến hành thanh toán trực tuyến hoặc giữ chỗ thanh toán tiền mặt. Vé điện tử kèm mã QR sẽ được xác nhận ngay sau khi đặt vé thành công.</p>
         <h3>3. Trách nhiệm của các bên</h3>
-        <p>Hutech Bus cam kết cung cấp dịch vụ đúng như mô tả, bảo mật thông tin khách hàng và hỗ trợ giải quyết các vấn đề phát sinh. Khách hàng cần cung cấp thông tin chính xác khi đặt vé và tuân thủ các quy định của nhà xe.</p>
+        <p>Triply cam kết cung cấp thông tin chuyến đi minh bạch, bảo mật dữ liệu khách hàng và hỗ trợ giải quyết các vấn đề phát sinh 24/7. Khách hàng cần cung cấp thông tin liên hệ chính xác khi đặt vé để nhận mã vé điện tử.</p>
       </>
-    )
+    ),
   },
   'chinh-sach-bao-mat': {
     title: 'Chính sách bảo mật thông tin',
     content: (
       <>
-        <p>Hutech Bus cam kết bảo vệ thông tin cá nhân của bạn. Chính sách bảo mật này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn.</p>
+        <p>Triply cam kết bảo vệ thông tin cá nhân của bạn. Chính sách bảo mật này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn.</p>
         <h3>1. Mục đích thu thập</h3>
-        <p>Chúng tôi thu thập thông tin để hỗ trợ quá trình đặt vé, thông báo lịch trình và cải thiện chất lượng dịch vụ.</p>
+        <p>Chúng tôi thu thập họ tên, số điện thoại và email nhằm xuất mã vé điện tử, thông báo lịch trình khởi hành và hỗ trợ đón trả khách.</p>
         <h3>2. Phạm vi sử dụng</h3>
-        <p>Thông tin của bạn chỉ được sử dụng nội bộ và chia sẻ với các đối tác liên quan trực tiếp đến chuyến đi (như nhà xe, cổng thanh toán).</p>
+        <p>Thông tin của bạn chỉ được sử dụng nội bộ và chia sẻ với nhà xe trực tiếp vận hành chuyến đi mà bạn đã đặt.</p>
         <h3>3. Cam kết bảo mật</h3>
-        <p>Hutech Bus áp dụng các biện pháp kỹ thuật và an ninh để ngăn chặn truy cập trái phép. Chúng tôi không bán hoặc trao đổi thông tin khách hàng cho bên thứ ba vì mục đích thương mại.</p>
+        <p>Triply áp dụng các tiêu chuẩn mã hóa và an ninh dữ liệu để ngăn chặn truy cập trái phép. Chúng tôi tuyệt đối không bán hoặc chia sẻ thông tin khách hàng cho bên thứ ba.</p>
       </>
-    )
+    ),
   },
   'chinh-sach-thanh-toan': {
-    title: 'Chính sách thanh toán',
+    title: 'Chính sách thanh toán & hoàn vé',
     content: (
       <>
-        <p>Hutech Bus hỗ trợ đa dạng phương thức thanh toán nhằm mang lại sự tiện lợi tối đa cho khách hàng.</p>
+        <p>Triply hỗ trợ đa dạng phương thức thanh toán nhằm mang lại sự tiện lợi tối đa cho hành khách.</p>
         <h3>1. Phương thức thanh toán</h3>
-        <p>Chúng tôi chấp nhận thanh toán qua thẻ tín dụng, thẻ ghi nợ, chuyển khoản ngân hàng và các ví điện tử phổ biến như Momo, ZaloPay, PayOS.</p>
-        <h3>2. Quy định hoàn trả</h3>
-        <p>Trong trường hợp hủy vé hợp lệ theo quy định của nhà xe, số tiền hoàn lại sẽ được chuyển vào tài khoản của bạn trong vòng 3-5 ngày làm việc.</p>
-        <h3>3. Bảo mật thanh toán</h3>
-        <p>Mọi giao dịch thanh toán đều được mã hóa và xử lý qua các cổng thanh toán uy tín, đảm bảo an toàn tuyệt đối cho thông tin tài chính của bạn.</p>
+        <p>Chúng tôi hỗ trợ thanh toán tiền mặt khi lên xe và thanh toán trực tuyến qua cổng PayOS QR (hỗ trợ VietQR, MoMo, ZaloPay và hơn 40 ngân hàng nội địa).</p>
+        <h3>2. Quy định hoàn hủy</h3>
+        <p>Hành khách có thể hủy vé trực tiếp trên ứng dụng hoặc qua Trợ lý Triply trước giờ khởi hành theo quy định của nhà xe.</p>
+        <h3>3. Bảo mật giao dịch</h3>
+        <p>Mọi giao dịch thanh toán đều được xác thực tự động theo thời gian thực, đảm bảo an toàn tuyệt đối cho khách hàng.</p>
       </>
-    )
+    ),
   },
   'giai-quyet-khieu-nai': {
-    title: 'Giải quyết khiếu nại',
+    title: 'Trung tâm Hỗ trợ & Giải quyết khiếu nại',
     content: (
       <>
-        <p>Chúng tôi luôn lắng nghe và sẵn sàng giải quyết mọi thắc mắc, khiếu nại của khách hàng một cách nhanh chóng và công bằng.</p>
-        <h3>1. Quy trình tiếp nhận</h3>
-        <p>Khách hàng có thể gửi khiếu nại qua email hotro@hutechbus.vn hoặc gọi điện đến hotline 1900 1234. Chúng tôi sẽ ghi nhận và phản hồi trong vòng 24 giờ.</p>
-        <h3>2. Thời gian xử lý</h3>
-        <p>Tùy vào tính chất của khiếu nại, thời gian xử lý có thể kéo dài từ 1 đến 3 ngày làm việc. Chúng tôi sẽ cập nhật tiến độ thường xuyên cho khách hàng.</p>
-        <h3>3. Nguyên tắc giải quyết</h3>
-        <p>Mọi khiếu nại đều được giải quyết trên tinh thần thiện chí, tuân thủ các quy định của pháp luật và chính sách của công ty để đảm bảo quyền lợi tối đa cho khách hàng.</p>
+        <p>Triply luôn lắng nghe và sẵn sàng giải quyết mọi thắc mắc, yêu cầu hỗ trợ của hành khách nhanh chóng và minh bạch.</p>
+        <h3>1. Kênh tiếp nhận hỗ trợ 24/7</h3>
+        <p>Khách hàng có thể nhắn tin trực tiếp với Trợ lý Triply ngay trên góc phải màn hình, gửi email về hotro@triply.vn hoặc gọi hotline 1900 1234.</p>
+        <h3>2. Thời gian phản hồi</h3>
+        <p>Yêu cầu tra cứu, đổi ghế hoặc hủy vé được xử lý tức thì. Các khiếu nại về chất lượng nhà xe được phản hồi trong vòng 24 giờ làm việc.</p>
+        <h3>3. Nguyên tắc bảo vệ hành khách</h3>
+        <p>Mọi phản ánh đều được Triply phối hợp cùng đối tác nhà xe xác minh trên tinh thần bảo vệ quyền lợi chính đáng của hành khách.</p>
       </>
-    )
+    ),
   },
   'huong-dan-thanh-toan': {
-    title: 'Hướng dẫn thanh toán',
+    title: 'Hướng dẫn đặt vé & thanh toán',
     content: (
       <>
-        <p>Để hoàn tất quá trình đặt vé, vui lòng làm theo các bước thanh toán dưới đây:</p>
-        <h3>Bước 1: Chọn chuyến đi và ghế ngồi</h3>
-        <p>Sau khi chọn được chuyến đi và vị trí ghế ưng ý, hãy điền đầy đủ thông tin hành khách.</p>
-        <h3>Bước 2: Chọn phương thức thanh toán</h3>
-        <p>Tại trang thanh toán, bạn có thể chọn một trong các phương thức: Chuyển khoản ngân hàng (PayOS), Ví Momo, ZaloPay, hoặc thẻ tín dụng.</p>
-        <h3>Bước 3: Xác nhận và thanh toán</h3>
-        <p>Kiểm tra lại thông tin đơn hàng và tiến hành thanh toán. Khi giao dịch thành công, bạn sẽ nhận được vé điện tử qua email đã đăng ký.</p>
+        <p>Đặt vé trên Triply chỉ gồm 4 bước đơn giản và minh bạch:</p>
+        <h3>Bước 1: Tìm kiếm hành trình</h3>
+        <p>Chọn Điểm đi, Điểm đến và Ngày khởi hành tại Trang chủ hoặc nhắn trực tiếp cho Trợ lý Triply.</p>
+        <h3>Bước 2: Chọn chuyến & vị trí ghế</h3>
+        <p>So sánh giờ khởi hành, loại xe, giá vé và chạm chọn ghế trống trên sơ đồ ghế từng tầng.</p>
+        <h3>Bước 3: Nhập thông tin hành khách</h3>
+        <p>Điền họ tên, số điện thoại liên hệ và điểm đón/trả mong muốn.</p>
+        <h3>Bước 4: Xác nhận & nhận vé điện tử</h3>
+        <p>Chọn thanh toán tiền mặt hoặc quét mã PayOS QR để nhận ngay mã vé điện tử HTxxxxxxxx.</p>
       </>
-    )
+    ),
   },
-  'faq': {
+  faq: {
     title: 'Câu hỏi thường gặp (FAQ)',
     content: (
       <>
-        <h3>1. Tôi có thể đổi hoặc trả vé không?</h3>
-        <p>Có, bạn có thể đổi hoặc trả vé tùy thuộc vào quy định của từng nhà xe. Vui lòng kiểm tra kỹ chính sách hoàn hủy khi đặt vé hoặc liên hệ tổng đài để được hỗ trợ.</p>
-        <h3>2. Tôi có cần in vé điện tử không?</h3>
-        <p>Không, bạn chỉ cần xuất trình vé điện tử trên điện thoại hoặc mã vé (booking code) cùng với giấy tờ tùy thân khi lên xe.</p>
-        <h3>3. Làm sao để nhận biết xe đã đến đón?</h3>
-        <p>Tài xế hoặc phụ xe sẽ liên hệ với bạn trước giờ khởi hành. Bạn cũng có thể theo dõi vị trí xe qua tính năng tra cứu vé trên website Hutech Bus.</p>
-        <h3>4. Trẻ em có được miễn phí vé không?</h3>
-        <p>Chính sách giá vé cho trẻ em phụ thuộc vào từng nhà xe, thông thường trẻ em dưới 3 tuổi hoặc dưới 100cm ngồi chung với người lớn sẽ được miễn phí.</p>
+        <h3>1. Tôi có thể hủy vé đã đặt không?</h3>
+        <p>Có. Bạn có thể mở Trợ lý Triply hoặc mục Vé của tôi để hủy vé trước giờ xe khởi hành.</p>
+        <h3>2. Tôi có cần in vé giấy không?</h3>
+        <p>Không cần. Bạn chỉ cần lưu mã vé điện tử (VD: HT12345678) hoặc mã QR trên điện thoại để xuất trình khi lên xe.</p>
+        <h3>3. Làm sao để đặt vé nhanh bằng Trợ lý Triply?</h3>
+        <p>Bạn chỉ cần mở nút "Trợ lý Triply" ở góc dưới màn hình và gõ câu tự nhiên như: "TP.HCM đi Đà Lạt ngày mai, 2 vé", trợ lý sẽ tự động tìm chuyến và mở sơ đồ ghế cho bạn.</p>
       </>
-    )
-  }
+    ),
+  },
 };
 
 const Policy = () => {
@@ -95,30 +95,31 @@ const Policy = () => {
 
   if (!policy) {
     return (
-      <div style={{ padding: '100px 20px', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <h2 style={{ fontSize: '28px', color: '#1e293b', fontWeight: '700', marginBottom: '16px' }}>Không tìm thấy trang</h2>
-        <p style={{ color: '#64748b', fontSize: '16px' }}>Trang bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+      <div className="py-24 px-4 text-center min-h-[60vh] flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-extrabold text-[#202938] mb-2">Không tìm thấy nội dung</h2>
+        <p className="text-sm text-[#778196]">Trang bạn đang tìm kiếm không tồn tại.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ background: '#f8fafc', padding: '60px 20px', flex: 1, display: 'flex', justifyContent: 'center' }}>
-      <div style={{ maxWidth: '800px', width: '100%', background: '#fff', borderRadius: '16px', padding: '48px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#1e293b', marginBottom: '40px', textAlign: 'center', position: 'relative', paddingBottom: '20px' }}>
+    <div className="bg-[#F7F8FA] py-12 px-4 flex-1 flex justify-center">
+      <div className="max-w-3xl w-full bg-white rounded-2xl border border-[#E7EAF0] p-8 sm:p-10 card-shadow">
+        <h1 className="text-2xl sm:text-3xl font-black text-[#202938] mb-8 pb-4 border-b border-[#E7EAF0]">
           {policy.title}
-          <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '80px', height: '4px', background: 'linear-gradient(90deg, #EF5222 0%, #F97316 100%)', borderRadius: '4px' }}></span>
         </h1>
-        <div className="policy-content" style={{ color: '#475569', lineHeight: '1.8', fontSize: '16px' }}>
+        <div className="policy-content text-[#778196] leading-relaxed text-sm sm:text-base">
           {policy.content}
         </div>
-        <style dangerouslySetInnerHTML={{__html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           .policy-content h3 {
-            color: #1e293b;
-            font-size: 20px;
-            font-weight: 700;
-            margin-top: 36px;
-            margin-bottom: 16px;
+            color: #202938;
+            font-size: 17px;
+            font-weight: 800;
+            margin-top: 24px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
           }
@@ -127,15 +128,16 @@ const Policy = () => {
             display: inline-block;
             width: 8px;
             height: 8px;
-            background: #EF5222;
+            background: #FF6B00;
             border-radius: 50%;
-            margin-right: 12px;
+            margin-right: 10px;
           }
           .policy-content p {
-            margin-bottom: 16px;
-            text-align: justify;
+            margin-bottom: 14px;
           }
-        `}} />
+        `,
+          }}
+        />
       </div>
     </div>
   );

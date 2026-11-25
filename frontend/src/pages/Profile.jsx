@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Edit3, Save } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Edit3, Save, Ticket } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Profile = () => {
@@ -22,7 +22,6 @@ const Profile = () => {
   if (!user) return null;
 
   const handleSave = () => {
-    // In a real app, this would be an API call
     localStorage.setItem('user', JSON.stringify(formData));
     setUser(formData);
     setIsEditing(false);
@@ -30,108 +29,112 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-32 pb-12 flex justify-center w-full">
-      <div className="max-w-4xl w-full px-6">
-        <h1 className="text-3xl font-black text-slate-800 mb-8 uppercase tracking-tight">Tài khoản của tôi</h1>
-        
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-[#EF5222] to-[#FF8E53]"></div>
-          
-          <div className="px-8 pb-8 relative">
-            <div className="flex justify-between items-end -mt-16 mb-8">
-              <div className="w-32 h-32 bg-white rounded-full p-2 shadow-lg">
-                <div className="w-full h-full bg-slate-100 rounded-full flex items-center justify-center text-[#EF5222]">
-                  <User size={48} />
+    <div className="min-h-screen bg-[#F7F8FA] py-10 flex justify-center w-full">
+      <div className="max-w-4xl w-full px-4 sm:px-6">
+        <h1 className="text-2xl font-black text-[#202938] mb-6">Tài khoản cá nhân</h1>
+
+        <div className="bg-white rounded-2xl border border-[#E7EAF0] card-shadow overflow-hidden">
+          <div className="h-24 bg-[#FFF1E6] border-b border-[#E7EAF0]"></div>
+
+          <div className="px-6 sm:px-8 pb-8 relative">
+            <div className="flex justify-between items-end -mt-12 mb-6">
+              <div className="w-24 h-24 bg-white rounded-full p-1.5 border border-[#E7EAF0] shadow-sm">
+                <div className="w-full h-full bg-[#FFF1E6] rounded-full flex items-center justify-center text-[#FF6B00]">
+                  <User size={40} />
                 </div>
               </div>
-              
+
               {isEditing ? (
-                <button 
+                <button
                   onClick={handleSave}
-                  className="bg-[#EF5222] hover:bg-[#D43D11] text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-colors shadow-lg shadow-orange-200"
+                  className="bg-[#FF6B00] hover:bg-[#E85F00] text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
                 >
-                  <Save size={18} /> Lưu thay đổi
+                  <Save size={16} /> Lưu thay đổi
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={() => setIsEditing(true)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-colors"
+                  className="bg-[#F7F8FA] hover:border-[#FF6B00] hover:text-[#FF6B00] border border-[#E7EAF0] text-[#202938] px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
                 >
-                  <Edit3 size={18} /> Cập nhật
+                  <Edit3 size={16} /> Chỉnh sửa
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2">Họ và tên</label>
-                  <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 focus-within:border-[#EF5222] focus-within:ring-2 focus-within:ring-[#EF5222]/10 transition-all">
-                    <User size={20} className={isEditing ? "text-[#EF5222]" : "text-slate-400"} />
-                    <input 
-                      type="text" 
-                      value={formData.name || ''} 
-                      onChange={e => setFormData({...formData, name: e.target.value})}
-                      readOnly={!isEditing}
-                      className="bg-transparent w-full font-bold text-slate-800 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2">Số điện thoại</label>
-                  <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 focus-within:border-[#EF5222] focus-within:ring-2 focus-within:ring-[#EF5222]/10 transition-all">
-                    <Phone size={20} className={isEditing ? "text-[#EF5222]" : "text-slate-400"} />
-                    <input 
-                      type="text" 
-                      value={formData.phone || ''} 
-                      onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})}
-                      readOnly={!isEditing}
-                      className="bg-transparent w-full font-bold text-slate-800 focus:outline-none"
-                    />
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-bold text-[#778196] mb-1.5">Họ và tên</label>
+                <div className="flex items-center gap-3 bg-[#F7F8FA] px-4 py-3 rounded-xl border border-[#E7EAF0] focus-within:border-[#FF6B00] focus-within:bg-white transition-all">
+                  <User size={18} className={isEditing ? 'text-[#FF6B00]' : 'text-[#778196]'} />
+                  <input
+                    type="text"
+                    value={formData.name || ''}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    readOnly={!isEditing}
+                    className="bg-transparent w-full text-sm font-bold text-[#202938] focus:outline-none"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2">Email</label>
-                  <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 focus-within:border-[#EF5222] focus-within:ring-2 focus-within:ring-[#EF5222]/10 transition-all">
-                    <Mail size={20} className={isEditing ? "text-[#EF5222]" : "text-slate-400"} />
-                    <input 
-                      type="email" 
-                      value={formData.email || ''} 
-                      onChange={e => setFormData({...formData, email: e.target.value})}
-                      readOnly={!isEditing}
-                      className="bg-transparent w-full font-bold text-slate-800 focus:outline-none"
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-[#778196] mb-1.5">Số điện thoại</label>
+                <div className="flex items-center gap-3 bg-[#F7F8FA] px-4 py-3 rounded-xl border border-[#E7EAF0] focus-within:border-[#FF6B00] focus-within:bg-white transition-all">
+                  <Phone size={18} className={isEditing ? 'text-[#FF6B00]' : 'text-[#778196]'} />
+                  <input
+                    type="text"
+                    value={formData.phone || ''}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                    readOnly={!isEditing}
+                    className="bg-transparent w-full text-sm font-bold text-[#202938] focus:outline-none"
+                  />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-2">Địa chỉ</label>
-                  <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 focus-within:border-[#EF5222] focus-within:ring-2 focus-within:ring-[#EF5222]/10 transition-all">
-                    <MapPin size={20} className={isEditing ? "text-[#EF5222]" : "text-slate-400"} />
-                    <input 
-                      type="text" 
-                      placeholder={isEditing ? "Nhập địa chỉ của bạn" : "Chưa cập nhật"}
-                      value={formData.address || ''}
-                      onChange={e => setFormData({...formData, address: e.target.value})}
-                      readOnly={!isEditing}
-                      className="bg-transparent w-full font-bold text-slate-800 focus:outline-none"
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-[#778196] mb-1.5">Email</label>
+                <div className="flex items-center gap-3 bg-[#F7F8FA] px-4 py-3 rounded-xl border border-[#E7EAF0] focus-within:border-[#FF6B00] focus-within:bg-white transition-all">
+                  <Mail size={18} className={isEditing ? 'text-[#FF6B00]' : 'text-[#778196]'} />
+                  <input
+                    type="email"
+                    value={formData.email || ''}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    readOnly={!isEditing}
+                    className="bg-transparent w-full text-sm font-bold text-[#202938] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#778196] mb-1.5">Địa chỉ</label>
+                <div className="flex items-center gap-3 bg-[#F7F8FA] px-4 py-3 rounded-xl border border-[#E7EAF0] focus-within:border-[#FF6B00] focus-within:bg-white transition-all">
+                  <MapPin size={18} className={isEditing ? 'text-[#FF6B00]' : 'text-[#778196]'} />
+                  <input
+                    type="text"
+                    placeholder={isEditing ? 'Nhập địa chỉ của bạn' : 'Chưa cập nhật'}
+                    value={formData.address || ''}
+                    onChange={e => setFormData({ ...formData, address: e.target.value })}
+                    readOnly={!isEditing}
+                    className="bg-transparent w-full text-sm font-bold text-[#202938] focus:outline-none"
+                  />
                 </div>
               </div>
             </div>
-            
-            <div className="mt-12 pt-8 border-t border-slate-100">
-              <h3 className="text-xl font-bold text-slate-800 mb-6">Lịch sử đặt vé</h3>
-              <div className="bg-slate-50 rounded-xl p-8 text-center text-slate-500 font-medium border border-slate-100 border-dashed">
-                Bạn chưa có chuyến đi nào. <Link to="/" className="text-[#EF5222] hover:underline font-bold">Đặt vé ngay!</Link>
+
+            <div className="mt-8 pt-6 border-t border-[#E7EAF0]">
+              <h3 className="text-base font-extrabold text-[#202938] mb-3">Tra cứu & Quản lý vé</h3>
+              <div className="bg-[#F7F8FA] rounded-xl p-6 text-center text-sm text-[#778196] font-medium border border-[#E7EAF0]">
+                <Ticket size={24} className="mx-auto mb-2 text-[#FF6B00]" />
+                Bạn có thể kiểm tra vé đã đặt tại mục{' '}
+                <Link to="/check-ticket" className="text-[#FF6B00] hover:underline font-bold">
+                  Tra cứu vé
+                </Link>{' '}
+                hoặc{' '}
+                <Link to="/" className="text-[#FF6B00] hover:underline font-bold">
+                  Tìm chuyến xe mới
+                </Link>
+                .
               </div>
             </div>
-            
           </div>
         </div>
       </div>

@@ -26,14 +26,14 @@ class _OperatorMainScreenState extends State<OperatorMainScreen> {
   );
   final DateFormat _dateFmt = DateFormat('dd/MM/yyyy HH:mm');
 
-  // Design System — Light Orange & White Transportation App
-  static const Color brandOrange = Color(0xFFF26A21); // Cam thương hiệu #F26A21
-  static const Color brandOrangeDark = Color(0xFFE65B16); // Cam đậm #E65B16
-  static const Color brandOrangeLight = Color(0xFFFFF0E6); // Cam nhạt #FFF0E6
+  // Design System — Light Orange & White Transportation App (TRIPLY)
+  static const Color brandOrange = Color(0xFFFF6B00); // Cam thương hiệu #FF6B00
+  static const Color brandOrangeDark = Color(0xFFE85F00); // Cam đậm #E85F00
+  static const Color brandOrangeLight = Color(0xFFFFF1E6); // Cam nhạt #FFF1E6
   static const Color surfaceWhite = Color(0xFFFFFFFF); // Trắng #FFFFFF
-  static const Color bgOverall = Color(0xFFF8F9FB); // Nền tổng thể #F8F9FB
-  static const Color textMain = Color(0xFF263244); // Chữ chính #263244
-  static const Color textSub = Color(0xFF778397); // Chữ phụ #778397
+  static const Color bgOverall = Color(0xFFF7F8FA); // Nền tổng thể #F7F8FA
+  static const Color textMain = Color(0xFF202938); // Chữ chính #202938
+  static const Color textSub = Color(0xFF778196); // Chữ phụ #778196
   static const Color borderSubtle = Color(0xFFE7EAF0); // Đường viền #E7EAF0
   static const Color successGreen = Color(0xFF16A36A);
   static const Color successGreenLight = Color(0xFFE9F8F0);

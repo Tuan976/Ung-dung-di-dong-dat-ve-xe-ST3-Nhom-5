@@ -156,30 +156,93 @@ class _CheckoutState extends State<_Checkout> {
     }
   }
 
+  Widget _seatLegend() {
+    Widget dot(Color bg, Color border, String label) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: border),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+
+    return Wrap(
+      spacing: 14,
+      runSpacing: 6,
+      children: [
+        dot(Colors.white, AppColors.seatAvailableBorder, 'Ghế trống'),
+        dot(_brandOrange, _brandOrange, 'Đang chọn'),
+        dot(AppColors.seatOccupied, AppColors.seatOccupied, 'Đã đặt'),
+      ],
+    );
+  }
+
   Widget _seatRows(List<AssistantData> floors) => Container(
     decoration: BoxDecoration(
-      color: AppColors.surfaceMuted,
-      borderRadius: BorderRadius.circular(12),
+      color: AppColors.surfaceSecondary,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: AppColors.border),
     ),
-    padding: const EdgeInsets.all(9),
+    padding: const EdgeInsets.all(12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 10,
       children: [
+        _seatLegend(),
+        const Divider(height: 1, color: AppColors.border),
         for (final floor in floors) ...[
           Text(
             floor['floor'] as String? ?? 'Sơ đồ ghế',
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
           ),
           for (final row in _rows(floor))
             Wrap(
-              spacing: 5,
-              runSpacing: 4,
+              spacing: 6,
+              runSpacing: 6,
               children: [
                 for (final seat in row)
                   if (seat['id'] is String)
                     FilterChip(
-                      label: Text((seat['name'] ?? seat['id']).toString()),
+                      label: Text(
+                        (seat['name'] ?? seat['id']).toString(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: _selected.contains(seat['id'])
+                              ? Colors.white
+                              : seat['status'] == 'available'
+                                  ? AppColors.textPrimary
+                                  : AppColors.textMuted,
+                        ),
+                      ),
                       showCheckmark: false,
+                      selectedColor: _brandOrange,
+                      backgroundColor: Colors.white,
+                      disabledColor: AppColors.seatOccupied,
+                      side: BorderSide(
+                        color: _selected.contains(seat['id'])
+                            ? _brandOrange
+                            : AppColors.border,
+                      ),
                       selected: _selected.contains(seat['id']),
                       onSelected: seat['status'] != 'available'
                           ? null
@@ -206,16 +269,47 @@ class _CheckoutState extends State<_Checkout> {
   Widget build(BuildContext context) {
     final map = _map;
     return _AssistantCard(
+      borderColor: _brandOrange.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 8,
+        spacing: 10,
         children: [
           Row(
             children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(
+                  _reviewing ? Icons.fact_check_outlined : Icons.event_seat_rounded,
+                  size: 18,
+                  color: _brandOrange,
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  _reviewing ? 'Xác nhận đặt vé' : 'Chọn ghế và thông tin',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _reviewing ? 'Xác nhận đặt vé' : 'Chọn ghế và thông tin',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15.5,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      "${_trip['route_text']} · ${_trip['time_text']}",
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               TextButton(
@@ -224,22 +318,37 @@ class _CheckoutState extends State<_Checkout> {
               ),
             ],
           ),
-          Text(
-            "${_trip['route_text']} · ${_trip['time_text']}",
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
           if (_loading)
-            const LinearProgressIndicator()
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: LinearProgressIndicator(color: _brandOrange),
+            )
           else if (map != null && !_reviewing)
             _details(assistantItems(map['seat_map']))
           else if (map != null)
             _summary(map['price'] as num),
           if (_error != null)
-            Text(_error!, style: const TextStyle(color: Colors.red)),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.errorBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.errorBorder),
+              ),
+              child: Text(
+                _error!,
+                style: const TextStyle(
+                  color: AppColors.error,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           if (_error != null && !_loading && !_submitting)
-            OutlinedButton(
+            OutlinedButton.icon(
               onPressed: _loadSeats,
-              child: const Text('Tải lại sơ đồ ghế'),
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Tải lại sơ đồ ghế'),
             ),
         ],
       ),
@@ -256,26 +365,47 @@ class _CheckoutState extends State<_Checkout> {
       key: _form,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 8,
+        spacing: 10,
         children: [
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            children: [
-              Text('Đã chọn ${_selected.length}/$_quantity ghế'),
-              TextButton(
-                onPressed: available >= _quantity
-                    ? () => _autoSelect(floors)
-                    : null,
-                child: Text('Chọn giúp $_quantity ghế'),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceWarm,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _brandOrange.withValues(alpha: 0.2)),
+            ),
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              children: [
+                Text(
+                  'Đã chọn ${_selected.length}/$_quantity ghế',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: available >= _quantity
+                      ? () => _autoSelect(floors)
+                      : null,
+                  icon: const Icon(Icons.auto_fix_high_rounded, size: 15),
+                  label: Text('Chọn giúp $_quantity ghế'),
+                ),
+              ],
+            ),
           ),
           _seatRows(floors),
           TextFormField(
             controller: _name,
             maxLength: 100,
-            decoration: const InputDecoration(labelText: 'Họ tên'),
+            decoration: const InputDecoration(
+              labelText: 'Họ tên hành khách',
+              prefixIcon: Icon(Icons.person_outline_rounded, size: 19),
+              counterText: '',
+            ),
             validator: (value) => value == null || value.trim().isEmpty
                 ? 'Nhập tên hành khách.'
                 : null,
@@ -284,22 +414,44 @@ class _CheckoutState extends State<_Checkout> {
             controller: _phone,
             maxLength: 20,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(labelText: 'Số điện thoại'),
+            decoration: const InputDecoration(
+              labelText: 'Số điện thoại liên hệ',
+              prefixIcon: Icon(Icons.phone_outlined, size: 19),
+              counterText: '',
+            ),
             validator: _validatePhone,
           ),
-          TextFormField(
-            controller: _pickup,
-            maxLength: 200,
-            decoration: const InputDecoration(labelText: 'Điểm đón'),
-          ),
-          TextFormField(
-            controller: _dropoff,
-            maxLength: 200,
-            decoration: const InputDecoration(labelText: 'Điểm trả'),
+          Row(
+            spacing: 8,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _pickup,
+                  maxLength: 200,
+                  decoration: const InputDecoration(
+                    labelText: 'Điểm đón',
+                    counterText: '',
+                  ),
+                ),
+              ),
+              Expanded(
+                child: TextFormField(
+                  controller: _dropoff,
+                  maxLength: 200,
+                  decoration: const InputDecoration(
+                    labelText: 'Điểm trả',
+                    counterText: '',
+                  ),
+                ),
+              ),
+            ],
           ),
           DropdownButtonFormField<String>(
             initialValue: _payment,
-            decoration: const InputDecoration(labelText: 'Thanh toán'),
+            decoration: const InputDecoration(
+              labelText: 'Phương thức thanh toán',
+              prefixIcon: Icon(Icons.payments_outlined, size: 19),
+            ),
             items: [
               const DropdownMenuItem(
                 value: 'cash',
@@ -324,30 +476,68 @@ class _CheckoutState extends State<_Checkout> {
 
   Widget _summary(num price) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    spacing: 8,
+    spacing: 10,
     children: [
-      Text(
-        'Ghế ${_selected.join(', ')} · ${_name.text.trim()} · ${_phone.text.trim()}',
-      ),
-      if (_pickup.text.trim().isNotEmpty)
-        Text('Điểm đón: ${_pickup.text.trim()}'),
-      if (_dropoff.text.trim().isNotEmpty)
-        Text('Điểm trả: ${_dropoff.text.trim()}'),
-      Text(_payment == 'cash' ? 'Tiền mặt trên xe' : 'Thanh toán qua PayOS'),
-      Text(
-        'Tổng cộng ${_price(price * _selected.length)}',
-        style: const TextStyle(color: _orange, fontWeight: FontWeight.w800),
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSecondary,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 6,
+          children: [
+            Text(
+              'Ghế ${_selected.join(', ')} · ${_name.text.trim()} · ${_phone.text.trim()}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                fontSize: 13.5,
+              ),
+            ),
+            if (_pickup.text.trim().isNotEmpty)
+              Text(
+                'Điểm đón: ${_pickup.text.trim()}',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+            if (_dropoff.text.trim().isNotEmpty)
+              Text(
+                'Điểm trả: ${_dropoff.text.trim()}',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+            Text(
+              _payment == 'cash' ? 'Tiền mặt trên xe' : 'Thanh toán qua PayOS',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Divider(height: 12, color: AppColors.border),
+            Text(
+              'Tổng cộng ${_price(price * _selected.length)}',
+              style: const TextStyle(
+                color: _brandOrange,
+                fontWeight: FontWeight.w900,
+                fontSize: 17,
+              ),
+            ),
+          ],
+        ),
       ),
       Wrap(
         spacing: 8,
+        runSpacing: 8,
         children: [
           OutlinedButton(
             onPressed: _submitting
                 ? null
                 : () => setState(() {
-                    _reviewing = false;
-                    _error = null;
-                  }),
+                      _reviewing = false;
+                      _error = null;
+                    }),
             child: const Text('Chỉnh sửa'),
           ),
           FilledButton(

@@ -95,23 +95,23 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
-        title: const Text('Chi tiết vé xe', style: TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.w700)),
+        iconTheme: const IconThemeData(color: Color(0xFF202938)),
+        title: const Text('Chi tiết vé điện tử', style: TextStyle(color: Color(0xFF202938), fontSize: 17.5, fontWeight: FontWeight.w800)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.ios_share, color: Color(0xFF0F172A)),
+            icon: const Icon(Icons.ios_share_rounded, color: Color(0xFF202938), size: 20),
             onPressed: () {},
           ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            color: const Color(0xFFE2E8F0),
+            color: const Color(0xFFE7EAF0),
             height: 1.0,
           ),
         ),
@@ -121,7 +121,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 
   Widget _buildBody(NumberFormat currencyFormatter) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Color(0xFFFF6B00)));
 
     if (_error != null) {
       return Center(
@@ -139,7 +139,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     }
 
     final booking = _booking!;
-    final statusColor = booking.isCancelled ? const Color(0xFFEF4444) : booking.isPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B);
+    final statusColor = booking.isCancelled ? const Color(0xFFDC4545) : booking.isPaid ? const Color(0xFF16A36A) : const Color(0xFFE99A22);
     final statusLabel = booking.isCancelled ? 'Đã hủy' : booking.isPaid ? 'Đã xác nhận' : 'Chờ thanh toán';
     
     // Formatting date
@@ -154,58 +154,62 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Main dark ticket card
+          // Main Triply E-Ticket Card
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: ShapeDecoration(
-              color: const Color(0xFF0B192C),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE7EAF0)),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('MÃ ĐẶT VÉ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w400)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: ShapeDecoration(
-                        color: statusColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                Container(
+                  color: const Color(0xFFFF6B00),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('MÃ ĐẶT VÉ TRIPLY', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              statusLabel,
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        statusLabel,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            booking.ticketCode,
+                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                          ),
+                          if (booking.trip != null)
+                            Text(
+                              '${_getShortCity(booking.trip!.startPoint)} → ${_getShortCity(booking.trip!.endPoint)}',
+                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                            ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      booking.ticketCode,
-                      style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-                    ),
-                    if (booking.trip != null)
-                      Text(
-                        '${_getShortCity(booking.trip!.startPoint)} → ${_getShortCity(booking.trip!.endPoint)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: ShapeDecoration(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
+                  padding: const EdgeInsets.all(18),
+                  color: Colors.white,
                   child: Column(
                     children: [
                       QrImageView(
@@ -226,14 +230,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF0E6),
+                          color: const Color(0xFFFFF1E6),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFF26A21).withOpacity(0.3)),
+                          border: Border.all(color: const Color(0xFFFF6B00).withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           'MÃ VÉ: ${booking.ticketCode}',
                           style: const TextStyle(
-                            color: Color(0xFFE65B16),
+                            color: Color(0xFFFF6B00),
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                             letterSpacing: 0.8,
@@ -244,7 +248,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       const Text(
                         'Đưa mã này cho tài xế hoặc phụ xe quét khi lên xe',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Color(0xFF687386), fontSize: 12, fontWeight: FontWeight.w500),
+                        style: TextStyle(color: Color(0xFF778196), fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -260,14 +264,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             decoration: ShapeDecoration(
               color: Colors.white,
               shape: RoundedRectangleBorder(
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFFE7EAF0)),
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Thông tin chuyến đi', style: TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w700)),
+                const Text('Thông tin chuyến đi', style: TextStyle(color: Color(0xFF202938), fontSize: 15, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 16),
                 _buildInfoRow('Nhà xe', booking.trip?.companyName ?? 'N/A', isBold: true),
                 const SizedBox(height: 12),
@@ -277,7 +281,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                       ? booking.trip!.licensePlate!
                       : 'Đang xếp xe',
                   isBold: true,
-                  valueColor: const Color(0xFF0284C7),
+                  valueColor: const Color(0xFFFF6B00),
                 ),
                 const SizedBox(height: 12),
                 _buildInfoRow('Loại xe', booking.trip?.busType ?? 'Limousine cao cấp'),
@@ -286,7 +290,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 const SizedBox(height: 12),
                 _buildInfoRow('Khởi hành', departureFormatted, isBold: true),
                 const SizedBox(height: 12),
-                _buildInfoRow('Vị trí ghế', 'Ghế ${booking.seatNumber}', valueColor: const Color(0xFF00639B), isBold: true),
+                _buildInfoRow('Vị trí ghế', 'Ghế ${booking.seatNumber}', valueColor: const Color(0xFFFF6B00), isBold: true),
               ],
             ),
           ),
@@ -306,14 +310,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             decoration: ShapeDecoration(
               color: Colors.white,
               shape: RoundedRectangleBorder(
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFFE7EAF0)),
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Hành khách & Điểm đón/trả', style: TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w700)),
+                const Text('Hành khách & Điểm đón/trả', style: TextStyle(color: Color(0xFF202938), fontSize: 15, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 16),
                 _buildInfoRow('Hành khách', booking.passengerName, isBold: true),
                 const SizedBox(height: 12),
@@ -323,12 +327,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.only(top: 16),
-                  decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE2E8F0)))),
+                  decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFE7EAF0)))),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tổng thanh toán', style: TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w700)),
-                      Text(currencyFormatter.format(booking.ticketPrice), style: const TextStyle(color: Color(0xFF00639B), fontSize: 16, fontWeight: FontWeight.w800)),
+                      const Text('Tổng thanh toán', style: TextStyle(color: Color(0xFF202938), fontSize: 14, fontWeight: FontWeight.w700)),
+                      Text(currencyFormatter.format(booking.ticketPrice), style: const TextStyle(color: Color(0xFFFF6B00), fontSize: 17, fontWeight: FontWeight.w900)),
                     ],
                   ),
                 ),
@@ -349,30 +353,29 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           if (!booking.isCancelled)
             InkWell(
               onTap: _isCancelling ? null : _cancelBooking,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 height: 48,
                 decoration: ShapeDecoration(
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
-                    side: const BorderSide(width: 1.50, color: Color(0xFFEF4444)),
-                    borderRadius: BorderRadius.circular(24),
+                    side: const BorderSide(width: 1.3, color: Color(0xFFDC4545)),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: Center(
                   child: _isCancelling
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)))
-                      : const Text('Hủy vé', style: TextStyle(color: Color(0xFFEF4444), fontSize: 15, fontWeight: FontWeight.w600)),
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFDC4545)))
+                      : const Text('Hủy vé này', style: TextStyle(color: Color(0xFFDC4545), fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
               ),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Center(
-            child: InkWell(
-              onTap: () {},
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                child: Text('Liên hệ hỗ trợ', style: TextStyle(color: Color(0xFF00639B), fontSize: 14, fontWeight: FontWeight.w600)),
-              ),
+            child: TextButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.support_agent_rounded, size: 18, color: Color(0xFFFF6B00)),
+              label: const Text('Trung tâm hỗ trợ Triply', style: TextStyle(color: Color(0xFFFF6B00), fontSize: 14, fontWeight: FontWeight.w700)),
             ),
           ),
           const SizedBox(height: 24),
