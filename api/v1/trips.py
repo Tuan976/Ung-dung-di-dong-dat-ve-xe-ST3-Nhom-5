@@ -93,17 +93,29 @@ def get_trip_detail(trip_id):
     booked_seats = [b.seat_number for b in trip.bookings if b.status in ['CONFIRMED', 'HOLD']]
     
     try:
-        raw_seat_map = json.loads(trip.bus.seat_map)
+        raw_seat_map = json.loads(trip.bus.seat_map) if trip.bus and trip.bus.seat_map else None
         if isinstance(raw_seat_map, dict) and 'seats' in raw_seat_map:
-            seat_map = [s['id'] for s in raw_seat_map['seats']]
+            seat_map = [str(s['id']) for s in raw_seat_map['seats'] if isinstance(s, dict) and s.get('id')]
         elif isinstance(raw_seat_map, list):
-            seat_map = raw_seat_map
+            if raw_seat_map and isinstance(raw_seat_map[0], dict) and 'rows' in raw_seat_map[0]:
+                seat_map = [
+                    str(s['id'])
+                    for floor in raw_seat_map
+                    for row in floor.get('rows', [])
+                    for s in row
+                    if isinstance(s, dict) and s.get('id')
+                ]
+            else:
+                seat_map = [str(s['id'] if isinstance(s, dict) else s) for s in raw_seat_map if s]
         else:
             seat_map = []
-    except:
+    except Exception:
         seat_map = []
 
-    total_seats = trip.bus.total_seats
+    total_seats = trip.bus.total_seats if trip.bus and trip.bus.total_seats else 34
+    if not seat_map:
+        half = (total_seats + 1) // 2
+        seat_map = [f"A{i:02d}" for i in range(1, half + 1)] + [f"B{i:02d}" for i in range(1, total_seats - half + 1)]
     available_seats = total_seats - len(booked_seats)
 
     return api_success(
