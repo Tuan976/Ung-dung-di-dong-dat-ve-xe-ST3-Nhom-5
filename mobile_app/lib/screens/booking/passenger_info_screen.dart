@@ -42,15 +42,14 @@ class _PassengerInfoScreenState extends State<PassengerInfoScreen> {
   String? _selectedDropoff;
 
   late final List<String> _pickups = [
-    'Bến xe ${widget.trip.departureStation}',
-    'Văn phòng trung tâm ${widget.trip.departureStation}',
-    'Bến xe Gia Lâm',
-    'Bến xe Mỹ Đình',
+    'Bến xe trung tâm ${widget.trip.departureStation}',
+    'Văn phòng nhà xe tại ${widget.trip.departureStation}',
+    'Điểm đón dọc Quốc lộ (${widget.trip.departureStation})',
   ];
   late final List<String> _dropoffs = [
-    'Bến xe ${widget.trip.arrivalStation}',
-    'Văn phòng trung tâm ${widget.trip.arrivalStation}',
-    'Bến xe Cầu Rào',
+    'Bến xe trung tâm ${widget.trip.arrivalStation}',
+    'Văn phòng nhà xe tại ${widget.trip.arrivalStation}',
+    'Điểm trả dọc Quốc lộ (${widget.trip.arrivalStation})',
   ];
 
   bool _isBooking = false;

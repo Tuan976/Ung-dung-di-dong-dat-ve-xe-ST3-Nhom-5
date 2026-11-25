@@ -229,15 +229,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (strategy.mode == BookingMode.mapStops && strategy.hasMapConfig) {
         context.push(
-          '/map_booking?route_id=${strategy.routeId ?? "sg_cj"}&direction=${strategy.direction}&from=$_from&to=$_to&date=$dateStr&passengers=1',
+          '/map_booking?route_id=${strategy.routeId ?? "sg_cj"}&direction=${strategy.direction}&from=${Uri.encodeComponent(_from)}&to=${Uri.encodeComponent(_to)}&date=$dateStr&passengers=1',
         );
       } else {
-        context.push('/search_results?from=$_from&to=$_to&date=$dateStr');
+        context.push(
+          '/search_results?from=${Uri.encodeComponent(_from)}&to=${Uri.encodeComponent(_to)}&date=$dateStr',
+        );
       }
     } catch (e) {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
       if (mounted) {
-        context.push('/search_results?from=$_from&to=$_to&date=$dateStr');
+        context.push(
+          '/search_results?from=${Uri.encodeComponent(_from)}&to=${Uri.encodeComponent(_to)}&date=$dateStr',
+        );
       }
     } finally {
       if (mounted) setState(() => _isSearching = false);

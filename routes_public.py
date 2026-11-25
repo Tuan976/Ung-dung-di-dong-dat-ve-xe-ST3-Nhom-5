@@ -628,10 +628,25 @@ def register_public_routes(app):
             else:
                 query = query.filter(Trip.departure_time > _now())
 
-            if start_point:
-                query = query.filter(Route.start_point.ilike(f'{start_point}'))
-            if end_point:
-                query = query.filter(Route.end_point.ilike(f'{end_point}'))
+            if start_point or end_point:
+                from ai_service import ai_service
+                def _norm_p(val):
+                    n = ai_service.normalize_text(val or '')
+                    for p in ('tp ', 'thanh pho ', 'tinh '):
+                        if n.startswith(p):
+                            n = n[len(p):].strip()
+                    return 'ho chi minh' if n in ('sai gon', 'hcm', 'tphcm') else n
+
+                sp_norm = _norm_p(start_point)
+                ep_norm = _norm_p(end_point)
+                matching_rids = [
+                    r.id for r in Route.query.all()
+                    if (not sp_norm or sp_norm in _norm_p(r.start_point) or _norm_p(r.start_point) in sp_norm)
+                    and (not ep_norm or ep_norm in _norm_p(r.end_point) or _norm_p(r.end_point) in ep_norm)
+                ]
+                if not matching_rids:
+                    return jsonify([])
+                query = query.filter(Trip.route_id.in_(matching_rids))
 
             trips = query.order_by(Trip.departure_time).all()
             
